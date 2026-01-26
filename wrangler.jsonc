@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "openauthster-webui",
+  "pages_build_output_dir": ".frame-master/build",
+  "compatibility_date": "2025-11-09",
+  "d1_databases": [
+    {
+      "binding": "PROJECT_DB",
+      "database_name": "<YOUR_D1_DATABASE_NAME>",
+      "database_id": "<YOUR_D1_DATABASE_ID>",
+      "migrations_dir": "drizzle/migrations",
+      "remote": true
+    }
+  ],
+  "vars": {
+    "BUN_VERSION": "1.3.4",
+    "SKIP_DEPENDENCY_INSTALL": "true",
+    "PUBLIC_CLIENT_ID": "openauth_webui",
+    "PUBLIC_REDIRECT_URI": "<YOUR_WEBUI_URL>/auth/callback",
+    "PUBLIC_ISSUER": "<YOUR_ISSUER_URL>"
+  },
+  "compatibility_flags": ["nodejs_compat"]
+}

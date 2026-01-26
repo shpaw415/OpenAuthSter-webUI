@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "My-OpenAuth-Worker",
+  "pages_build_output_dir": ".frame-master/build",
+  "compatibility_date": "2025-11-09",
+  "kv_namespaces": [
+    {
+      "binding": "PROJECT_KV",
+      "id": "Your-KV-id",
+    },
+  ],
+  "vars": {
+    "BUN_VERSION": "1.3.4",
+    "SKIP_DEPENDENCY_INSTALL": "true",
+    "CLOUDFLARE_TOKEN": "your-cloudflare-token",
+    "CLOUDFLARE_ACCOUNT_ID": "your-cloudflare-account-id",
+  },
+}

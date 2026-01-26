@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "target": "ESNext",
+    "module": "preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "types": ["./worker-configuration.d.ts"],
+    "paths": {
+      "@api/*": ["./src/api/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@docs/*": ["./src/docs/*"],
+      "@components/*": ["./src/components/*"]
+    }
+  },
+  "include": [
+    "src",
+    ".frame-master/frame-master-custom-type.d.ts",
+    "templates",
+    "test/index.test.ts"
+  ],
+  "exclude": [".frame-master/build"]
+}

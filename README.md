@@ -103,7 +103,7 @@ For local development and contributing to the WebUI:
 ```
 openauth-webui/
 ├── src/              # Application source code
-├── functions/        # Cloudflare Pages Functions (API routes)
+├── functions/        # Cloudflare Pages Functions (API routes) **Build only**
 ├── static/           # Static assets
 ├── templates/        # Email and page templates
 ├── drizzle/          # Database migrations

@@ -50,7 +50,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // Show login form if not authenticated
   if (!auth?.loggedIn && auth?.loaded) {
     setTimeout(() => {
-      //auth?.login();
+      auth?.login();
       console.log(auth);
     }, 1000); // Slight delay to ensure smooth redirect
 

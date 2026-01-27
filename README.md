@@ -14,7 +14,7 @@ OpenAuthster WebUI is the management dashboard for your [OpenAuthster](https://g
 
 Before setting up the WebUI, you must first deploy the OpenAuthster issuer server:
 
-👉 [OpenAuthster Issuer Setup](https://github.com/shpaw415/openauth-multi-tenant-server-provider)
+👉 [OpenAuthster Issuer Setup](https://github.com/shpaw415/OpenAuthSter-issuer)
 
 ## Installation
 

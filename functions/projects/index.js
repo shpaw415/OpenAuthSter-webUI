@@ -4,9 +4,11 @@ import {
   getContext,
   projectTable,
   requireAuth
-} from "../chunk-5qkejggt.js";
-import"../chunk-ydj242yd.js";
-import"../chunk-6b5ekjqc.js";
+} from "../chunk-1jym31gh.js";
+import"../chunk-4d009j3y.js";
+import {
+  parseDBProject
+} from "../chunk-c97z6qgd.js";
 import"../chunk-0t41ngqp.js";
 
 // src/api/projects/index.ts
@@ -24,10 +26,7 @@ async function GET() {
   const projects = await db.select().from(projectTable);
   return {
     success: true,
-    data: projects.map((p) => ({
-      ...p,
-      providers_data: typeof p.providers_data === "string" ? JSON.parse(p.providers_data) : p.providers_data
-    }))
+    data: projects.map(parseDBProject)
   };
 }
 function isClientIdValid(name) {
@@ -69,17 +68,19 @@ async function POST(params) {
       clientID,
       created_at: new Date().toISOString(),
       active: true,
-      providers_data: JSON.stringify(providers_data)
+      providers_data: JSON.stringify(providers_data),
+      codeMode: "email"
     };
-    await db.insert(projectTable).values(newProject);
+    const [insertedProject] = await db.insert(projectTable).values(newProject).returning();
+    if (!insertedProject) {
+      return {
+        success: false,
+        error: "Failed to create project"
+      };
+    }
     return {
       success: true,
-      data: {
-        clientID: newProject.clientID,
-        active: true,
-        providers_data,
-        created_at: newProject.created_at
-      }
+      data: parseDBProject(insertedProject)
     };
   } catch (error) {
     return {

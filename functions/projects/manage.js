@@ -4,9 +4,11 @@ import {
   getContext,
   projectTable,
   requireAuth
-} from "../chunk-5qkejggt.js";
-import"../chunk-ydj242yd.js";
-import"../chunk-6b5ekjqc.js";
+} from "../chunk-1jym31gh.js";
+import"../chunk-4d009j3y.js";
+import {
+  parseDBProject
+} from "../chunk-c97z6qgd.js";
 import"../chunk-0t41ngqp.js";
 
 // src/api/projects/manage.ts
@@ -29,11 +31,7 @@ async function GET(params) {
   }
   return {
     success: true,
-    data: {
-      ...project,
-      providers_data: typeof project.providers_data === "string" ? JSON.parse(project.providers_data) : project.providers_data,
-      projectData: typeof project.projectData === "string" ? JSON.parse(project.projectData) : project.projectData || {}
-    }
+    data: parseDBProject(project)
   };
 }
 async function PUT(params) {
@@ -70,6 +68,9 @@ async function PUT(params) {
     if (params.data.projectData !== undefined) {
       updates.projectData = JSON.stringify(params.data.projectData);
     }
+    if (params.data.codeMode !== undefined) {
+      updates.codeMode = params.data.codeMode;
+    }
     if (Object.keys(updates).length === 0)
       return {
         success: false,
@@ -85,11 +86,7 @@ async function PUT(params) {
       };
     return {
       success: true,
-      data: {
-        ...updated,
-        providers_data: typeof updated.providers_data === "string" ? JSON.parse(updated.providers_data) : updated.providers_data,
-        projectData: typeof updated.projectData === "string" ? JSON.parse(updated.projectData) : updated.projectData || {}
-      }
+      data: parseDBProject(updated)
     };
   } catch (error) {
     return {

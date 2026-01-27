@@ -47,15 +47,9 @@ export default function UIThemeManage() {
     if (editId) {
       setIsEditMode(true);
       setThemeId(editId);
+    } else {
+      setShowModal(true);
     }
-  }, []);
-
-  // Ask for default Theme data preset if creating new theme
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const editId = url.searchParams.get("edit");
-    if (editId) return;
-    setShowModal(true);
   }, []);
 
   const handleSetPresetTheme = useCallback(async (presetKey: string) => {
@@ -854,6 +848,7 @@ export default function UIThemeManage() {
                         : themeData.radius === "full"
                         ? "9999px"
                         : "0.375rem",
+                    color: previewMode === "dark" ? "#000000" : "#ffffff",
                   }}
                 >
                   Continue

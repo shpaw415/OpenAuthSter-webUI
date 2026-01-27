@@ -1,9 +1,5 @@
 import { eq, drizzle } from "openauth-webui-shared-types/drizzle";
-import type {
-  Project,
-  ProviderConfig,
-  ProjectData,
-} from "openauth-webui-shared-types";
+import { type Project, parseDBProject } from "openauth-webui-shared-types";
 import { projectTable } from "openauth-webui-shared-types/database";
 
 import { requireAuth } from "../../server-utils";
@@ -40,17 +36,7 @@ export async function GET(params: {
 
   return {
     success: true,
-    data: {
-      ...project,
-      providers_data:
-        typeof project.providers_data === "string"
-          ? JSON.parse(project.providers_data)
-          : project.providers_data,
-      projectData:
-        typeof project.projectData === "string"
-          ? JSON.parse(project.projectData)
-          : project.projectData || {},
-    } as Project,
+    data: parseDBProject(project),
   };
 }
 
@@ -62,13 +48,7 @@ type UpdateResponse = {
 
 export type updateProjectParams = {
   clientID: string;
-  data: {
-    active?: boolean;
-    providers_data?: ProviderConfig[];
-    themeId?: string | null;
-    emailTemplateId?: string | null;
-    projectData?: ProjectData;
-  };
+  data: Partial<Omit<Project, "clientID" | "created_at">>;
 };
 
 // PUT /projects/manage - Update a project
@@ -119,6 +99,9 @@ export async function PUT(
     if (params.data.projectData !== undefined) {
       updates.projectData = JSON.stringify(params.data.projectData);
     }
+    if (params.data.codeMode !== undefined) {
+      updates.codeMode = params.data.codeMode;
+    }
 
     if (Object.keys(updates).length === 0)
       return {
@@ -148,17 +131,7 @@ export async function PUT(
 
     return {
       success: true,
-      data: {
-        ...updated,
-        providers_data:
-          typeof updated.providers_data === "string"
-            ? JSON.parse(updated.providers_data)
-            : updated.providers_data,
-        projectData:
-          typeof updated.projectData === "string"
-            ? JSON.parse(updated.projectData)
-            : updated.projectData || {},
-      } as Project,
+      data: parseDBProject(updated),
     };
   } catch (error) {
     return {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import type {
   Project,
   ProjectData,
@@ -190,19 +190,18 @@ export default function ProjectDetail() {
       {/* Theme & Email Template Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Theme Selection */}
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">🎨</span>
-              <h3 className="text-sm font-medium text-white">UI Theme</h3>
-            </div>
+        <SelectWrapper
+          icon="🎨"
+          name="UI Theme"
+          action={
             <a
               href="/theme"
               className="text-xs text-blue-400 hover:text-blue-300"
             >
               Manage Themes
             </a>
-          </div>
+          }
+        >
           <select
             value={projectHook.project?.themeId || ""}
             onChange={async (e) => {
@@ -238,22 +237,20 @@ export default function ProjectDetail() {
               Using theme: {projectHook.project.themeId}
             </p>
           )}
-        </div>
-
+        </SelectWrapper>
         {/* Email Template Selection */}
-        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">📧</span>
-              <h3 className="text-sm font-medium text-white">Email Template</h3>
-            </div>
+        <SelectWrapper
+          name="Email/SMS Template"
+          icon={"✉️"}
+          action={
             <a
               href="/templates"
               className="text-xs text-blue-400 hover:text-blue-300"
             >
               Manage Templates
             </a>
-          </div>
+          }
+        >
           <select
             value={projectHook.project?.emailTemplateId || ""}
             onChange={async (e) => {
@@ -301,7 +298,45 @@ export default function ProjectDetail() {
               </a>
             </div>
           )}
-        </div>
+        </SelectWrapper>
+        {/* codeMode Section */}
+        <SelectWrapper
+          name="Code Mode"
+          icon={"💻"}
+          helpText="Select the mode for registration code sending"
+        >
+          <select
+            defaultValue="email"
+            disabled={isSaving}
+            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            onChange={(e) => {
+              const value = e.currentTarget.value as "email" | "phone";
+
+              setIsSaving(true);
+              projectHook
+                .updateProject({
+                  codeMode: value,
+                })
+                .then(() => {
+                  setNotification({ message: "Code mode updated" });
+                })
+                .catch((err) => {
+                  setNotification({
+                    message:
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to update code mode",
+                  });
+                })
+                .finally(() => {
+                  setIsSaving(false);
+                });
+            }}
+          >
+            <option value="email">Email Code Mode</option>
+            <option value="phone">Phone Code Mode</option>
+          </select>
+        </SelectWrapper>
       </div>
 
       {/* Project Data Section */}
@@ -734,6 +769,39 @@ export default function ProjectDetail() {
                 );
               })}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SelectWrapper({
+  children,
+  name,
+  icon,
+  action,
+  helpText,
+}: {
+  children: React.ReactNode;
+  name: string;
+  icon: string;
+  action?: React.ReactNode;
+  helpText?: string | React.ReactNode;
+}) {
+  return (
+    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <span className="text-xl">{icon}</span>
+          <h3 className="text-sm font-medium text-white">{name}</h3>
+        </div>
+        {action}
+      </div>
+      {children}
+      {helpText && (
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-gray-500 text-xs">{helpText}</p>
+          <span></span>
         </div>
       )}
     </div>

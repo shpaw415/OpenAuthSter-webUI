@@ -1,6 +1,6 @@
 import {
   COOKIE_NAME
-} from "./chunk-6b5ekjqc.js";
+} from "./chunk-c97z6qgd.js";
 
 // ../openauth-webui-shared-types/endpoints/index.ts
 class AuthManager {

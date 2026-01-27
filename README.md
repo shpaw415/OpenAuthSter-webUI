@@ -29,13 +29,14 @@ cd openauth-webui
 
 ### 2. Configure Wrangler
 
-Update your `wrangler.jsonc` with the following settings:
+rename `wrangler.example.json` to `wrangler.json` then,
+update your `wrangler.json` with the following settings:
 
 #### Database Binding
 
 Add the D1 database from your OpenAuthster issuer deployment:
 
-```jsonc
+```json
 {
   "d1_databases": [
     {

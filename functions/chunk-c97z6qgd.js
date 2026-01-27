@@ -173,6 +173,18 @@ var PROVIDER_REGISTRY = [
     ]
   }
 ];
+function parseDBProject(data) {
+  return {
+    clientID: String(data.clientID),
+    created_at: String(data.created_at),
+    active: Boolean(data.active),
+    providers_data: typeof data.providers_data === "string" ? JSON.parse(data.providers_data) : data.providers_data,
+    themeId: data.themeId || null,
+    emailTemplateId: data.emailTemplateId || null,
+    codeMode: String(data.codeMode) === "phone" ? "phone" : "email",
+    projectData: typeof data.projectData === "string" ? JSON.parse(data.projectData) : data.projectData || {}
+  };
+}
 var COOKIE_NAME = "oauth_client_id";
 
-export { PROVIDER_REGISTRY, COOKIE_NAME };
+export { PROVIDER_REGISTRY, parseDBProject, COOKIE_NAME };

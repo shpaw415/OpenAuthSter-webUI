@@ -10,7 +10,8 @@
     "@types/react-dom": "^19.2.3",
     "drizzle-kit": "^0.31.8",
     "typescript": "^5.9.3",
-    "wrangler": "^4.60.0"
+    "wrangler": "^4.60.0",
+    "openauth-webui-shared-types": "link:openauth-webui-shared-types"
   },
   "dependencies": {
     "@material-icons/svg": "^1.0.33",
@@ -28,7 +29,7 @@
     "frame-master-svg-to-jsx-loader": "^0.1.0",
     "mustache": "^4.2.0",
     "openauth-react": "https://github.com/shpaw415/openauth-react.git#516e0a8",
-    "openauth-webui-shared-types": "link:openauth-webui-shared-types",
+    "openauth-webui-shared-types": "https://github.com/shpaw415/OpenAuthSter-shared.git",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rehype-autolink-headings": "^7.1.0",

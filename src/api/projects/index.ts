@@ -1,4 +1,8 @@
-import type { Project, ProviderConfig } from "openauth-webui-shared-types";
+import {
+  parseDBProject,
+  type Project,
+  type ProviderConfig,
+} from "openauth-webui-shared-types";
 import { projectTable } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import { requireAuth } from "../../server-utils";
@@ -25,16 +29,7 @@ export async function GET(): Promise<{
 
   return {
     success: true,
-    data: projects.map(
-      (p) =>
-        ({
-          ...p,
-          providers_data:
-            typeof p.providers_data === "string"
-              ? JSON.parse(p.providers_data)
-              : p.providers_data,
-        }) as Project,
-    ),
+    data: projects.map(parseDBProject),
   };
 }
 
@@ -101,18 +96,24 @@ export async function POST(params: {
       created_at: new Date().toISOString(),
       active: true,
       providers_data: JSON.stringify(providers_data) as any,
+      codeMode: "email",
     };
 
-    await db.insert(projectTable).values(newProject);
+    const [insertedProject] = await db
+      .insert(projectTable)
+      .values(newProject)
+      .returning();
+
+    if (!insertedProject) {
+      return {
+        success: false,
+        error: "Failed to create project",
+      };
+    }
 
     return {
       success: true,
-      data: {
-        clientID: newProject.clientID,
-        active: true,
-        providers_data,
-        created_at: newProject.created_at,
-      },
+      data: parseDBProject(insertedProject),
     };
   } catch (error) {
     return {

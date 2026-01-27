@@ -8,6 +8,13 @@
       "when": 1769195479618,
       "tag": "0000_small_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1769539789174,
+      "tag": "0001_little_whirlwind",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import {
   client,
   subject
-} from "./chunk-ydj242yd.js";
+} from "./chunk-4d009j3y.js";
 
 // ../openauth-webui-shared-types/node_modules/drizzle-orm/entity.js
 var entityKind = Symbol.for("drizzle:entityKind");
@@ -3689,6 +3689,7 @@ var projectTable = sqliteTable("openauth_webui_projects", {
     mode: "json"
   }).default("[]"),
   themeId: text(),
+  codeMode: text(),
   emailTemplateId: text(),
   projectData: text({
     mode: "json"

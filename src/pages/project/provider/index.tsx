@@ -827,31 +827,15 @@ function KeycloakFields() {
 function CodeFields() {
   const data = useProviderFormState<CodeProviderConfig>();
 
-  const defaultValues: CodeProviderConfig["data"] = {
-    length: 4,
-    mode: "email",
-  };
-
   return (
     <>
-      <InputFieldForm label="Verification Channel" required>
-        <select
-          name="mode"
-          id="mode"
-          className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          defaultValue={data.data?.mode || defaultValues.mode}
-        >
-          <option value="email">Email</option>
-          <option value="phone">phone</option>
-        </select>
-      </InputFieldForm>
       <InputFieldForm label="Code Length">
         <InputField
           type="number"
-          name="length"
+          name="number::length"
           min="4"
           max="8"
-          defaultValue={data.data?.length || defaultValues.length}
+          defaultValue={data.data?.length || 4}
         />
         <p className="text-gray-500 text-sm mt-1">
           Number of digits in the verification code (4-8)

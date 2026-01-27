@@ -114,7 +114,7 @@ openauth-webui/
 
 - [OpenAuthster](https://github.com/shpaw415/openauthster) - Main project documentation
 - [OpenAuthster Issuer](https://github.com/shpaw415/openauth-multi-tenant-server-provider) - Authentication server
-- [Shared Types](https://github.com/shpaw415/openauth-webui-shared-types) - TypeScript types and client SDK
+- [Shared Types](https://github.com/shpaw415/OpenAuthSter-shared) - TypeScript types and client SDK
 
 ## License
 

@@ -1,12 +1,17 @@
 "no action";
 
 import { AuthManager } from "openauth-webui-shared-types/endpoints";
-import { client, subject } from "../../open-auth";
+import { subject } from "../../open-auth";
+import { createServerClient } from "openauth-webui-shared-types/client";
 
 export const onRequest: PagesFunction<Env> = (ctx) => {
   return new AuthManager({
     issuer: ctx.env.PUBLIC_ISSUER,
-    client,
+    client: createServerClient({
+      issuer: ctx.env.PUBLIC_ISSUER,
+      clientID: ctx.env.PUBLIC_CLIENT_ID,
+      request: ctx.request,
+    }),
     client_id: ctx.env.PUBLIC_CLIENT_ID,
     redirectURI: ctx.env.PUBLIC_REDIRECT_URI,
     callback: {

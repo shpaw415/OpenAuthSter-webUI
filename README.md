@@ -63,9 +63,12 @@ Configure the required environment variables:
 
 Deploy to Cloudflare Pages:
 
-```bash
-npx wrangler pages deploy
-```
+1. Create a github private repo and push your code.
+2. Create a Clouflare Pages linked to the newly created github repo.
+3. set deploy data:
+   - build command: `bun install --frozen-lockfile && NODE_ENV=production bun run build`
+   - Build output: `.frame-master/build`
+4. Done!
 
 ## Development Setup
 

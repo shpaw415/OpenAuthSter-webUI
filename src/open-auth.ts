@@ -5,6 +5,7 @@ import { object, string } from "valibot";
 export const client = createClient({
   clientID: process.env.PUBLIC_CLIENT_ID!,
   issuer: process.env.PUBLIC_ISSUER!,
+  copyID: null,
 });
 
 export const subject = createSubjects({

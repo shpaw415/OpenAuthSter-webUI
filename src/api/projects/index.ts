@@ -3,7 +3,7 @@ import {
   type Project,
   type ProviderConfig,
 } from "openauth-webui-shared-types";
-import { projectTable } from "openauth-webui-shared-types/database";
+import { createUserTable, projectTable } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
@@ -111,10 +111,17 @@ export async function POST(params: {
       };
     }
 
-    return {
-      success: true,
-      data: parseDBProject(insertedProject),
-    };
+    return await createUserTable(clientID, env.PROJECT_DB)
+    .then(() => ({ success: true, data: parseDBProject(insertedProject) }))
+    .catch((err) => {
+      console.error(
+        `Failed to create user table for project ${clientID}: ${err}`,
+      );
+      return {
+        success: false,
+        error: "Failed to create user table for project",
+      }
+    });
   } catch (error) {
     return {
       success: false,

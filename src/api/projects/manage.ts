@@ -1,6 +1,9 @@
 import { eq, drizzle } from "openauth-webui-shared-types/drizzle";
 import { type Project, parseDBProject } from "openauth-webui-shared-types";
-import { projectTable } from "openauth-webui-shared-types/database";
+import {
+  DeleteOTFusersTable,
+  projectTable,
+} from "openauth-webui-shared-types/database";
 
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
@@ -173,5 +176,13 @@ export async function DELETE(params: {
     .delete(projectTable)
     .where(eq(projectTable.clientID, params.clientID));
 
-  return { success: true };
+  try {
+    await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: "Failed to delete associated user table",
+    };
+  }
 }

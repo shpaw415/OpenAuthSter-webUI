@@ -1,7 +1,7 @@
 import {
   PROVIDER_REGISTRY
 } from "../chunk-c97z6qgd.js";
-import"../chunk-0t41ngqp.js";
+import"../chunk-5yjnn0bn.js";
 
 // src/api/providers/index.ts
 async function GET() {

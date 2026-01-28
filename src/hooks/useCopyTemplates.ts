@@ -4,13 +4,13 @@ import {
   POST as createNewCopyTemplate,
   type CopyTemplate,
   type CreateCopyTemplateParams,
-} from "@api/templates/copy";
+} from "@api/_templates/copy";
 import {
   GET as getCopyTemplateByName,
   PUT as updateCopyTemplateByName,
   DELETE as deleteCopyTemplateByName,
   type UpdateCopyTemplateParams,
-} from "@api/templates/copy/id";
+} from "@api/_templates/copy/id";
 
 export type { CopyTemplate };
 

@@ -1,14 +1,15 @@
 import {
+  createUserTable,
   drizzle,
   eq,
   getContext,
   projectTable,
   requireAuth
-} from "../chunk-ahbj91ep.js";
-import"../chunk-3zxan9w0.js";
+} from "../chunk-8dwcf6me.js";
+import"../chunk-7zjzkwae.js";
 import {
   parseDBProject
-} from "../chunk-c97z6qgd.js";
+} from "../chunk-m3600dbj.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/projects/index.ts
@@ -78,10 +79,13 @@ async function POST(params) {
         error: "Failed to create project"
       };
     }
-    return {
-      success: true,
-      data: parseDBProject(insertedProject)
-    };
+    return await createUserTable(clientID, env.PROJECT_DB).then(() => ({ success: true, data: parseDBProject(insertedProject) })).catch((err) => {
+      console.error(`Failed to create user table for project ${clientID}: ${err}`);
+      return {
+        success: false,
+        error: "Failed to create user table for project"
+      };
+    });
   } catch (error) {
     return {
       success: false,

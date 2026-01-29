@@ -337,6 +337,50 @@ export default function ProjectDetail() {
             <option value="phone">Phone Code Mode</option>
           </select>
         </SelectWrapper>
+        <SelectWrapper icon="🌐" name="Allow Origin URL">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setIsSaving(true);
+              projectHook
+                .updateProject({
+                  originURL: new FormData(e.currentTarget)
+                    .get("origin")!
+                    .toString(),
+                })
+                .then(() => {
+                  setNotification({ message: "Origin URL updated" });
+                })
+                .catch((err) => {
+                  setNotification({
+                    message:
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to update origin URL",
+                  });
+                })
+                .finally(() => {
+                  setIsSaving(false);
+                });
+            }}
+          >
+            <input
+              name="origin"
+              type="url"
+              value={projectHook.project?.originURL || ""}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={isSaving}
+            />
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              Save
+            </button>
+          </form>
+        </SelectWrapper>
       </div>
 
       {/* Project Data Section */}

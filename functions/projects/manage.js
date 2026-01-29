@@ -1,14 +1,15 @@
 import {
+  DeleteOTFusersTable,
   drizzle,
   eq,
   getContext,
   projectTable,
   requireAuth
-} from "../chunk-ahbj91ep.js";
-import"../chunk-3zxan9w0.js";
+} from "../chunk-8dwcf6me.js";
+import"../chunk-7zjzkwae.js";
 import {
   parseDBProject
-} from "../chunk-c97z6qgd.js";
+} from "../chunk-m3600dbj.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/projects/manage.ts
@@ -71,6 +72,9 @@ async function PUT(params) {
     if (params.data.codeMode !== undefined) {
       updates.codeMode = params.data.codeMode;
     }
+    if (params.data.originURL !== undefined) {
+      updates.originURL = params.data.originURL;
+    }
     if (Object.keys(updates).length === 0)
       return {
         success: false,
@@ -112,7 +116,15 @@ async function DELETE(params) {
       error: "Project not found"
     };
   await db.delete(projectTable).where(eq(projectTable.clientID, params.clientID));
-  return { success: true };
+  try {
+    await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: "Failed to delete associated user table"
+    };
+  }
 }
 function parseData(formData) {
   const propsArray = [];

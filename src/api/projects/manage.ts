@@ -105,6 +105,9 @@ export async function PUT(
     if (params.data.codeMode !== undefined) {
       updates.codeMode = params.data.codeMode;
     }
+    if (params.data.originURL !== undefined) {
+      updates.originURL = params.data.originURL;
+    }
 
     if (Object.keys(updates).length === 0)
       return {

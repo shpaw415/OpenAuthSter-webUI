@@ -338,10 +338,6 @@ function parseFormToProviderConfig({
 
   const normalData = Array.from(entries).filter(([key]) => !key.includes("::"));
 
-  console.log("Listed Data:", listedData);
-  console.log("normal Data:", normalData);
-  console.log("Array Data:", arrayData);
-
   const keys = listedData
     .filter(([key]) => key.includes("::key::"))
     .map(([key, value]) => {

@@ -1,11 +1,11 @@
 import {
   AuthManager
-} from "../chunk-5gegt0w7.js";
+} from "../chunk-cwtr4tff.js";
 import {
-  client,
+  createServerClient,
   subject
-} from "../chunk-3zxan9w0.js";
-import"../chunk-c97z6qgd.js";
+} from "../chunk-7zjzkwae.js";
+import"../chunk-m3600dbj.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/auth/[action].ts
@@ -13,7 +13,11 @@ import"../chunk-5yjnn0bn.js";
 var onRequest = (ctx) => {
   return new AuthManager({
     issuer: ctx.env.PUBLIC_ISSUER,
-    client,
+    client: createServerClient({
+      issuer: ctx.env.PUBLIC_ISSUER,
+      clientID: ctx.env.PUBLIC_CLIENT_ID,
+      request: ctx.request
+    }),
     client_id: ctx.env.PUBLIC_CLIENT_ID,
     redirectURI: ctx.env.PUBLIC_REDIRECT_URI,
     callback: {

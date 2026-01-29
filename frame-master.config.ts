@@ -8,7 +8,6 @@ import mdxLoaderPlugin from "frame-master-plugin-mdx-to-js-loader";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { AuthManager } from "../openauth-webui-shared-types/endpoints/index";
 
 const proxyPaths = ["/auth", "/auth/authorize", "/auth/callback"];
 

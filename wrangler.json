@@ -16,7 +16,7 @@
     "BUN_VERSION": "1.3.4",
     "SKIP_DEPENDENCY_INSTALL": "true",
     "PUBLIC_CLIENT_ID": "openauth_webui",
-    "PUBLIC_REDIRECT_URI": "http://localhost:3001/auth/callback",
+    "PUBLIC_REDIRECT_URI": "http://localhost:3001/",
     "PUBLIC_ISSUER": "http://localhost:8788"
   },
   "compatibility_flags": ["nodejs_compat"]

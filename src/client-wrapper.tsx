@@ -22,6 +22,7 @@ export default function ClientWrapper({ children }: { children: JSX.Element }) {
       <AuthProvider
         callbackRedirectURI={process.env.PUBLIC_REDIRECT_URI!}
         userInfoEndpoint="/auth"
+        isFrontendCallback
         client={client}
       >
         <RouterHost>{children}</RouterHost>

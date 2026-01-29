@@ -16,7 +16,7 @@
     "BUN_VERSION": "1.3.4",
     "SKIP_DEPENDENCY_INSTALL": "true",
     "PUBLIC_CLIENT_ID": "openauth_webui",
-    "PUBLIC_REDIRECT_URI": "<YOUR_WEBUI_URL>/auth/callback",
+    "PUBLIC_REDIRECT_URI": "<YOUR_WEBUI_URL>/",
     "PUBLIC_ISSUER": "<YOUR_ISSUER_URL>"
   },
   "compatibility_flags": ["nodejs_compat"]

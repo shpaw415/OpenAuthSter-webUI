@@ -7,6 +7,7 @@ import {
 
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
+import { createClient, deleteCustomDomainForProject } from "../../cloudflare";
 
 // GET /projects/manage - Get a single project
 export async function GET(params: {
@@ -167,9 +168,10 @@ export async function DELETE(params: {
     .select()
     .from(projectTable)
     .where(eq(projectTable.clientID, params.clientID))
-    .limit(1);
+    .limit(1)
+    .get();
 
-  if (existing.length === 0)
+  if (!existing)
     return {
       success: false,
       error: "Project not found",
@@ -178,6 +180,13 @@ export async function DELETE(params: {
   await db
     .delete(projectTable)
     .where(eq(projectTable.clientID, params.clientID));
+
+  const cfClient = createClient(env);
+  await deleteCustomDomainForProject(
+    env,
+    cfClient,
+    existing.cloudflareDomaineID,
+  );
 
   try {
     await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);

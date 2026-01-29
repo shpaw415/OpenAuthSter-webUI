@@ -18,6 +18,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@openauthjs/openauth": "^0.4.3",
     "@tailwindcss/cli": "^4.1.18",
+    "cloudflare": "^5.2.0",
     "drizzle-orm": "^0.45.1",
     "frame-master": "^3.1.1",
     "frame-master-plugin-apply-react": "0.2.6",
@@ -43,6 +44,7 @@
     "build:dev": "NODE_ENV=development bun frame-master build",
     "init:db": "wrangler d1 migrations apply PROJECT_DB",
     "db:generate": "bun --bun drizzle-kit generate",
-    "db:migrate": "bun --bun drizzle-kit migrate"
+    "db:migrate": "bun --bun drizzle-kit migrate",
+    "update:share": "bun update openauth-webui-shared-types"
   }
 }

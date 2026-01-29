@@ -3,10 +3,14 @@ import {
   type Project,
   type ProviderConfig,
 } from "openauth-webui-shared-types";
-import { createUserTable, projectTable } from "openauth-webui-shared-types/database";
+import {
+  createUserTable,
+  projectTable,
+} from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
+import { createClient, createCustomDomainForProject } from "../../cloudflare";
 
 // GET /api/projects - List all projects
 export async function GET(): Promise<{
@@ -91,12 +95,27 @@ export async function POST(params: {
       };
     }
 
+    const cfClient = createClient(env);
+    const cfDomaineCreate = await createCustomDomainForProject(env, cfClient);
+
+    if (!cfDomaineCreate || !cfDomaineCreate.id || !cfDomaineCreate.hostname) {
+      return {
+        success: false,
+        error: `Failed to create Cloudflare custom domain for project. Cloudflare info: ${JSON.stringify(
+          cfDomaineCreate,
+        )}`,
+      };
+    }
+
     const newProject: Project = {
       clientID: clientID,
       created_at: new Date().toISOString(),
       active: true,
       providers_data: JSON.stringify(providers_data) as any,
       codeMode: "email",
+      originURL: "",
+      authEndpointURL: cfDomaineCreate.hostname,
+      cloudflareDomaineID: cfDomaineCreate.id,
     };
 
     const [insertedProject] = await db
@@ -112,16 +131,16 @@ export async function POST(params: {
     }
 
     return await createUserTable(clientID, env.PROJECT_DB)
-    .then(() => ({ success: true, data: parseDBProject(insertedProject) }))
-    .catch((err) => {
-      console.error(
-        `Failed to create user table for project ${clientID}: ${err}`,
-      );
-      return {
-        success: false,
-        error: "Failed to create user table for project",
-      }
-    });
+      .then(() => ({ success: true, data: parseDBProject(insertedProject) }))
+      .catch((err) => {
+        console.error(
+          `Failed to create user table for project ${clientID}: ${err}`,
+        );
+        return {
+          success: false,
+          error: "Failed to create user table for project",
+        };
+      });
   } catch (error) {
     return {
       success: false,

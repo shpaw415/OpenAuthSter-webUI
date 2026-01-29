@@ -30,7 +30,7 @@
     "src",
     ".frame-master/frame-master-custom-type.d.ts",
     "templates",
-    "test/index.test.ts"
+    "test"
   ],
   "exclude": [".frame-master/build"]
 }

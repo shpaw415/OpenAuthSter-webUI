@@ -128,7 +128,11 @@ export default function ProjectDetail() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
       {/* Notification */}
       {notification && (
-        <Snackbar message={notification.message} actionText="OK" />
+        <Snackbar
+          message={notification.message}
+          actionText="OK"
+          onClose={() => setNotification(null)}
+        />
       )}
 
       {/* Header */}
@@ -186,6 +190,12 @@ export default function ProjectDetail() {
           </label>
         </div>
       </div>
+
+      {/* Project Client Info */}
+      <ProjectClientInfo
+        project={projectHook.project!}
+        setNotification={setNotification}
+      />
 
       {/* Theme & Email Template Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -778,6 +788,106 @@ export default function ProjectDetail() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ProjectClientInfo({
+  project,
+  setNotification,
+}: {
+  project: Project;
+  setNotification: (notif: { message: string } | null) => void;
+}) {
+  const [showSecret, setShowSecret] = useState(false);
+
+  return (
+    <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
+      <div className="flex items-center space-x-2 mb-4">
+        <span className="text-xl">🔑</span>
+        <h3 className="text-lg font-semibold text-white">
+          Project Client Info
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-gray-400 text-sm">Client-ID</label>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
+              {project?.clientID}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(project?.clientID || "");
+                setNotification({ message: "Client-ID copied!" });
+              }}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Copy Client-ID"
+            >
+              📋
+            </button>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="text-gray-400 text-sm">Issuer URL</label>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
+              {project?.authEndpointURL}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(project?.authEndpointURL || "");
+                setNotification({ message: "Auth Endpoint URL copied!" });
+              }}
+              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+              title="Copy Auth Endpoint URL"
+            >
+              📋
+            </button>
+          </div>
+        </div>
+        {/* Secret */}
+        <div className="space-y-1 md:col-span-2">
+          <div>
+            <label className="text-gray-400 text-sm">Client Secret</label>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
+                {showSecret
+                  ? project?.secret
+                  : "*".repeat(project.secret.length)}
+              </code>
+              <div className="flex flex-col">
+                <button className="">
+                  <span
+                    onClick={() => setShowSecret(!showSecret)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    title={
+                      showSecret ? "Hide Client Secret" : "Show Client Secret"
+                    }
+                  >
+                    {showSecret ? "🙈" : "👁️"}
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(project?.secret || "");
+                    setNotification({ message: "Client Secret copied!" });
+                  }}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Copy Client Secret"
+                >
+                  📋
+                </button>
+              </div>
+            </div>
+            <p className="text-gray-500 text-xs mt-2">
+              Do not share your Client Secret with anyone. it can modify any
+              part of the user data. ONLY use it in secure server-side
+              environments.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

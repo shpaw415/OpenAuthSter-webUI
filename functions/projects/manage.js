@@ -1,15 +1,19 @@
 import {
+  createClient,
+  deleteCustomDomainForProject
+} from "../chunk-p0enet3n.js";
+import {
   DeleteOTFusersTable,
   drizzle,
   eq,
   getContext,
   projectTable,
   requireAuth
-} from "../chunk-8dwcf6me.js";
-import"../chunk-7zjzkwae.js";
+} from "../chunk-505r9mta.js";
+import"../chunk-98635g97.js";
 import {
   parseDBProject
-} from "../chunk-m3600dbj.js";
+} from "../chunk-aqd3ejpt.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/projects/manage.ts
@@ -109,13 +113,15 @@ async function DELETE(params) {
       error: "Unauthorized"
     };
   const db = drizzle(env.PROJECT_DB);
-  const existing = await db.select().from(projectTable).where(eq(projectTable.clientID, params.clientID)).limit(1);
-  if (existing.length === 0)
+  const existing = await db.select().from(projectTable).where(eq(projectTable.clientID, params.clientID)).limit(1).get();
+  if (!existing)
     return {
       success: false,
       error: "Project not found"
     };
   await db.delete(projectTable).where(eq(projectTable.clientID, params.clientID));
+  const cfClient = createClient(env);
+  await deleteCustomDomainForProject(env, cfClient, existing.cloudflareDomaineID);
   try {
     await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);
     return { success: true };

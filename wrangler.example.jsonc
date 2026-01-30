@@ -34,6 +34,7 @@
     it will be used to create auth endpoints for your projects as a suffix.
     you must be the owner of the domain and have it added to your Cloudflare account.
     If not set, PUBLIC_ISSUER will be used as the auth endpoint domain.
+    e.g. https://auth.yourdomain.com
     */
     "CLOUDFLARE_AUTH_ENDPOINT_DOMAIN": "<YOUR_AUTH_ENDPOINT_DOMAIN>",
 

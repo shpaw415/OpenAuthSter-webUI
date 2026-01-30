@@ -1,15 +1,19 @@
 import {
+  createClient,
+  createCustomDomainForProject
+} from "../chunk-p0enet3n.js";
+import {
   createUserTable,
   drizzle,
   eq,
   getContext,
   projectTable,
   requireAuth
-} from "../chunk-8dwcf6me.js";
-import"../chunk-7zjzkwae.js";
+} from "../chunk-505r9mta.js";
+import"../chunk-98635g97.js";
 import {
   parseDBProject
-} from "../chunk-m3600dbj.js";
+} from "../chunk-aqd3ejpt.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/projects/index.ts
@@ -65,12 +69,28 @@ async function POST(params) {
         error: "Project with this clientID already exists"
       };
     }
+    const cfClient = createClient(env);
+    const cfDomaineCreate = await createCustomDomainForProject(env, cfClient);
+    if (!cfDomaineCreate || !cfDomaineCreate.id || !cfDomaineCreate.hostname) {
+      return {
+        success: false,
+        error: `Failed to create Cloudflare custom domain for project. Cloudflare info: ${JSON.stringify(cfDomaineCreate)}`
+      };
+    }
     const newProject = {
       clientID,
       created_at: new Date().toISOString(),
       active: true,
       providers_data: JSON.stringify(providers_data),
-      codeMode: "email"
+      codeMode: "email",
+      originURL: "",
+      authEndpointURL: cfDomaineCreate.hostname,
+      cloudflareDomaineID: cfDomaineCreate.id,
+      secret: [
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        crypto.randomUUID()
+      ].join("-")
     };
     const [insertedProject] = await db.insert(projectTable).values(newProject).returning();
     if (!insertedProject) {

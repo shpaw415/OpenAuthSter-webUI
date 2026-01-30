@@ -103,7 +103,7 @@ export default function AdminPanel() {
                       project.active ? "bg-green-500" : "bg-gray-500"
                     }`}
                   />
-                  <h3 className="text-lg font-semibold text-white truncate max-w-[180px]">
+                  <h3 className="text-lg font-semibold text-white truncate max-w-45">
                     {project.clientID}
                   </h3>
                 </div>

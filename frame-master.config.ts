@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 
-const proxyPaths = ["/auth", "/auth/authorize", "/auth/callback"];
+const proxyPaths = ["/auth"];
 
 export default {
   HTTPServer: {

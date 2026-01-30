@@ -116,6 +116,11 @@ export async function POST(params: {
       originURL: "",
       authEndpointURL: cfDomaineCreate.hostname,
       cloudflareDomaineID: cfDomaineCreate.id,
+      secret: [
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+      ].join("-"),
     };
 
     const [insertedProject] = await db

@@ -14,15 +14,22 @@ export async function createCustomDomainForProject(
   const newDomaineName = `${crypto.randomUUID().replaceAll("-", "")}-${
     issuer_url.hostname
   }`;
-  const domaine = await cf.workers.domains.update({
-    account_id: env.CLOUDFLARE_ACCOUNT_ID,
-    zone_id: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
-    hostname: newDomaineName,
-    service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
-    environment: "production",
-  });
 
-  return domaine;
+  try {
+    const domaine = await cf.workers.domains.update({
+      account_id: env.CLOUDFLARE_ACCOUNT_ID,
+      zone_id: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
+      hostname: newDomaineName,
+      service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
+      environment: "production",
+    });
+
+    return domaine;
+  } catch (error) {
+    throw new Error(`Cloudflare domain creation failed: ${newDomaineName}`, {
+      cause: error,
+    });
+  }
 }
 
 export async function deleteCustomDomainForProject(

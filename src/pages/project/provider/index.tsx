@@ -42,6 +42,13 @@ const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
     password: () => import("@docs/providers/password.mdx"),
     slack: () => import("@docs/providers/slack.mdx"),
     cognito: () => import("@docs/providers/cognito.mdx"),
+    apple: () => import("@docs/providers/apple.mdx"),
+    facebook: () => import("@docs/providers/facebook.mdx"),
+    spotify: () => import("@docs/providers/spotify.mdx"),
+    twitch: () => import("@docs/providers/twitch.mdx"),
+    x: () => import("@docs/providers/x.mdx"),
+    yahoo: () => import("@docs/providers/yahoo.mdx"),
+    jumpcloud: () => import("@docs/providers/jumpcloud.mdx"),
     default: () => import("@docs/providers/default.mdx"),
   };
 

@@ -1,6 +1,6 @@
 import {
   PROVIDER_REGISTRY
-} from "../chunk-aqd3ejpt.js";
+} from "../chunk-7qy2d66q.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/providers/index.ts

@@ -21,12 +21,15 @@ import type {
   SlackProviderConfig,
   CognitoProviderConfig,
   MicrosoftProviderConfig,
+  AppleOAuthProviderConfig,
+  AppleOIDCProviderConfig,
 } from "openauth-webui-shared-types";
 import { getProviderMeta } from "openauth-webui-shared-types";
 import { navigate } from "../../../utils";
 import { useProject } from "@hooks/useProjects";
 import { Snackbar } from "@material/react-snackbar";
 import { Toggle, ToggleBase } from "@components/toggle";
+import formParser from "@shpaw415/formdata-parser";
 
 // MDX documentation imports
 const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
@@ -83,7 +86,7 @@ export default function ProviderForm() {
         ? undefined
         : (new URLSearchParams(window.location.search).get(
             "provider_type",
-          ) as ProviderType),
+          ) as Exclude<ProviderType, "apple">),
     [typeof window !== "undefined" && window.location.href],
   );
   const projectHook = useProject(
@@ -148,7 +151,7 @@ export default function ProviderForm() {
   useEffect(() => {
     if (!projectHook.project) return;
 
-    const providerType = provider_type;
+    const providerType = provider_type as Exclude<ProviderType, "apple">;
 
     let initialConfig: Partial<ProviderConfig> | null = {
       enabled: false,
@@ -328,91 +331,8 @@ function parseFormToProviderConfig({
   providerType: ProviderConfig["type"];
   providerEnabled: boolean;
 }): ProviderConfig {
-  const entries = Array.from(formData.entries());
-  const listedData = Array.from(entries).filter(([key]) =>
-    key.startsWith("list::"),
-  );
-  const arrayData = Array.from(entries).filter(([key]) =>
-    key.startsWith("array::"),
-  );
-
-  const booleanData = Array.from(entries).filter(([key]) =>
-    key.startsWith("boolean::"),
-  );
-  const numberData = Array.from(entries).filter(([key]) =>
-    key.startsWith("number::"),
-  );
-
-  const normalData = Array.from(entries).filter(([key]) => !key.includes("::"));
-
-  const keys = listedData
-    .filter(([key]) => key.includes("::key::"))
-    .map(([key, value]) => {
-      const parts = key.split("::") as ["list", "key", string, string];
-      return {
-        name: parts[2],
-        index: parts[3],
-        value: value.toString(),
-      };
-    });
-  const values = listedData
-    .filter(([key]) => key.includes("::value::"))
-    .map(([key, value]) => {
-      const parts = key.split("::") as ["list", "value", string, string];
-      return {
-        name: parts[2],
-        index: parts[3],
-        value: value.toString(),
-      };
-    });
-  // init with normal data
-  const result: Partial<ProviderConfig["data"]> = normalData.reduce(
-    (acc, [key, value]) => {
-      if (value === "") return acc;
-      acc[key as keyof ProviderConfig["data"]] = value as never;
-      return acc;
-    },
-    {} as Partial<ProviderConfig["data"]>,
-  );
-  // parse listed data
-  for (const key of keys) {
-    if (key.value.trim() === "") continue;
-    if (!result[key.name as keyof ProviderConfig["data"]]) {
-      //@ts-ignore
-      result[key.name] = {} as any;
-    }
-    //@ts-ignore
-    result[key.name]![key.value] =
-      values.find((v) => v.name === key.name && v.index === key.index)?.value ||
-      "";
-  }
-  // parse array data
-  for (const [key, value] of arrayData) {
-    if (value.trim() === "") continue;
-    const parts = key.split("::") as ["array", string];
-    const name = parts[1];
-    result[name as keyof ProviderConfig["data"]] = value
-      .split(",")
-      .map((v) => v.trim()) as never;
-  }
-  // parse boolean data
-  for (const [key, value] of booleanData) {
-    const parts = key.split("::") as ["boolean", string];
-    const name = parts[1];
-    result[name as keyof ProviderConfig["data"]] = (value === "true") as never;
-  }
-  // parse number data
-  for (const [key, value] of numberData) {
-    const parts = key.split("::") as ["number", string];
-    const name = parts[1];
-    const parsedValue = Number(value);
-    if (isNaN(parsedValue))
-      throw new Error(`Invalid number value for field ${name}`);
-    result[name as keyof ProviderConfig["data"]] = parsedValue as never;
-  }
-
   return {
-    data: result,
+    data: formParser(formData),
     type: providerType,
     enabled: providerEnabled,
   } as ProviderConfig;
@@ -617,6 +537,10 @@ function FormFields({ type }: { type: ProviderType }) {
       return <CognitoFields />;
     case "microsoft":
       return <MicrosoftFields />;
+    case "appleoauth":
+      return <AppleOAuthFields />;
+    case "appleoidc":
+      return <AppleOIDCFields />;
     default:
       return <OAuth2Fields query pkce scopes />;
   }
@@ -704,6 +628,17 @@ function ScopesField({
   );
 }
 
+function SelectField(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      {...props}
+      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      {props.children}
+    </select>
+  );
+}
+
 // Provider setups /////////////////////////////////////////
 
 function OAuth2Fields({
@@ -733,6 +668,7 @@ function OAuth2Fields({
 
 function OIDCFields() {
   const data = useProviderFormState<OIDCProviderConfig>();
+
   return (
     <>
       <InputFieldForm label="Client ID" required>
@@ -759,6 +695,7 @@ function OIDCFields() {
 
 function GenericOAuthFields() {
   const data = useProviderFormState<GenericOAuthProviderConfig>();
+
   return (
     <>
       <OAuth2DefaultFields
@@ -768,29 +705,61 @@ function GenericOAuthFields() {
       <InputFieldForm label="Authorization Endpoint" required>
         <InputField
           type="url"
-          name="authorizationEndpoint"
-          defaultValue={data.data?.authorizationEndpoint || ""}
+          name="endpoint.authorization"
+          defaultValue={data.data?.endpoint?.authorization || ""}
           placeholder="https://auth.example.com/authorize"
         />
       </InputFieldForm>
       <InputFieldForm label="Token Endpoint" required>
         <InputField
           type="url"
-          name="tokenEndpoint"
-          defaultValue={data.data?.tokenEndpoint || ""}
+          name="endpoint.token"
+          defaultValue={data.data?.endpoint?.token || ""}
           placeholder="https://auth.example.com/token"
-        />
-      </InputFieldForm>
-      <InputFieldForm label="JWKS Endpoint" required>
-        <InputField
-          type="url"
-          defaultValue={data.data?.jwksEndpoint || ""}
-          name="jwksEndpoint"
-          placeholder="https://auth.example.com/.well-known/jwks.json"
         />
       </InputFieldForm>
       <ScopesField value={data.data?.scopes} placeholder="email, profile" />
       <QueryParametersField value={data.data?.query} />
+      <span className="block my-4 border-t border-gray-600" />
+      <h2 className="text-white">
+        User Info Getter <span className="text-red-500">*</span>
+      </h2>
+      <p className="text-gray-500 text-sm mb-3">
+        Configuration for fetching user information from the provider
+      </p>
+      <InputFieldForm label="Endpoint" required>
+        <InputField
+          type="text"
+          name="userInfoGetter.url"
+          defaultValue={data.data?.userInfoGetter?.url || ""}
+          placeholder="https://auth.example.com/userinfo"
+        />
+      </InputFieldForm>
+      <InputFieldForm label="User info getter method" required>
+        <SelectField
+          name="userInfoGetter.method"
+          defaultValue={data.data?.userInfoGetter?.method || "GET"}
+        >
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+        </SelectField>
+      </InputFieldForm>
+      <InputFieldForm label="Dot notation path to user ID" required>
+        <InputField
+          type="text"
+          name="userInfoGetter.idPath"
+          defaultValue={data.data?.userInfoGetter?.idPath || ""}
+          placeholder="user.id"
+        />
+      </InputFieldForm>
+      <InputFieldForm label="Request headers">
+        <KeyValueEditor
+          name="userInfoGetter.headers"
+          keyPlaceholder="Header name"
+          valuePlaceholder="Header value"
+          value={data.data?.userInfoGetter?.headers}
+        />
+      </InputFieldForm>
     </>
   );
 }
@@ -1030,6 +999,50 @@ function MicrosoftFields() {
         />
       </InputFieldForm>
       <PkceField enabled={data.data?.pkce} />
+      <QueryParametersField value={data.data?.query} />
+    </>
+  );
+}
+
+function AppleOAuthFields() {
+  const data = useProviderFormState<AppleOAuthProviderConfig>();
+
+  return (
+    <>
+      <OAuth2DefaultFields
+        clientId={data.data?.clientID}
+        clientSecret={data.data?.clientSecret}
+      />
+      <ScopesField value={data.data?.scopes} placeholder="email, name" />
+      <InputFieldForm label="Response Mode">
+        <SelectField
+          name="responseMode"
+          defaultValue={data.data?.responseMode || "form_post"}
+        >
+          <option value="form_post">form_post</option>
+          <option value="query">query</option>
+        </SelectField>
+      </InputFieldForm>
+      <PkceField enabled={data.data?.pkce} />
+      <QueryParametersField value={data.data?.query} />
+    </>
+  );
+}
+
+function AppleOIDCFields() {
+  const data = useProviderFormState<AppleOIDCProviderConfig>();
+
+  return (
+    <>
+      <InputFieldForm label="Client ID" required>
+        <InputField
+          type="text"
+          name="clientID"
+          defaultValue={data.data?.clientID || ""}
+          placeholder="Your Apple OIDC client ID"
+        />
+      </InputFieldForm>
+      <ScopesField value={data.data?.scopes} placeholder="email, name" />
       <QueryParametersField value={data.data?.query} />
     </>
   );

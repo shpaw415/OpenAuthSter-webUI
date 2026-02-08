@@ -15,13 +15,6 @@ import { useUIThemes } from "../../hooks/useUIThemes";
 import { useEmailTemplates } from "../../hooks/useEmailTemplates";
 import { Snackbar } from "@material/react-snackbar";
 
-interface ProjectDetailProps {
-  project: Project;
-  isLoading: boolean;
-  onBack: () => void;
-  onUpdateProviders: (providers: ProviderConfig[]) => Promise<void>;
-  onToggleActive: (active: boolean) => Promise<void>;
-}
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
   { id: "social", label: "Social", icon: "👥" },

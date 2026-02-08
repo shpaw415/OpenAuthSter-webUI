@@ -4,6 +4,7 @@ import HomeSvg from "@material-icons/svg/svg/home/outline.svg";
 import WebAssetSvg from "@material-icons/svg/svg/web_asset/outline.svg";
 import BrushSvg from "@material-icons/svg/svg/brush/outline.svg";
 import TextAd from "@material-icons/svg/svg/text_snippet/outline.svg";
+import Group from "@material-icons/svg/svg/group/outline.svg";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const auth = useAuth();
@@ -30,6 +31,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         name: "Copy Text",
         href: "/copy",
         icon: <TextAd className="inline-block w-5 h-5 mr-1 fill-white" />,
+      },
+      {
+        name: "Users",
+        href: "/users",
+        icon: <Group className="inline-block w-5 h-5 mr-1 fill-white" />,
       },
     ],
     [],

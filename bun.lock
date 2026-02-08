@@ -11,6 +11,7 @@
         "@openauthjs/openauth": "^0.4.3",
         "@shpaw415/formdata-parser": "^0.1.1",
         "@tailwindcss/cli": "^4.1.18",
+        "@types/js-cookie": "^3.0.6",
         "cloudflare": "^5.2.0",
         "drizzle-orm": "^0.45.1",
         "frame-master": "^3.1.1",
@@ -382,6 +383,8 @@
     "@types/git": ["@types/git@0.0.21", "", {}, "sha512-uPbvsGarU5Q7Ice9KOA+URjKLPRPmIqWX0rTzjfC2eXmp0lI7qpyDqhWncdxSRpazJeX+dGg1eBompeRAwl/+A=="],
 
     "@types/hast": ["@types/hast@3.0.4", "", { "dependencies": { "@types/unist": "*" } }, "sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ=="],
+
+    "@types/js-cookie": ["@types/js-cookie@3.0.6", "", {}, "sha512-wkw9yd1kEXOPnvEeEV1Go1MmxtBJL0RR79aOTAApecWFVu7w0NNXNqhcWgvw2YgZDYadliXkl14pa3WXw5jlCQ=="],
 
     "@types/mdast": ["@types/mdast@4.0.4", "", { "dependencies": { "@types/unist": "*" } }, "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA=="],
 
@@ -849,7 +852,7 @@
 
     "nth-check": ["nth-check@2.1.1", "", { "dependencies": { "boolbase": "^1.0.0" } }, "sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w=="],
 
-    "openauth-react": ["openauth-react@github:shpaw415/openauth-react#682b3a0", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "js-cookie": "^3.0.5" }, "peerDependencies": { "react": "^19.0.0", "react-dom": "^19.0.0", "typescript": "^5" } }, "shpaw415-openauth-react-682b3a0"],
+    "openauth-react": ["openauth-react@github:shpaw415/openauth-react#9fc3a79", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "js-cookie": "^3.0.5", "openauth-webui-shared-types": "https://github.com/shpaw415/OpenAuthSter-shared.git" }, "peerDependencies": { "react": "^19.0.0", "react-dom": "^19.0.0", "typescript": "^5" } }, "shpaw415-openauth-react-9fc3a79"],
 
     "openauth-webui-shared-types": ["openauthster-shared@github:shpaw415/OpenAuthSter-shared#112b009", { "dependencies": { "mustache": "^4.2.0", "valibot": "^1.2.0" }, "peerDependencies": { "drizzle-orm": "^0.45.1", "typescript": "^5" } }, "shpaw415-OpenAuthSter-shared-112b009"],
 
@@ -1398,6 +1401,8 @@
     "npm/write-file-atomic": ["write-file-atomic@7.0.0", "", { "dependencies": { "imurmurhash": "^0.1.4", "signal-exit": "^4.0.1" } }, "sha512-YnlPC6JqnZl6aO4uRc+dx5PHguiR9S6WeoLtpxNT9wIG+BDya7ZNE1q7KOjVgaA73hKhKLpVPgJ5QA9THQ5BRg=="],
 
     "npm/yallist": ["yallist@5.0.0", "", {}, "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw=="],
+
+    "openauth-react/openauth-webui-shared-types": ["openauthster-shared@github:shpaw415/OpenAuthSter-shared#112b009", { "dependencies": { "mustache": "^4.2.0", "valibot": "^1.2.0" }, "peerDependencies": { "drizzle-orm": "^0.45.1", "typescript": "^5" } }, "shpaw415-OpenAuthSter-shared-112b009"],
 
     "parse-entities/@types/unist": ["@types/unist@2.0.11", "", {}, "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA=="],
 

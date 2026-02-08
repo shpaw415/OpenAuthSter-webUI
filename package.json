@@ -19,6 +19,7 @@
     "@openauthjs/openauth": "^0.4.3",
     "@shpaw415/formdata-parser": "^0.1.1",
     "@tailwindcss/cli": "^4.1.18",
+    "@types/js-cookie": "^3.0.6",
     "cloudflare": "^5.2.0",
     "drizzle-orm": "^0.45.1",
     "frame-master": "^3.1.1",

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useProject, useProjects } from "../../hooks/useProjects";
 import { useProjectUsers } from "../../hooks/useProjectUsers";
+import { navigate } from "../../utils";
 
 export default function UserListPage() {
   const clientID = useMemo(
@@ -56,7 +57,7 @@ export default function UserListPage() {
     if (!value || typeof window === "undefined") return;
     const url = new URL(window.location.href);
     url.searchParams.set("project_id", value);
-    window.location.href = url.toString();
+    navigate(url.toString());
   };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize || 1));

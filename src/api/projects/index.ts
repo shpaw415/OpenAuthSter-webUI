@@ -8,6 +8,7 @@ import {
   projectTable,
 } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import { isClientIdValid } from "openauth-webui-shared-types/database";
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { createClient, createCustomDomainForProject } from "../../cloudflare";
@@ -41,12 +42,6 @@ export type createProjectParams = {
   clientID: string;
   providers_data?: ProviderConfig[];
 };
-
-export function isClientIdValid(name: string) {
-  // SQLite table name safe: must start with letter/underscore, only alphanumeric + underscore
-  const regex = /^[a-zA-Z_][a-zA-Z0-9_]{2,29}$/;
-  return regex.test(name);
-}
 
 // POST /api/projects - Create a new project
 export async function POST(params: {

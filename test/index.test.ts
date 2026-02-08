@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { isClientIdValid } from "../src/api/projects";
+import { isClientIdValid } from "openauth-webui-shared-types/database";
 
 describe("isClientIdValid - SQLite table name safety", () => {
   describe("valid client IDs", () => {

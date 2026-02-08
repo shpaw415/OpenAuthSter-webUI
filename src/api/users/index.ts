@@ -8,7 +8,7 @@ import {
   eq,
 } from "openauth-webui-shared-types/drizzle";
 import { requireAuth } from "../../server-utils";
-import { isClientIdValid } from "../projects";
+import { isClientIdValid } from "openauth-webui-shared-types/database";
 
 export type ProjectUser = {
   id: string;

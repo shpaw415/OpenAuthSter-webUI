@@ -3,7 +3,7 @@ import {
   GET as getProjectUsers,
   DELETE as deleteProjectUser,
   type ProjectUser,
-} from "@api/users";
+} from "@api/_users";
 
 export type UseProjectUsersOptions = {
   pageSize?: number;

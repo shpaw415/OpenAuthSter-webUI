@@ -1,5 +1,5 @@
 import {
-  createClient,
+  createClient as createClient2,
   createCustomDomainForProject
 } from "../chunk-p0enet3n.js";
 import {
@@ -9,10 +9,11 @@ import {
   getContext,
   insertLog,
   isClientIdValid,
-  projectTable,
-  requireAuth
-} from "../chunk-kqpvm8zs.js";
-import"../chunk-8w50dwxd.js";
+  projectTable
+} from "../chunk-57a2tpg2.js";
+import {
+  createClient
+} from "../chunk-1hv2w1kb.js";
 import {
   parseDBProject
 } from "../chunk-7qy2d66q.js";
@@ -22,8 +23,8 @@ import"../chunk-5yjnn0bn.js";
 async function GET() {
   const ctx = getContext(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -39,8 +40,8 @@ async function GET() {
 async function POST(params) {
   const ctx = getContext(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized"
@@ -67,7 +68,7 @@ async function POST(params) {
         error: "Project with this clientID already exists"
       };
     }
-    const cfClient = createClient(env);
+    const cfClient = createClient2(env);
     const cfDomaineCreate = await createCustomDomainForProject(env, cfClient);
     if (!cfDomaineCreate || !cfDomaineCreate.id || !cfDomaineCreate.hostname) {
       return {

@@ -1,16 +1,13 @@
-import { createSubjects } from "@openauthjs/openauth/subject";
-import { createClient } from "openauth-webui-shared-types/client";
-import { any, object, string } from "valibot";
+import { createOpenAuthsterClient } from "openauth-webui-shared-types/client/user";
+import { defaultSubjectSchema } from "openauth-webui-shared-types/client/user";
 
-export const client = createClient({
-  clientID: process.env.PUBLIC_CLIENT_ID!,
-  issuer: process.env.PUBLIC_ISSUER!,
-  copyID: null,
-});
+export const subject = defaultSubjectSchema;
 
-export const subject = createSubjects({
-  user: object({
-    id: string(),
-    data: any(),
-  }),
-});
+export const createClient = () =>
+  createOpenAuthsterClient({
+    clientID: process.env.PUBLIC_CLIENT_ID!,
+    issuerURI: process.env.PUBLIC_ISSUER!,
+    redirectURI: process.env.PUBLIC_REDIRECT_URI!,
+    copyID: null,
+    subject,
+  });

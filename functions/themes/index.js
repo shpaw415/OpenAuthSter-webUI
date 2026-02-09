@@ -2,10 +2,11 @@ import {
   drizzle,
   eq,
   getContext,
-  requireAuth,
   uiStyleTable
-} from "../chunk-kqpvm8zs.js";
-import"../chunk-8w50dwxd.js";
+} from "../chunk-57a2tpg2.js";
+import {
+  createClient
+} from "../chunk-1hv2w1kb.js";
 import"../chunk-7qy2d66q.js";
 import"../chunk-5yjnn0bn.js";
 
@@ -13,8 +14,8 @@ import"../chunk-5yjnn0bn.js";
 async function GET() {
   const ctx = getContext(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -33,8 +34,8 @@ async function GET() {
 async function POST(params) {
   const ctx = getContext(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized"

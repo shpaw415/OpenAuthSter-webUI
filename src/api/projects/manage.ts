@@ -5,7 +5,7 @@ import {
   projectTable,
 } from "openauth-webui-shared-types/database";
 
-import { requireAuth } from "../../server-utils";
+import { createClient as createOpenAuthsterClient } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { createClient, deleteCustomDomainForProject } from "../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
@@ -16,8 +16,10 @@ export async function GET(params: {
 }): Promise<{ success: boolean; data?: Project; error?: string }> {
   const ctx = getContext<Env, any, any>(arguments);
 
-  const auth = await requireAuth(ctx.request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createOpenAuthsterClient().setTokenFromRequest(
+    ctx.request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -62,8 +64,10 @@ export async function PUT(
 ): Promise<UpdateResponse> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createOpenAuthsterClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -162,8 +166,10 @@ export async function DELETE(params: {
 }): Promise<{ success: boolean; error?: string }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createOpenAuthsterClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",

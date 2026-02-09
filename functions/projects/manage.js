@@ -1,5 +1,5 @@
 import {
-  createClient,
+  createClient as createClient2,
   deleteCustomDomainForProject
 } from "../chunk-p0enet3n.js";
 import {
@@ -8,10 +8,11 @@ import {
   eq,
   getContext,
   insertLog,
-  projectTable,
-  requireAuth
-} from "../chunk-kqpvm8zs.js";
-import"../chunk-8w50dwxd.js";
+  projectTable
+} from "../chunk-57a2tpg2.js";
+import {
+  createClient
+} from "../chunk-1hv2w1kb.js";
 import {
   parseDBProject
 } from "../chunk-7qy2d66q.js";
@@ -20,8 +21,8 @@ import"../chunk-5yjnn0bn.js";
 // src/api/projects/manage.ts
 async function GET(params) {
   const ctx = getContext(arguments);
-  const auth = await requireAuth(ctx.request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(ctx.request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized"
@@ -43,8 +44,8 @@ async function GET(params) {
 async function PUT(params) {
   const ctx = getContext(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized"
@@ -114,8 +115,8 @@ async function PUT(params) {
 async function DELETE(params) {
   const ctx = getContext(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(request);
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized"
@@ -128,7 +129,7 @@ async function DELETE(params) {
       error: "Project not found"
     };
   await db.delete(projectTable).where(eq(projectTable.clientID, params.clientID));
-  const cfClient = createClient(env);
+  const cfClient = createClient2(env);
   await deleteCustomDomainForProject(env, cfClient, existing.cloudflareDomaineID);
   try {
     await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);

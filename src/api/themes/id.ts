@@ -1,7 +1,7 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { uiStyleTable } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import { requireAuth } from "../../server-utils";
+import { createClient } from "@auth";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import type { UITheme } from "./index";
 
@@ -13,8 +13,10 @@ export async function GET(params: { id: string }): Promise<{
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -62,8 +64,10 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -124,8 +128,10 @@ export async function DELETE(params: { id: string }): Promise<{
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",

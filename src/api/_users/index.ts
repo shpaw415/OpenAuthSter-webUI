@@ -7,7 +7,7 @@ import {
   desc,
   eq,
 } from "openauth-webui-shared-types/drizzle";
-import { requireAuth } from "../../server-utils";
+import { createClient } from "@auth";
 import { isClientIdValid } from "openauth-webui-shared-types/database";
 
 export type ProjectUser = {
@@ -50,8 +50,10 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
 
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response) {
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false) {
     return { success: false, error: "Unauthorized" };
   }
 
@@ -148,8 +150,10 @@ export async function DELETE(
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
 
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response) {
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false) {
     return { success: false, error: "Unauthorized" };
   }
 

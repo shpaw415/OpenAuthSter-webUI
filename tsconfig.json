@@ -23,7 +23,8 @@
       "@api/*": ["./src/api/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@docs/*": ["./src/docs/*"],
-      "@components/*": ["./src/components/*"]
+      "@components/*": ["./src/components/*"],
+      "@auth": ["./src/open-auth.ts"]
     }
   },
   "include": [

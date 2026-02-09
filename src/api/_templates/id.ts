@@ -1,7 +1,7 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { emailTemplatesTable } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import { requireAuth } from "../../server-utils";
+import { createClient } from "@auth";
 import type { EmailTemplate } from "./index";
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
 
@@ -13,8 +13,10 @@ export async function GET(params: { name: string }): Promise<{
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -53,8 +55,10 @@ export async function PUT(params: UpdateTemplateParams): Promise<{
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",
@@ -115,8 +119,10 @@ export async function DELETE(params: { name: string }): Promise<{
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;
-  const auth = await requireAuth(request as unknown as Request);
-  if (auth instanceof Response)
+  const auth = await createClient().setTokenFromRequest(
+    request as unknown as Request,
+  );
+  if (auth.isAuthenticated === false)
     return {
       success: false,
       error: "Unauthorized",

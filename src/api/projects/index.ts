@@ -12,6 +12,7 @@ import { isClientIdValid } from "openauth-webui-shared-types/database";
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { createClient, createCustomDomainForProject } from "../../cloudflare";
+import { insertLog } from "openauth-webui-shared-types/database";
 
 // GET /api/projects - List all projects
 export async function GET(): Promise<{
@@ -142,9 +143,19 @@ export async function POST(params: {
         };
       });
   } catch (error) {
+    insertLog({
+      type: "error",
+      clientID: env.PUBLIC_CLIENT_ID,
+      message: error instanceof Error ? error.message : String(error),
+      database: env.PROJECT_DB,
+      endpoint: "/api/projects",
+    });
+    console.error("Error in POST /api/projects:", error);
     return {
       success: false,
-      error: "Invalid request body",
+      error:
+        "Invalid request body: " +
+        (error instanceof Error ? error.message : String(error)),
     };
   }
 }

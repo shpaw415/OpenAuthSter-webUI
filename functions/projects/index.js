@@ -106,7 +106,7 @@ async function POST(params) {
   } catch (error) {
     return {
       success: false,
-      error: "Invalid request body"
+      error: "Invalid request body: " + (error instanceof Error ? error.message : String(error))
     };
   }
 }

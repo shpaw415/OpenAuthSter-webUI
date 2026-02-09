@@ -8,6 +8,7 @@ import {
 import { requireAuth } from "../../server-utils";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { createClient, deleteCustomDomainForProject } from "../../cloudflare";
+import { insertLog } from "openauth-webui-shared-types/database";
 
 // GET /projects/manage - Get a single project
 export async function GET(params: {
@@ -141,6 +142,13 @@ export async function PUT(
       data: parseDBProject(updated),
     };
   } catch (error) {
+    insertLog({
+      type: "error",
+      clientID: env.PUBLIC_CLIENT_ID,
+      message: error instanceof Error ? error.message : String(error),
+      database: env.PROJECT_DB,
+      endpoint: "/api/projects",
+    });
     return {
       success: false,
       error: "Invalid request body",

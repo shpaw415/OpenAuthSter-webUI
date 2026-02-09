@@ -15,6 +15,13 @@
       "when": 1769539789174,
       "tag": "0001_little_whirlwind",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1770648689202,
+      "tag": "0002_sleepy_obadiah_stane",
+      "breakpoints": true
     }
   ]
 }

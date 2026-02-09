@@ -7,9 +7,10 @@ import {
   drizzle,
   eq,
   getContext,
+  insertLog,
   projectTable,
   requireAuth
-} from "../chunk-zmmmcg75.js";
+} from "../chunk-kqpvm8zs.js";
 import"../chunk-8w50dwxd.js";
 import {
   parseDBProject
@@ -97,6 +98,13 @@ async function PUT(params) {
       data: parseDBProject(updated)
     };
   } catch (error) {
+    insertLog({
+      type: "error",
+      clientID: env.PUBLIC_CLIENT_ID,
+      message: error instanceof Error ? error.message : String(error),
+      database: env.PROJECT_DB,
+      endpoint: "/api/projects"
+    });
     return {
       success: false,
       error: "Invalid request body"

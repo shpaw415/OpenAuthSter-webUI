@@ -7,10 +7,11 @@ import {
   drizzle,
   eq,
   getContext,
+  insertLog,
   isClientIdValid,
   projectTable,
   requireAuth
-} from "../chunk-zmmmcg75.js";
+} from "../chunk-kqpvm8zs.js";
 import"../chunk-8w50dwxd.js";
 import {
   parseDBProject
@@ -104,6 +105,14 @@ async function POST(params) {
       };
     });
   } catch (error) {
+    insertLog({
+      type: "error",
+      clientID: env.PUBLIC_CLIENT_ID,
+      message: error instanceof Error ? error.message : String(error),
+      database: env.PROJECT_DB,
+      endpoint: "/api/projects"
+    });
+    console.error("Error in POST /api/projects:", error);
     return {
       success: false,
       error: "Invalid request body: " + (error instanceof Error ? error.message : String(error))

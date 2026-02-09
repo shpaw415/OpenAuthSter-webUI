@@ -7,12 +7,7 @@ import { LogsTable } from "openauth-webui-shared-types/database";
 export async function GET(params: { clientID: string }): Promise<{
   success: boolean;
   error?: string;
-  data: {
-    id: string;
-    type: string;
-    message: string;
-    timestamp: string;
-  }[];
+  data: Array<typeof LogsTable.$inferSelect>;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { request, env } = ctx;

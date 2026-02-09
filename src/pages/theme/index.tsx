@@ -214,7 +214,7 @@ function ThemeCard({
         <div className="space-y-2 mb-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-400">Font</span>
-            <span className="text-gray-300 truncate max-w-[150px]">
+            <span className="text-gray-300 truncate max-w-37.5">
               {themeData.font?.family || "System Default"}
             </span>
           </div>

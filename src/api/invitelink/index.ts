@@ -28,6 +28,7 @@ export async function POST(params: {
   const project = await drizzle(ctx.env.PROJECT_DB)
     .select({
       authEndpointURL: projectTable.authEndpointURL,
+      originURL: projectTable.originURL,
     })
     .from(projectTable)
     .where(eq(projectTable.clientID, params.clientID))
@@ -48,7 +49,9 @@ export async function POST(params: {
       clientID: params.clientID,
       link: `${project.authEndpointURL}/invite?invite_id=${id}&client_id=${
         params.clientID
-      }${params.copyID ? `::${params.copyID}` : ""}`,
+      }${
+        params.copyID ? `::${params.copyID}` : ""
+      }&redirect_uri=${encodeURIComponent(project.originURL || "")}`,
       expiresAt: new Date(
         Date.now() + params.expireInMin * 60 * 1000,
       ).toISOString(), // Expires in specified minutes

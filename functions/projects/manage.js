@@ -9,13 +9,13 @@ import {
   getContext,
   insertLog,
   projectTable
-} from "../chunk-57a2tpg2.js";
+} from "../chunk-a5tvky22.js";
 import {
   createClient
-} from "../chunk-1hv2w1kb.js";
+} from "../chunk-qvp0byx4.js";
 import {
   parseDBProject
-} from "../chunk-7qy2d66q.js";
+} from "../chunk-02drm0pp.js";
 import"../chunk-5yjnn0bn.js";
 
 // src/api/projects/manage.ts
@@ -80,6 +80,9 @@ async function PUT(params) {
     }
     if (params.data.originURL !== undefined) {
       updates.originURL = params.data.originURL;
+    }
+    if (params.data.registerOnInvite !== undefined) {
+      updates.registerOnInvite = params.data.registerOnInvite ? 1 : 0;
     }
     if (Object.keys(updates).length === 0)
       return {

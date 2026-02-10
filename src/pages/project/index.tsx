@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import type {
   Project,
   ProjectData,
@@ -14,7 +14,8 @@ import { useProject } from "../../hooks/useProjects";
 import { useUIThemes } from "../../hooks/useUIThemes";
 import { useEmailTemplates } from "../../hooks/useEmailTemplates";
 import { Snackbar } from "@material/react-snackbar";
-
+import { POST as createInviteLink } from "@api/invitelink";
+import { useCopyTemplates } from "@hooks/useCopyTemplates";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
   { id: "social", label: "Social", icon: "👥" },
@@ -341,6 +342,13 @@ export default function ProjectDetail() {
           </select>
         </SelectWrapper>
         <AllowOriginForm
+          isSaving={isSaving}
+          setIsSaving={setIsSaving}
+          updateProject={projectHook.updateProject}
+          setNotification={setNotification}
+          project={projectHook.project!}
+        />
+        <RegisterOnInviteForm
           isSaving={isSaving}
           setIsSaving={setIsSaving}
           updateProject={projectHook.updateProject}
@@ -879,6 +887,302 @@ function ProjectClientInfo({
               environments.
             </p>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegisterOnInviteForm({
+  project,
+  setNotification,
+  updateProject,
+  isSaving,
+  setIsSaving,
+}: {
+  project: Project;
+  setNotification: (notif: { message: string } | null) => void;
+  updateProject: (data: Partial<Project>) => Promise<void>;
+  isSaving?: boolean;
+  setIsSaving: (saving: boolean) => void;
+}) {
+  const [value, setValue] = useState(Boolean(project?.registerOnInvite));
+  const [modaleOpen, setModalOpen] = useState(false);
+
+  const handleChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+    async (e) => {
+      const checked = e.target.checked;
+      setIsSaving(true);
+      try {
+        await updateProject({ registerOnInvite: checked });
+        setValue(checked);
+        setNotification({
+          message: `Register on Invite Only ${
+            checked ? "enabled" : "disabled"
+          }`,
+        });
+      } catch (err) {
+        setNotification({
+          message:
+            err instanceof Error
+              ? err.message
+              : "Failed to update Register on Invite Only setting",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [setIsSaving, setNotification, updateProject],
+  );
+
+  return (
+    <SelectWrapper icon="📩" name="Register on Invite Only">
+      <div className="mt-4">
+        <label className="inline-flex items-center cursor-pointer group/checkbox">
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={value}
+              disabled={isSaving}
+              onChange={handleChange}
+              className="appearance-none w-5 h-5 rounded border-2 border-gray-400 checked:border-blue-500 checked:bg-blue-500 cursor-pointer transition-all duration-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-600"
+            />
+            <svg
+              className="absolute inset-0 w-4 h-4 text-white pointer-events-none m-auto opacity-0 group-checked/checkbox:opacity-100 transition-opacity duration-150"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <span className="ml-3 text-gray-300 group-hover/checkbox:text-gray-100 transition-colors duration-150 select-none font-medium">
+            Register on Invite Only
+          </span>
+        </label>
+        {value && (
+          <div className="mt-2 flex items-center justify-between">
+            <span
+              onClick={() => setModalOpen(true)}
+              className="text-gray-500 text-xs hover:text-blue-400 transition-colors cursor-pointer"
+            >
+              create invite link
+            </span>
+          </div>
+        )}
+        {modaleOpen && (
+          <InviteLinkModal
+            project={project}
+            onClose={() => setModalOpen(false)}
+            setNotification={setNotification}
+          />
+        )}
+      </div>
+    </SelectWrapper>
+  );
+}
+
+function InviteLinkModal({
+  project,
+  onClose,
+  setNotification,
+}: {
+  project: Project;
+  onClose: () => void;
+  setNotification: (notif: { message: string } | null) => void;
+}) {
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copyID, setCopyID] = useState<string | null>(null);
+  const [expiresIn, setExpiresIn] = useState<number>(60);
+  const [isLoading, setIsLoading] = useState(false);
+  const { templates, isLoading: isTemplatesLoading } = useCopyTemplates();
+
+  const onCreate = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await createInviteLink({
+        clientID: project.clientID,
+        copyID: copyID || undefined,
+        expireInMin: expiresIn,
+      });
+      if (res.error) {
+        throw new Error(res.error);
+      }
+      setInviteLink(res.data?.link!);
+      setNotification({ message: "Invite link created successfully!" });
+    } catch (err) {
+      setNotification({
+        message:
+          err instanceof Error ? err.message : "Failed to create invite link",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [copyID, expiresIn, project.clientID, onClose, setNotification]);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-700 animate-in fade-in zoom-in duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔗</span>
+            <h2 className="text-xl font-semibold text-white">
+              Create Invite Link
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Copy Template Select */}
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Copy Template
+            </label>
+            {isTemplatesLoading ? (
+              <div className="h-10 bg-gray-700 rounded-lg animate-pulse flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>
+              </div>
+            ) : (
+              <select
+                value={copyID || ""}
+                onChange={(e) => setCopyID(e.target.value || null)}
+                disabled={isLoading}
+                className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">Select a template (optional)</option>
+                {templates.map((template) => (
+                  <option key={template.name} value={template.name}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="text-gray-500 text-xs mt-1">
+              Choose a copy/template to associate with this invite link
+            </p>
+          </div>
+
+          {/* Expires In Input */}
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Expires In (minutes)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={expiresIn}
+                onChange={(e) =>
+                  setExpiresIn(Math.max(1, parseInt(e.target.value) || 60))
+                }
+                disabled={isLoading}
+                min="1"
+                max="10080"
+                className="flex-1 px-3 py-2.5 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span className="text-gray-400 text-sm whitespace-nowrap">
+                {Math.floor(expiresIn / 60) > 0
+                  ? `${Math.floor(expiresIn / 60)}h ${expiresIn % 60}m`
+                  : `${expiresIn}m`}
+              </span>
+            </div>
+            <p className="text-gray-500 text-xs mt-1">
+              Link will expire after the specified duration
+            </p>
+          </div>
+        </div>
+
+        {inviteLink && (
+          <div className="mt-6 p-4 bg-gradient-to-br from-green-900/20 to-green-800/10 rounded-lg border border-green-600/30 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-green-400 text-sm font-semibold flex items-center gap-1.5">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Invite Link Created
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2.5 bg-gray-900 border border-gray-600 text-green-400 font-mono text-xs rounded-lg break-all select-all max-h-24 overflow-y-auto">
+                  {inviteLink}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteLink);
+                    setNotification({
+                      message: "Invite link copied to clipboard!",
+                    });
+                  }}
+                  className="p-2.5 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded-lg transition-all duration-200 border border-green-600/30 hover:border-green-500/50"
+                  title="Copy to clipboard"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-green-400/70 text-xs">
+                Share this link with users to allow them to register via invite
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2.5 bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onCreate}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Creating...
+              </>
+            ) : (
+              <>
+                <span>✓</span>
+                Create Link
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

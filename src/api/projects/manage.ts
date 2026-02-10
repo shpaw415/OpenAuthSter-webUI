@@ -114,6 +114,9 @@ export async function PUT(
     if (params.data.originURL !== undefined) {
       updates.originURL = params.data.originURL;
     }
+    if (params.data.registerOnInvite !== undefined) {
+      updates.registerOnInvite = params.data.registerOnInvite ? 1 : 0;
+    }
 
     if (Object.keys(updates).length === 0)
       return {

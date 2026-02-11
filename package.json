@@ -31,6 +31,7 @@
     "frame-master-svg-to-jsx-loader": "^0.1.0",
     "mustache": "^4.2.0",
     "openauth-react": "https://github.com/shpaw415/openauth-react.git",
+    "openauth-webui": ".",
     "openauth-webui-shared-types": "https://github.com/shpaw415/OpenAuthSter-shared.git",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

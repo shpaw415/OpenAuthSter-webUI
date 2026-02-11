@@ -47,9 +47,9 @@ export async function POST(params: {
     .values({
       id,
       clientID: params.clientID,
-      link: `${project.originURL}/invite?invite_id=${id}&client_id=${
-        params.clientID
-      }${params.copyID ? `::${params.copyID}` : ""}`,
+      link: `${project.originURL}?invite_id=${id}&client_id=${params.clientID}${
+        params.copyID ? `::${params.copyID}` : ""
+      }`,
       expiresAt: new Date(
         Date.now() + params.expireInMin * 60 * 1000,
       ).toISOString(), // Expires in specified minutes

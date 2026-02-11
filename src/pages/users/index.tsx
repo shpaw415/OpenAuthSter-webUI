@@ -106,7 +106,7 @@ export default function UserListPage() {
             </label>
             <select
               id="project-select"
-              className="flex-1 min-w-[220px] px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-55 px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={projectsHook.isLoading}
               value={""}
               onChange={(e) => handleProjectChange(e.target.value)}
@@ -186,7 +186,7 @@ export default function UserListPage() {
             </label>
             <select
               id="project-switcher"
-              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto min-w-[200px]"
+              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto min-w-50"
               value={clientID}
               disabled={projectsHook.isLoading}
               onChange={(e) => handleProjectChange(e.target.value)}
@@ -312,7 +312,7 @@ export default function UserListPage() {
                           setSelectedUser(user as Record<string, unknown>)
                         }
                       >
-                        <td className="px-6 py-4 whitespace-normal break-words max-w-xs md:max-w-sm">
+                        <td className="px-6 py-4 whitespace-normal wrap-break-word max-w-xs md:max-w-sm">
                           <div className="text-white font-medium">
                             {displayName}
                           </div>
@@ -326,10 +326,10 @@ export default function UserListPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {formatDate(user.created_at)}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-300 font-mono whitespace-pre-wrap break-words max-w-xs md:max-w-sm">
+                        <td className="px-6 py-4 text-sm text-gray-300 font-mono whitespace-pre-wrap wrap-break-word max-w-xs md:max-w-sm">
                           {publicPreview(user.session_public)}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-300 font-mono whitespace-pre-wrap break-words max-w-xs md:max-w-sm">
+                        <td className="px-6 py-4 text-sm text-gray-300 font-mono whitespace-pre-wrap wrap-break-word max-w-xs md:max-w-sm">
                           {publicPreview(user.data)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-300">
@@ -388,10 +388,10 @@ export default function UserListPage() {
                     <div className="text-xs text-gray-400">
                       Created: {formatDate(user.created_at)}
                     </div>
-                    <div className="text-xs text-gray-300 font-mono whitespace-pre-wrap break-words">
+                    <div className="text-xs text-gray-300 font-mono whitespace-pre-wrap wrap-break-word">
                       Public: {publicPreview(user.session_public)}
                     </div>
-                    <div className="text-xs text-gray-300 font-mono whitespace-pre-wrap break-words">
+                    <div className="text-xs text-gray-300 font-mono whitespace-pre-wrap wrap-break-word">
                       Meta: {publicPreview(user.data)}
                     </div>
                     <div className="pt-2">
@@ -432,7 +432,7 @@ export default function UserListPage() {
               </button>
             </div>
             <div className="overflow-auto p-4 bg-gray-950 max-h-[80vh] sm:max-h-[70vh]">
-              <pre className="text-sm text-gray-100 whitespace-pre-wrap font-mono break-words overflow-x-auto">
+              <pre className="text-sm text-gray-100 whitespace-pre-wrap font-mono wrap-break-word overflow-x-auto">
                 {JSON.stringify(selectedUser, null, 2)}
               </pre>
             </div>

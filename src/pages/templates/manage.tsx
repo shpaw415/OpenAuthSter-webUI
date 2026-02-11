@@ -355,7 +355,7 @@ export default function EmailTemplatesManage() {
         } gap-4 min-h-0`}
       >
         {/* Monaco Editor */}
-        <div className="flex flex-col border border-gray-600 rounded-lg overflow-hidden min-h-[300px] sm:min-h-[400px]">
+        <div className="flex flex-col border border-gray-600 rounded-lg overflow-hidden min-h-75 sm:min-h-100">
           <div className="bg-gray-800 px-4 py-2 border-b border-gray-600 flex items-center justify-between">
             <span className="text-sm font-medium text-gray-200">
               HTML Editor
@@ -386,7 +386,7 @@ export default function EmailTemplatesManage() {
 
         {/* Preview Panel */}
         {showPreview && (
-          <div className="flex flex-col gap-4 min-h-[300px] sm:min-h-[400px]">
+          <div className="flex flex-col gap-4 min-h-75 sm:min-h-100">
             {/* Mock Data Editor */}
             <div className="border border-gray-600 rounded-lg overflow-hidden">
               <div className="bg-gray-800 px-4 py-2 border-b border-gray-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -410,7 +410,7 @@ export default function EmailTemplatesManage() {
                   Reset to Default
                 </button>
               </div>
-              <div className="p-3 bg-gray-900 max-h-[200px] overflow-auto">
+              <div className="p-3 bg-gray-900 max-h-50 overflow-auto">
                 {mockDataError && (
                   <div className="mb-2 p-2 bg-red-900/50 border border-red-700 rounded text-red-300 text-xs">
                     {mockDataError}
@@ -480,7 +480,7 @@ export default function EmailTemplatesManage() {
             </div>
 
             {/* Parsed Preview */}
-            <div className="flex-1 flex flex-col border border-gray-600 rounded-lg overflow-hidden min-h-[200px]">
+            <div className="flex-1 flex flex-col border border-gray-600 rounded-lg overflow-hidden min-h-50">
               <div className="bg-gray-800 px-4 py-2 border-b border-gray-600 flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-200">
                   Preview (Parsed)

@@ -3,6 +3,7 @@ import {
   useCopyTemplate,
   useCopyTemplates,
 } from "../../hooks/useCopyTemplates";
+import { navigate } from "../../utils";
 
 // Default copy fields based on OpenAuth source
 const CODE_COPY_FIELDS: Record<string, string> = {
@@ -125,7 +126,7 @@ export default function CopyManagePage() {
         showNotification("success", "Copy template created successfully");
         // Redirect to list after short delay
         setTimeout(() => {
-          window.location.href = "/copy";
+          navigate("/copy");
         }, 1000);
       }
     } catch (err) {

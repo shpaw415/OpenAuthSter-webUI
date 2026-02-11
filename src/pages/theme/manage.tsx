@@ -2,6 +2,7 @@ import type { Theme } from "@openauthjs/openauth/ui/theme";
 import { useEffect, useState, useCallback } from "react";
 import { useUITheme, useUIThemes } from "../../hooks/useUIThemes";
 import { Snackbar } from "@material/react-snackbar";
+import { navigate } from "../../utils";
 
 const importTheme = {
   SST: () => import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_SST),
@@ -102,7 +103,7 @@ export default function UIThemeManage() {
           message: "Theme created successfully",
         });
         setTimeout(() => {
-          window.location.href = "/theme";
+          navigate("/theme");
         }, 1500);
       }
     } catch (err) {

@@ -7,6 +7,7 @@ import {
 } from "../../hooks/useEmailTemplates";
 import { useProject } from "../../hooks/useProjects";
 import Mustache from "mustache";
+import { navigate } from "../../utils";
 
 const DEFAULT_MOCK_DATA = {
   code: "123456",
@@ -201,7 +202,7 @@ export default function EmailTemplatesManage() {
         showNotification("success", "Template created successfully");
         // Redirect to list after creating
         setTimeout(() => {
-          window.location.href = "/templates";
+          navigate("/templates");
         }, 1500);
       }
     } catch (err) {

@@ -39,17 +39,28 @@ export async function POST(params: {
       success: false,
       error: "Project not found",
     };
+  else if (!project.originURL) {
+    return {
+      success: false,
+      error: "Project origin URL is not set",
+    };
+  }
 
   const id = crypto.randomUUID();
+
+  const url = new URL(project.originURL);
+  url.searchParams.set("invite_id", id);
+  url.searchParams.set("client_id", params.clientID);
+  if (params.copyID) {
+    url.searchParams.set("copy_id", params.copyID);
+  }
 
   const newLink = await drizzle(ctx.env.PROJECT_DB)
     .insert(WebUiInviteLinkTable)
     .values({
       id,
       clientID: params.clientID,
-      link: `${project.originURL}?invite_id=${id}&client_id=${params.clientID}${
-        params.copyID ? `::${params.copyID}` : ""
-      }`,
+      link: url.toString(),
       expiresAt: new Date(
         Date.now() + params.expireInMin * 60 * 1000,
       ).toISOString(), // Expires in specified minutes

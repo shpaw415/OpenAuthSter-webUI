@@ -3,7 +3,23 @@ import { useProjects } from "@hooks/useProjects";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LogsTable } from "openauth-webui-shared-types/database";
 
-type LogRow = typeof LogsTable.$inferSelect;
+function ParseLogs(logs: any[]): LogRow[] {
+  return logs.map((log) => ({
+    ...log,
+    type: log.type as "info" | "warning" | "error",
+    context: log.context ? JSON.parse(log.context) : undefined,
+  }));
+}
+
+type LogRow = typeof LogsTable.$inferSelect & {
+  type: "info" | "warning" | "error";
+  context?: Record<string, any>;
+};
+
+interface ContextModalState {
+  isOpen: boolean;
+  context?: Record<string, any>;
+}
 
 const typeTone: Record<LogRow["type"], string> = {
   info: "bg-blue-500/10 text-blue-200 border border-blue-500/30",
@@ -39,6 +55,9 @@ export default function LogsPage() {
   const [logsError, setLogsError] = useState<string | null>(null);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [contextModal, setContextModal] = useState<ContextModalState>({
+    isOpen: false,
+  });
 
   const fetchLogs = useCallback(async (clientID: string) => {
     if (!clientID) return;
@@ -55,7 +74,7 @@ export default function LogsPage() {
         return;
       }
 
-      setLogs(response.data || []);
+      setLogs(ParseLogs(response.data) || []);
       setLastUpdated(new Date().toISOString());
     } catch (err) {
       setLogsError(err instanceof Error ? err.message : String(err));
@@ -179,6 +198,7 @@ export default function LogsPage() {
                   <th className="px-4 py-3 text-left">Message</th>
                   <th className="px-4 py-3 text-left">Timestamp</th>
                   <th className="px-4 py-3 text-left">Project</th>
+                  <th className="px-4 py-3 text-left">Context</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800 bg-gray-900">
@@ -186,7 +206,7 @@ export default function LogsPage() {
 
                 {!isFetchingLogs && logsError && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6">
+                    <td colSpan={5} className="px-4 py-6">
                       <div className="bg-red-900/30 border border-red-800 text-red-200 rounded-lg px-4 py-3">
                         {logsError}
                       </div>
@@ -197,7 +217,7 @@ export default function LogsPage() {
                 {!isFetchingLogs && !logsError && showEmptyLogs && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="px-4 py-8 text-center text-gray-400"
                     >
                       No log entries for this project yet.
@@ -233,6 +253,23 @@ export default function LogsPage() {
                       <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
                         {log.clientID}
                       </td>
+                      <td className="px-4 py-3 text-sm whitespace-nowrap">
+                        {log.context ? (
+                          <button
+                            onClick={() =>
+                              setContextModal({
+                                isOpen: true,
+                                context: log.context,
+                              })
+                            }
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors text-xs font-medium border border-blue-500/40"
+                          >
+                            View Context
+                          </button>
+                        ) : (
+                          <span className="text-gray-500">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
               </tbody>
@@ -253,6 +290,12 @@ export default function LogsPage() {
           </div>
         )}
       </div>
+
+      <ContextModal
+        isOpen={contextModal.isOpen}
+        context={contextModal.context}
+        onClose={() => setContextModal({ isOpen: false })}
+      />
     </div>
   );
 }
@@ -293,8 +336,79 @@ function SkeletonRows() {
           <td className="px-4 py-3">
             <div className="h-4 w-28 rounded bg-gray-700/60" />
           </td>
+          <td className="px-4 py-3">
+            <div className="h-4 w-24 rounded bg-gray-700/60" />
+          </td>
         </tr>
       ))}
     </>
+  );
+}
+
+interface ContextModalProps {
+  isOpen: boolean;
+  context?: Record<string, any>;
+  onClose: () => void;
+}
+
+function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <h2 className="text-lg font-semibold text-white">Error Context</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-200 transition-colors p-1"
+            aria-label="Close modal"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-6">
+          <pre className="bg-gray-950 border border-gray-800 rounded-lg p-4 text-sm text-gray-200 font-mono overflow-auto max-h-full">
+            <code>{JSON.stringify(context, null, 2)}</code>
+          </pre>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 hover:border-gray-600 hover:text-white transition-colors"
+          >
+            Close
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(JSON.stringify(context, null, 2));
+            }}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
+            Copy JSON
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

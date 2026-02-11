@@ -116,6 +116,7 @@ export async function POST(params: {
       originURL: "",
       authEndpointURL: cfDomaineCreate.hostname,
       cloudflareDomaineID: cfDomaineCreate.id,
+      registerOnInvite: false,
       secret: [
         crypto.randomUUID(),
         crypto.randomUUID(),

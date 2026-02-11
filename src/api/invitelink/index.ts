@@ -1,5 +1,6 @@
 import { createClient } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
+import { parseDBProject, type Project } from "openauth-webui-shared-types";
 import {
   WebUiInviteLinkTable,
   projectTable,
@@ -27,7 +28,6 @@ export async function POST(params: {
 
   const project = await drizzle(ctx.env.PROJECT_DB)
     .select({
-      authEndpointURL: projectTable.authEndpointURL,
       originURL: projectTable.originURL,
     })
     .from(projectTable)
@@ -47,11 +47,9 @@ export async function POST(params: {
     .values({
       id,
       clientID: params.clientID,
-      link: `${project.authEndpointURL}/invite?invite_id=${id}&client_id=${
+      link: `${project.originURL}/invite?invite_id=${id}&client_id=${
         params.clientID
-      }${
-        params.copyID ? `::${params.copyID}` : ""
-      }&redirect_uri=${encodeURIComponent(project.originURL || "")}`,
+      }${params.copyID ? `::${params.copyID}` : ""}`,
       expiresAt: new Date(
         Date.now() + params.expireInMin * 60 * 1000,
       ).toISOString(), // Expires in specified minutes

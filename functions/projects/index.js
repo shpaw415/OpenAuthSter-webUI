@@ -10,10 +10,10 @@ import {
   insertLog,
   isClientIdValid,
   projectTable
-} from "../chunk-a5tvky22.js";
+} from "../chunk-gdyr7gn8.js";
 import {
   createClient
-} from "../chunk-qvp0byx4.js";
+} from "../chunk-fesjpn93.js";
 import {
   parseDBProject
 } from "../chunk-02drm0pp.js";
@@ -85,6 +85,7 @@ async function POST(params) {
       originURL: "",
       authEndpointURL: cfDomaineCreate.hostname,
       cloudflareDomaineID: cfDomaineCreate.id,
+      registerOnInvite: false,
       secret: [
         crypto.randomUUID(),
         crypto.randomUUID(),

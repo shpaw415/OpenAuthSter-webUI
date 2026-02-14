@@ -8,11 +8,13 @@ import {
 } from "@api/projects/manage";
 
 import { GET as getProjects, POST as createNewProject } from "@api/projects";
+import { useAuth } from "./useAuth";
 
 export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const auth = useAuth();
 
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
@@ -28,11 +30,12 @@ export function useProjects() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [auth.isAuthenticated, auth.isLoaded]);
 
   useEffect(() => {
+    if (!auth.isLoaded) return;
     fetchProjects();
-  }, [fetchProjects]);
+  }, [fetchProjects, auth.isLoaded]);
 
   const createProject = useCallback(async (clientID: string) => {
     const res = await createNewProject({ clientID });

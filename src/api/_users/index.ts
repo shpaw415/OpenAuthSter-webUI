@@ -1,5 +1,9 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { OTFusersTable } from "openauth-webui-shared-types/database";
+import {
+  OTFusersTable,
+  parseDBUser,
+  type OTFUsersParsedType,
+} from "openauth-webui-shared-types/database";
 import {
   drizzle,
   like,
@@ -29,7 +33,7 @@ export type ListUsersResponse = {
   success: boolean;
   error?: string;
   data?: {
-    users: ProjectUser[];
+    users: OTFUsersParsedType[];
     total: number;
     page: number;
     pageSize: number;
@@ -104,19 +108,7 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
       .limit(pageSize)
       .offset((page - 1) * pageSize);
 
-    const users: ProjectUser[] = rows.map((row) => ({
-      id: row.id,
-      identifier: row.identifier,
-      data:
-        typeof row.data === "string"
-          ? safeParse<Record<string, unknown> | null>(row.data)
-          : (row.data as Record<string, unknown> | null),
-      session_public:
-        typeof row.session_public === "string"
-          ? safeParse<Record<string, unknown> | null>(row.session_public)
-          : (row.session_public as Record<string, unknown> | null),
-      created_at: row.created_at,
-    }));
+    const users = rows.map(parseDBUser) as OTFUsersParsedType[];
 
     return {
       success: true,
@@ -133,14 +125,6 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
       success: false,
       error: error instanceof Error ? error.message : "Failed to load users",
     };
-  }
-}
-
-function safeParse<T>(value: string): T {
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return value as unknown as T;
   }
 }
 

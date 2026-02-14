@@ -20,12 +20,12 @@ export async function GET(): Promise<{
   error?: string;
   data: Project[];
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
+  const { env, request } = getContext<Env, any, any>(arguments);
+
   const auth = await createOpenAuthsterClient().setTokenFromRequest(
     request as unknown as Request,
   );
-  if (auth.isAuthenticated === false)
+  if (!auth.isAuthenticated)
     return {
       success: false,
       error: "Unauthorized",

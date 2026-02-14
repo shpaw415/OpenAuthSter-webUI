@@ -1,6 +1,6 @@
 {
   "name": "openauth-webui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260123.0",
     "@tailwindcss/typography": "^0.5.19",
@@ -30,9 +30,7 @@
     "frame-master-plugin-tailwind": "1.1.2",
     "frame-master-svg-to-jsx-loader": "^0.1.0",
     "mustache": "^4.2.0",
-    "openauth-react": "https://github.com/shpaw415/openauth-react.git",
-    "openauth-webui": ".",
-    "openauth-webui-shared-types": "https://github.com/shpaw415/OpenAuthSter-shared.git",
+    "openauth-webui-shared-types": "https://github.com/shpaw415/OpenAuthSter-shared.git#v0.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rehype-autolink-headings": "^7.1.0",

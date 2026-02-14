@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { useAuth } from "openauth-react/client";
+import { useAuth } from "@hooks/useAuth";
 import HomeSvg from "@material-icons/svg/svg/home/outline.svg";
 import WebAssetSvg from "@material-icons/svg/svg/web_asset/outline.svg";
 import BrushSvg from "@material-icons/svg/svg/brush/outline.svg";
@@ -48,7 +48,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   );
 
   // Show loading while checking auth
-  if (!auth?.loaded) {
+  if (!auth?.isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   // Show login form if not authenticated
-  if (!auth?.loggedIn && auth?.loaded) {
+  if (!auth?.isAuthenticated && auth?.isLoaded) {
     setTimeout(() => {
       auth?.login();
       console.log(auth);
@@ -99,11 +99,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              {auth?.loggedIn && (
+              {auth?.isAuthenticated && (
                 <span className="text-gray-400 text-sm">Logged in</span>
               )}
               <button
-                onClick={auth?.logout}
+                onClick={() =>
+                  auth?.logout().then(() => console.log("Logged out"))
+                }
                 className="px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
               >
                 Logout
@@ -172,7 +174,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               </a>
             ))}
             <div className="pt-3 mt-3 border-t border-gray-700">
-              {auth?.loggedIn && (
+              {auth?.isAuthenticated && (
                 <p className="px-3 py-2 text-sm text-gray-400">Logged in</p>
               )}
               <button

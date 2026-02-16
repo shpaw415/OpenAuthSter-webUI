@@ -30,11 +30,12 @@
     // it's the name given to your Cloudflare Worker that is serving your OpenAuthster-issuer instance
     "CLOUDFLARE_WORKER_SERVICE_NAME": "<YOUR_WORKER_SERVICE_NAME>",
     /* (Optional)
-    Add your custom auth endpoint domain here e.g. auth.yourdomain.com.
+    Add your custom auth endpoint domain here e.g. https://auth.yourdomain.com.
     it will be used to create auth endpoints for your projects as a suffix.
     you must be the owner of the domain and have it added to your Cloudflare account.
     If not set, PUBLIC_ISSUER will be used as the auth endpoint domain.
     e.g. https://auth.yourdomain.com
+    Note: must start with https:// or http:// and must not end with a slash (/)
     */
     "CLOUDFLARE_AUTH_ENDPOINT_DOMAIN": "<YOUR_AUTH_ENDPOINT_DOMAIN>",
 

@@ -149,7 +149,7 @@ export async function PUT(
       data: parseDBProject(updated),
     };
   } catch (error) {
-    insertLog({
+    await insertLog({
       type: "error",
       clientID: env.PUBLIC_CLIENT_ID,
       message: error instanceof Error ? error.message : String(error),

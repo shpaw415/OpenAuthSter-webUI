@@ -40,7 +40,7 @@
     "CLOUDFLARE_AUTH_ENDPOINT_DOMAIN": "<YOUR_AUTH_ENDPOINT_DOMAIN>",
 
     // Do not changes the followings
-    "BUN_VERSION": "1.3.4",
+    "BUN_VERSION": "1.3.8",
     "SKIP_DEPENDENCY_INSTALL": "true",
     "PUBLIC_CLIENT_ID": "openauth_webui"
   },

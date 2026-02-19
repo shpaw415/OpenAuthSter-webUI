@@ -122,6 +122,9 @@ export async function POST(params: {
         crypto.randomUUID(),
         crypto.randomUUID(),
       ].join("-"),
+      themeId: undefined as any,
+      emailTemplateId: undefined as any,
+      projectData: undefined as any,
     };
 
     const [insertedProject] = await db

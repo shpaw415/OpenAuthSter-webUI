@@ -16,6 +16,12 @@ import { useEmailTemplates } from "../../hooks/useEmailTemplates";
 import { Snackbar } from "@material/react-snackbar";
 import { POST as createInviteLink } from "@api/invitelink";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
+import { useWebHook } from "@hooks/useWebHook";
+import type {
+  WebHookConfig,
+  WebHookEvents,
+  ExtendedWebHookConfig,
+} from "openauth-webui-shared-types/webhook/types";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
   { id: "social", label: "Social", icon: "👥" },
@@ -33,6 +39,40 @@ const STANDARD_PROJECT_DATA_FIELDS = [
   "primaryColor",
   "emailFrom",
 ] as const;
+
+const WEBHOOK_EVENT_OPTIONS: Array<{
+  value: WebHookEvents;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "registration_success",
+    label: "Registration success",
+    description: "Triggered when a user completes registration.",
+  },
+  {
+    value: "login_success",
+    label: "Login success",
+    description: "Triggered when a user successfully logs in.",
+  },
+  {
+    value: "password_reset",
+    label: "Password reset",
+    description: "Triggered when a user resets their password.",
+  },
+  {
+    value: "code_sent",
+    label: "Code sent",
+    description: "Triggered when a verification code is sent.",
+  },
+];
+
+const getWebHookEventLabel = (event: WebHookEvents) => {
+  return (
+    WEBHOOK_EVENT_OPTIONS.find((option) => option.value === event)?.label ||
+    event
+  );
+};
 
 export default function ProjectDetail() {
   const projectHook = useProject(
@@ -105,8 +145,85 @@ export default function ProjectDetail() {
     }
   };
 
+  const {
+    webhooks,
+    registerWebHook,
+    getWebHooks,
+    deleteWebHook,
+    updateWebHook,
+  } = useWebHook(projectHook.project?.clientID || "");
+  const [isWebHookModalOpen, setIsWebHookModalOpen] = useState(false);
+  const [activeWebHook, setActiveWebHook] =
+    useState<ExtendedWebHookConfig | null>(null);
+  const [isWebHookSaving, setIsWebHookSaving] = useState(false);
+
   const categoryProviders = getProvidersByCategory(activeCategory);
   const enabledCount = providers.filter((p) => p.enabled).length;
+
+  useEffect(() => {
+    if (!projectHook.project?.clientID) return;
+    getWebHooks().catch((err) => {
+      setNotification({
+        message: err instanceof Error ? err.message : "Failed to load webhooks",
+      });
+    });
+  }, [getWebHooks, projectHook.project?.clientID]);
+
+  const handleOpenCreateWebhook = () => {
+    setActiveWebHook(null);
+    setIsWebHookModalOpen(true);
+  };
+
+  const handleOpenEditWebhook = (webhook: ExtendedWebHookConfig) => {
+    setActiveWebHook(webhook);
+    setIsWebHookModalOpen(true);
+  };
+
+  const handleCloseWebhookModal = () => {
+    setIsWebHookModalOpen(false);
+    setActiveWebHook(null);
+  };
+
+  const handleSaveWebhook = async (config: WebHookConfig) => {
+    setIsWebHookSaving(true);
+    try {
+      const res = activeWebHook
+        ? await updateWebHook(activeWebHook.id, config)
+        : await registerWebHook(config.event, config);
+      if (!res?.success) {
+        throw new Error(res?.error || "Failed to save webhook");
+      }
+      setNotification({
+        message: activeWebHook ? "Webhook updated" : "Webhook created",
+      });
+      handleCloseWebhookModal();
+    } catch (err) {
+      setNotification({
+        message: err instanceof Error ? err.message : "Failed to save webhook",
+      });
+    } finally {
+      setIsWebHookSaving(false);
+    }
+  };
+
+  const handleDeleteWebhook = async (webhook: ExtendedWebHookConfig) => {
+    if (!confirm("Delete this webhook?")) return;
+    setIsWebHookSaving(true);
+    try {
+      const res = await deleteWebHook(webhook.id);
+      if (!res?.success) {
+        throw new Error(res?.error || "Failed to delete webhook");
+      }
+      setNotification({ message: "Webhook deleted" });
+    } catch (err) {
+      setNotification({
+        message:
+          err instanceof Error ? err.message : "Failed to delete webhook",
+      });
+    } finally {
+      setIsWebHookSaving(false);
+    }
+  };
 
   if (projectHook.isLoading) {
     return (
@@ -657,6 +774,79 @@ export default function ProjectDetail() {
         )}
       </div>
 
+      {/* Webhooks */}
+      <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              🔔 Webhooks
+            </h3>
+            <p className="text-gray-400 text-sm">
+              Send event payloads to your endpoints in real time.
+            </p>
+          </div>
+          <button
+            onClick={handleOpenCreateWebhook}
+            disabled={isWebHookSaving}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            + Create Webhook
+          </button>
+        </div>
+
+        {webhooks.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-700 p-6 text-center">
+            <p className="text-gray-400 text-sm">No webhooks configured yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {webhooks.map((webhook) => (
+              <div
+                key={webhook.id}
+                className="bg-gray-900/60 border border-gray-700 rounded-lg p-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2 py-1 text-xs rounded bg-blue-500/10 text-blue-400">
+                        {getWebHookEventLabel(webhook.event)}
+                      </span>
+                      <span className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-300">
+                        {webhook.method}
+                      </span>
+                    </div>
+                    <p className="text-gray-200 break-all mt-2">
+                      {webhook.url}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      {webhook.headers
+                        ? `${Object.keys(webhook.headers).length} headers`
+                        : "No headers"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpenEditWebhook(webhook)}
+                      disabled={isWebHookSaving}
+                      className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg disabled:opacity-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteWebhook(webhook)}
+                      disabled={isWebHookSaving}
+                      className="px-3 py-1.5 text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Category Tabs */}
       <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
         {CATEGORIES.map((cat) => (
@@ -788,6 +978,15 @@ export default function ProjectDetail() {
               })}
           </div>
         </div>
+      )}
+
+      {isWebHookModalOpen && (
+        <WebHookModal
+          data={activeWebHook || undefined}
+          isSaving={isWebHookSaving}
+          onClose={handleCloseWebhookModal}
+          onSave={handleSaveWebhook}
+        />
       )}
     </div>
   );
@@ -1103,7 +1302,7 @@ function InviteLinkModal({
         </div>
 
         {inviteLink && (
-          <div className="mt-6 p-4 bg-gradient-to-br from-green-900/20 to-green-800/10 rounded-lg border border-green-600/30 backdrop-blur-sm">
+          <div className="mt-6 p-4 bg-linear-to-br from-green-900/20 to-green-800/10 rounded-lg border border-green-600/30 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-green-400 text-sm font-semibold flex items-center gap-1.5">
                 <svg
@@ -1279,6 +1478,260 @@ function SelectWrapper({
           <span></span>
         </div>
       )}
+    </div>
+  );
+}
+
+function WebHookModal({
+  data,
+  onClose,
+  onSave,
+  isSaving,
+}: {
+  data?: ExtendedWebHookConfig;
+  onClose: () => void;
+  onSave: (config: WebHookConfig) => void | Promise<void>;
+  isSaving?: boolean;
+}) {
+  const [url, setUrl] = useState("");
+  const [method, setMethod] = useState<WebHookConfig["method"]>("POST");
+  const [event, setEvent] = useState<WebHookEvents>("registration_success");
+  const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>(
+    [],
+  );
+
+  useEffect(() => {
+    if (data) {
+      setUrl(data.url || "");
+      setMethod(data.method || "POST");
+      setEvent(data.event || "registration_success");
+      setHeaders(
+        data.headers
+          ? Object.entries(data.headers).map(([key, value]) => ({
+              key,
+              value,
+            }))
+          : [],
+      );
+    } else {
+      setUrl("");
+      setMethod("POST");
+      setEvent("registration_success");
+      setHeaders([]);
+    }
+  }, [data]);
+
+  const selectedEvent = WEBHOOK_EVENT_OPTIONS.find(
+    (option) => option.value === event,
+  );
+
+  const handleHeaderChange = (
+    index: number,
+    field: "key" | "value",
+    value: string,
+  ) => {
+    setHeaders((prev) =>
+      prev.map((header, idx) =>
+        idx === index ? { ...header, [field]: value } : header,
+      ),
+    );
+  };
+
+  const handleHeaderAdd = () => {
+    setHeaders((prev) => [...prev, { key: "", value: "" }]);
+  };
+
+  const handleHeaderRemove = (index: number) => {
+    setHeaders((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleSubmit = (eventAction: React.FormEvent) => {
+    eventAction.preventDefault();
+    const normalizedHeaders = headers
+      .map((header) => ({
+        key: header.key.trim(),
+        value: header.value.trim(),
+      }))
+      .filter((header) => header.key && header.value);
+    const headersRecord = normalizedHeaders.length
+      ? Object.fromEntries(
+          normalizedHeaders.map((header) => [header.key, header.value]),
+        )
+      : undefined;
+
+    onSave({
+      url: url.trim(),
+      method,
+      event,
+      headers: headersRecord,
+    });
+  };
+
+  const isValid = Boolean(url.trim());
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-lg shadow-2xl border border-gray-700 animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white">
+            {data ? "Edit Webhook" : "Create Webhook"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Event
+            </label>
+            <select
+              value={event}
+              onChange={(eventChange) =>
+                setEvent(eventChange.target.value as WebHookEvents)
+              }
+              disabled={isSaving}
+              className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {WEBHOOK_EVENT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {selectedEvent && (
+              <p className="text-gray-500 text-xs mt-1">
+                {selectedEvent.description}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Endpoint URL
+            </label>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com/webhooks"
+              disabled={isSaving}
+              className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              HTTP Method
+            </label>
+            <div className="flex gap-2">
+              {(["POST", "GET"] as Array<WebHookConfig["method"]>).map(
+                (methodOption) => (
+                  <button
+                    type="button"
+                    key={methodOption}
+                    onClick={() => setMethod(methodOption)}
+                    disabled={isSaving}
+                    className={`flex-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      method === methodOption
+                        ? "bg-blue-600 border-blue-500 text-white"
+                        : "bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-500"
+                    }`}
+                  >
+                    {methodOption}
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-gray-300 text-sm font-medium">
+                Headers (optional)
+              </label>
+              <button
+                type="button"
+                onClick={handleHeaderAdd}
+                disabled={isSaving}
+                className="text-xs text-blue-400 hover:text-blue-300"
+              >
+                + Add Header
+              </button>
+            </div>
+            {headers.length === 0 ? (
+              <p className="text-gray-500 text-xs">No headers added yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {headers.map((header, index) => (
+                  <div key={`${header.key}-${index}`} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={header.key}
+                      onChange={(e) =>
+                        handleHeaderChange(index, "key", e.target.value)
+                      }
+                      placeholder="Header"
+                      disabled={isSaving}
+                      className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={header.value}
+                      onChange={(e) =>
+                        handleHeaderChange(index, "value", e.target.value)
+                      }
+                      placeholder="Value"
+                      disabled={isSaving}
+                      className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleHeaderRemove(index)}
+                      disabled={isSaving}
+                      className="px-2 text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg"
+                      title="Remove header"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t border-gray-700">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="flex-1 px-4 py-2.5 bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving || !isValid}
+              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                "Save Webhook"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

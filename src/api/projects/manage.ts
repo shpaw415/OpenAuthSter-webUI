@@ -124,21 +124,15 @@ export async function PUT(
         error: "No valid fields to update",
       };
 
-    await db
-      .update(projectTable)
-      .set(updates)
-      .where(eq(projectTable.clientID, params.clientID));
+    const updatedProjects = (
+      await db
+        .update(projectTable)
+        .set(updates)
+        .where(eq(projectTable.clientID, params.clientID))
+        .returning()
+    ).at(0);
 
-    // Fetch updated project
-    const updatedProjects = await db
-      .select()
-      .from(projectTable)
-      .where(eq(projectTable.clientID, params.clientID))
-      .limit(1);
-
-    const updated = updatedProjects.at(0);
-
-    if (!updated)
+    if (!updatedProjects)
       return {
         success: false,
         error: "Project not found after update",
@@ -146,7 +140,7 @@ export async function PUT(
 
     return {
       success: true,
-      data: parseDBProject(updated),
+      data: parseDBProject(updatedProjects),
     };
   } catch (error) {
     await insertLog({
@@ -154,7 +148,7 @@ export async function PUT(
       clientID: env.PUBLIC_CLIENT_ID,
       message: error instanceof Error ? error.message : String(error),
       database: env.PROJECT_DB,
-      endpoint: "/api/projects",
+      endpoint: "/api/projects/manage",
     });
     return {
       success: false,

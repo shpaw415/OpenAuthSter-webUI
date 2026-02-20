@@ -1,4 +1,10 @@
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useAuth } from "@hooks/useAuth";
 import HomeSvg from "@material-icons/svg/svg/home/outline.svg";
 import WebAssetSvg from "@material-icons/svg/svg/web_asset/outline.svg";
@@ -6,10 +12,58 @@ import BrushSvg from "@material-icons/svg/svg/brush/outline.svg";
 import TextAd from "@material-icons/svg/svg/text_snippet/outline.svg";
 import Group from "@material-icons/svg/svg/group/outline.svg";
 import Activity from "@material-icons/svg/svg/report/outline.svg";
+import {
+  getCurrentIssuerVersion,
+  getCurrentWebUiVersion,
+} from "../version-check";
+
+const semver = require("semver");
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [VersionWarningMessage, setVersionWarningMessage] = useState<
+    string | null
+  >(null);
+
+  const clearWraningMessageTimeoutRef = useCallback(() => {
+    if (VersionWarningMessage) {
+      const timeout = setTimeout(() => {
+        setVersionWarningMessage(null);
+      }, 15000); // Clear warning after 15 seconds
+
+      return () => clearTimeout(timeout);
+    }
+  }, [VersionWarningMessage]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") return;
+    const func = async () => {
+      const currentwebUIVersion = getCurrentWebUiVersion();
+      const currentIssuerVersion = await getCurrentIssuerVersion(
+        process.env.PUBLIC_ISSUER,
+      );
+
+      // Extract major.minor version (e.g., "0.3" from "0.3.1")
+      const webUIParts = currentwebUIVersion.split(".");
+      const issuerParts = currentIssuerVersion.split(".");
+      const webUIMajorMinor = `${webUIParts[0]}.${webUIParts[1]}.0`;
+      const issuerMajorMinor = `${issuerParts[0]}.${issuerParts[1]}.0`;
+
+      // Check if major.minor versions match (patch version differences are compatible)
+      if (semver.gt(issuerMajorMinor, webUIMajorMinor)) {
+        setVersionWarningMessage(
+          `Warning: Your OpenAuthSter Web UI version (${currentwebUIVersion}) is not compatible with the current issuer version (${currentIssuerVersion}). Please update your Web UI to ensure compatibility and access to the latest features and security updates.`,
+        );
+      } else if (semver.gt(webUIMajorMinor, issuerMajorMinor)) {
+        setVersionWarningMessage(
+          `Warning: Your OpenAuthSter issuer version (${currentIssuerVersion}) is not compatible with the current Web UI version (${currentwebUIVersion}). Please update your issuer to ensure compatibility and access to the latest features and security updates.`,
+        );
+      }
+    };
+    func().then(() => clearWraningMessageTimeoutRef());
+  }, []);
 
   const NavLinks = useMemo(
     () => [
@@ -73,6 +127,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-gray-900">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700">
+        {VersionWarningMessage && (
+          <div className="fixed w-full top-0 left-0 z-50 flex items-center justify-center bg-yellow-600 text-yellow-100 ">
+            <div className="px-4 py-2 text-sm text-center">
+              {VersionWarningMessage}
+            </div>
+            <span
+              className="absolute top-0 right-0 p-2 cursor-pointer"
+              onClick={() => setVersionWarningMessage(null)}
+            >
+              X
+            </span>
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo */}
@@ -253,4 +320,147 @@ function NavLinkDesktop({
       {icon} {name}
     </a>
   );
+}
+
+function NewVersionModale({
+  webUIVersion,
+  issuerVersion,
+  latestUIVersion,
+  latestIssuerVersion,
+  onClose,
+}: {
+  webUIVersion: string | null;
+  latestUIVersion: string | null;
+  issuerVersion: string | null;
+  latestIssuerVersion: string | null;
+  onClose?: () => void;
+}) {
+  const displayWebUiVersion = webUIVersion ?? "unknown";
+  const displayIssuerVersion = issuerVersion ?? "unknown";
+  const displayLatestUIVersion = latestUIVersion ?? "unknown";
+  const displayLatestIssuerVersion = latestIssuerVersion ?? "unknown";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-2xl">
+        <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-5">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute right-4 top-4 rounded-full border border-white/20 bg-white/10 p-1 text-white/80 transition hover:bg-white/20 hover:text-white"
+            >
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white">
+              <span className="text-lg">⬆</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">
+                New Version Available
+              </h2>
+              <p className="text-sm text-blue-100">
+                Update to keep your issuer and Web UI in sync.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-6">
+          <div className="mb-5 overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700 bg-gray-800">
+                  <th className="px-4 py-3 text-left font-semibold text-gray-300"></th>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-300">
+                    Current Version
+                  </th>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-300">
+                    New Version
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-700 bg-gray-800">
+                  <td className="px-4 py-3 font-medium text-gray-300">
+                    Web UI
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="inline-block rounded-full bg-gray-700 px-3 py-1 font-medium text-gray-200">
+                      {displayWebUiVersion}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="inline-block rounded-full bg-green-900 px-3 py-1 font-medium text-green-300">
+                      {displayLatestUIVersion}
+                    </span>
+                  </td>
+                </tr>
+                <tr className="bg-gray-800">
+                  <td className="px-4 py-3 font-medium text-gray-300">
+                    Issuer
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="inline-block rounded-full bg-gray-700 px-3 py-1 font-medium text-gray-200">
+                      {displayIssuerVersion}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className="inline-block rounded-full bg-green-900 px-3 py-1 font-medium text-green-300">
+                      {displayLatestIssuerVersion}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="text-sm text-gray-400">
+            A new version of OpenAuthSter is available. Refresh to load the
+            latest assets, or review the release notes before updating.
+          </p>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+            >
+              Refresh Now
+            </button>
+            <a
+              href="https://github.com/shpaw415/OpenAuthSter"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-sm font-semibold text-gray-200 transition-colors hover:bg-gray-600"
+            >
+              View on GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function isUserAwareOfTheNewVersion(version: string) {
+  return localStorage.getItem(`newVersionAware-${version}`) === "true";
+}
+
+function setUserAwareOfTheNewVersion(version: string) {
+  localStorage.setItem(`newVersionAware-${version}`, "true");
 }

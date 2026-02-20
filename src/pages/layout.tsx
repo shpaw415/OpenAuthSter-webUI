@@ -4,6 +4,8 @@ import {
   useMemo,
   useState,
   type ReactNode,
+  type MouseEvent,
+  useRef,
 } from "react";
 import { useAuth } from "@hooks/useAuth";
 import HomeSvg from "@material-icons/svg/svg/home/outline.svg";
@@ -70,38 +72,38 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     () => [
       {
         href: "/",
-        icon: <HomeSvg className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: HomeSvg,
         name: "Dashboard",
       },
       {
         href: "/templates",
-        icon: <WebAssetSvg className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: WebAssetSvg,
         name: "Templates",
       },
       {
         href: "/theme",
-        icon: <BrushSvg className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: BrushSvg,
         name: "UI theme",
       },
       {
         name: "Copy Text",
         href: "/copy",
-        icon: <TextAd className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: TextAd,
       },
       {
         name: "Users",
         href: "/users",
-        icon: <Group className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: Group,
       },
       {
         name: "Logs",
         href: "/activity",
-        icon: <Activity className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: Activity,
       },
       {
         name: "Configurations",
         href: "/configurations",
-        icon: <CogWheel className="inline-block w-5 h-5 mr-1 fill-white" />,
+        icon: CogWheel,
       },
     ],
     [],
@@ -164,7 +166,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <NavLinkDesktop
                   key={link.href}
                   href={link.href}
-                  icon={link.icon}
+                  Icon={link.icon}
                   name={link.name}
                 />
               ))}
@@ -242,7 +244,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 className="flex items-center px-3 py-3 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {link.icon}
+                <link.icon className="inline-block w-5 h-5 mr-1 fill-white" />
                 <span className="ml-2">{link.name}</span>
               </a>
             ))}
@@ -314,16 +316,40 @@ function RedirectToLogin() {
 
 function NavLinkDesktop({
   href,
-  icon,
+  Icon,
   name,
 }: {
   href: string;
-  icon: ReactNode;
+  Icon: React.FC<React.SVGProps<SVGElement>>;
   name: string;
 }) {
+  const [isRippling, setIsRippling] = useState(false);
+  const aRef = useRef<HTMLAnchorElement>(null);
+
+  const handleClick = () => {
+    setIsRippling(true);
+    setTimeout(() => setIsRippling(false), 600);
+  };
+
   return (
-    <a href={href} className="text-gray-300 hover:text-white transition-colors">
-      {icon} {name}
+    <a
+      ref={aRef}
+      href={href}
+      title={name}
+      onClick={handleClick}
+      className="group relative h-10 w-10 flex items-center justify-center rounded-lg text-gray-300 transition-all duration-500 ease-in-out hover:scale-110"
+    >
+      <Icon className="w-5 h-5 fill-slate-200 group-hover:fill-white" />
+      <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out border border-gray-700">
+        {name}
+      </span>
+      {isRippling && <Ripple />}
     </a>
+  );
+}
+
+function Ripple() {
+  return (
+    <span className="absolute inset-0 translate-[50%] rounded-full bg-gray-700 animate-ping max-w-5 max-h-5"></span>
   );
 }

@@ -4,6 +4,7 @@ import {
   getCurrentWebUiVersion,
   getLatestVersion,
 } from "../../version-check";
+import { Snackbar } from "@material/react-snackbar";
 
 export default function ConfigurationsPage() {
   const [newVersionAvailable, setNewVersionAvailable] = useState(false);
@@ -18,6 +19,9 @@ export default function ConfigurationsPage() {
     latestIssuer: null,
     currentIssuer: null,
   });
+  const [notification, setNotification] = useState<{ message: string } | null>(
+    null,
+  );
 
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +43,29 @@ export default function ConfigurationsPage() {
     checkVersions();
   }, []);
 
+  const handleCheckVersionsClick = useCallback(() => {
+    if (
+      openauthsterVersions.currentWebUI !== openauthsterVersions.latestWebUIV ||
+      openauthsterVersions.currentIssuer !== openauthsterVersions.latestIssuer
+    ) {
+      setNewVersionAvailable(true);
+    } else {
+      setNotification({
+        message:
+          "You are already using the latest versions of both Web UI and Issuer.",
+      });
+    }
+  }, [openauthsterVersions]);
+
   return (
     <div className="min-h-screen bg-gray-900">
+      {notification && (
+        <Snackbar
+          message={notification?.message}
+          actionText="OK"
+          onClose={() => setNotification(null)}
+        />
+      )}
       {newVersionAvailable && (
         <NewVersionModale
           onClose={() => setNewVersionAvailable(false)}
@@ -91,7 +116,7 @@ export default function ConfigurationsPage() {
                 </p>
               </div>
               <button
-                onClick={() => setNewVersionAvailable(true)}
+                onClick={handleCheckVersionsClick}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
               >
                 Check Versions

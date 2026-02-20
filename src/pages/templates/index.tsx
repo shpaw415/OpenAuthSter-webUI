@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  useEmailTemplates,
-  type EmailTemplate,
-} from "../../hooks/useEmailTemplates";
+import { useEmailTemplates } from "../../hooks/useEmailTemplates";
 
 export default function EmailTemplatesList() {
   const { templates, isLoading, error, deleteTemplate } = useEmailTemplates();

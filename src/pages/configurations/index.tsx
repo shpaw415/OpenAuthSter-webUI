@@ -177,7 +177,7 @@ function NewVersionModale({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-2xl">
-        <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-5">
+        <div className="relative bg-linear-to-r from-blue-600 to-sky-500 px-6 py-5">
           {onClose && (
             <button
               type="button"

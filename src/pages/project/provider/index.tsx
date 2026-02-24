@@ -52,6 +52,7 @@ const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
     x: () => import("@docs/providers/x.mdx"),
     yahoo: () => import("@docs/providers/yahoo.mdx"),
     jumpcloud: () => import("@docs/providers/jumpcloud.mdx"),
+    qr: () => import("@docs/providers/QRCode.mdx"),
     default: () => import("@docs/providers/default.mdx"),
   };
 
@@ -541,6 +542,8 @@ function FormFields({ type }: { type: ProviderType }) {
       return <AppleOAuthFields />;
     case "appleoidc":
       return <AppleOIDCFields />;
+    case "qr":
+      return <QrCodeFields />;
     default:
       return <OAuth2Fields query pkce scopes />;
   }
@@ -640,6 +643,18 @@ function SelectField(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 }
 
 // Provider setups /////////////////////////////////////////
+
+function QrCodeFields() {
+  // const data = useProviderFormState<CodeProviderConfig>();
+  return (
+    <div className="text-white">
+      <p>QR code authentication is under development.</p>
+      <p>
+        There are no specific configuration options for QR code authentication.
+      </p>
+    </div>
+  );
+}
 
 function OAuth2Fields({
   query,

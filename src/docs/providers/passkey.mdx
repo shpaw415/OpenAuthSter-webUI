@@ -9,17 +9,14 @@ Passkeys (built on the WebAuthn standard) allow users to log in using cryptograp
 ## How It Works
 
 1.  **Registration**: The user registers a new passkey on their device. The device generates a public-private key pair. The private key remains securely on the device, while the public key is sent to the server.
-2.  **Authentication**: When logging in, the server issues a challenge. The user's device signs this challenge with the private key after user verification (e.g., FaceID, TouchID). The server verifies the signature using the stored public key.
+2.  **Authorization**: When logging in, the server issues a challenge. The user's device signs this challenge with the private key
+    after user verification (e.g., FaceID, TouchID). The server verifies the signature using the stored public key.
+    The server returns a token to the client ( valid for 5 min ).
+3.  **Authentication**: The client will exchange the token with a code that will be used to obtain an access token.
 
 ## Configuration
 
-To enable Passkey authentication, you need to configure the `WebAuthnProvider` in your OpenAuth server and ensure your database has the required tables.
-
-### Database Schema
-
-The Passkey provider requires specific tables to store user credentials and authentication challenges. Ensure your database schema includes the `webauthn_credentials` and `webauthn_challenges` tables.
-
-Check the `webauthn` related tables in your schema definition (e.g., using Drizzle ORM).
+To enable Passkey authentication, you need to configure the `WebAuthnProvider` in your OpenAuth server.
 
 ## Client-Side Integration
 
@@ -40,7 +37,7 @@ const client = createOpenAuthsterClient({
 
 // ... inside your component or logic
 async function registerPasskey() {
-  const result = await client.passkey.registerPasskey();
+  const result = await client.passkey.register();
 
   if (result.success) {
     console.log("Passkey registered successfully!");
@@ -52,7 +49,18 @@ async function registerPasskey() {
 
 ### Logging In
 
-When passkey is configured as a provider, the default login UI will include a "Sign in with Passkey" option, managed automatically by the `PassKeyUI` component.
+When passkey is configured as a provider, users can log in using their passkey:
+
+```typescript
+async function loginWithPasskey() {
+  client.passkey.login();
+}
+client.init(); // This will intercept the login flow and trigger the passkey login if configured
+```
+
+```html
+<button onClick="{loginWithPasskey}">Login with Passkey</button>
+```
 
 ## Security Considerations
 
@@ -64,4 +72,3 @@ When passkey is configured as a provider, the default login UI will include a "S
 
 - **"NotAllowedError"**: This usually means the user cancelled the biometric prompt or the operation timed out.
 - **"NotSupportedError"**: The browser or device does not support WebAuthn.
-- **Domain Mismatch**: Ensure `rpID` matches the domain of your application. Subdomains are allowed, but the `rpID` must be a suffix of the current origin.

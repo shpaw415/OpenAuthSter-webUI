@@ -11,4 +11,9 @@ export const createClient = (token?: string) =>
     copyID: null,
     subject,
     token,
+    authFlowCallbacks: {
+      onLoginRequired(client) {
+        client.login();
+      },
+    },
   });

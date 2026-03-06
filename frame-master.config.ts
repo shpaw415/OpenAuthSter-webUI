@@ -8,8 +8,9 @@ import mdxLoaderPlugin from "frame-master-plugin-mdx-to-js-loader";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-
-const proxyPaths = ["/auth"];
+import EnvInHtml from "frame-master-plugin-env-in-html";
+import rehypePrettyCode from "rehype-pretty-code";
+import ImageOptimizerPlugin from "frame-master-plugin-image-optimizer";
 
 export default {
   HTTPServer: {
@@ -44,78 +45,34 @@ export default {
         },
       },
     },
-    {
-      name: "inject-env",
-      version: "1.0.0",
-      build: {
-        buildConfig: {
-          plugins: [
-            {
-              name: "inject-env-plugin",
-              setup(build) {
-                build.finally("html", async (args) => {
-                  const envVars = Object.assign(
-                    {},
-                    ...Object.entries(process.env)
-                      .filter(([key]) => key.startsWith("PUBLIC_"))
-                      .map(([key, value]) => ({ [key]: value })),
-                  );
-                  const scriptEl = `<script id="_env_script_">window.process = { env: ${JSON.stringify(
-                    envVars,
-                  )} };</script>`;
-                  const appendedData = new HTMLRewriter()
-                    .on("head", {
-                      element(element) {
-                        element.prepend(scriptEl, { html: true });
-                      },
-                    })
-                    .transform(args.contents as string);
-                  return {
-                    contents: appendedData,
-                  };
-                });
-              },
-            },
-          ],
-        },
-      },
-    },
+    EnvInHtml({
+      prefix: "PUBLIC_",
+      entries: ["NODE_ENV"],
+    }),
     CloudflareAction({
       actionBasePath: "src/api",
       outDir: ".frame-master/build",
     }),
-    {
-      name: "dev-proxy-to-auth",
-      version: "1.0.0",
-      router: {
-        async request(master) {
-          if (!proxyPaths.includes(master.URL.pathname)) return;
-          const url = new URL(master.request.url);
-          url.port = "8787";
-
-          const res = await fetch(url.toString(), master.request);
-
-          console.log("Proxying auth request:", url.toString(), {
-            status: res.status,
-          });
-
-          master.setResponse(Bun.gzipSync(await res.arrayBuffer()), {
-            status: res.status,
-            headers: {
-              ...Object.fromEntries(res.headers),
-              "content-encoding": "gzip",
-            },
-          });
-        },
-      },
-    },
     svgToJsxPlugin(),
     mdxLoaderPlugin({
       mdxOptions: {
         remarkPlugins: [remarkGfm],
-        rehypePlugins: [rehypeSlug, rehypeAutolinkHeadings],
+        rehypePlugins: [
+          rehypeSlug,
+          rehypeAutolinkHeadings,
+          [rehypePrettyCode, { theme: "one-dark-pro" }],
+        ],
         recmaPlugins: [],
       },
+    }),
+    ImageOptimizerPlugin({
+      input: "static",
+      output: "optimized",
+      formats: ["webp"],
+      quality: 75,
+      sizes: [320],
+      skipExisting: true,
+      enableImports: true,
     }),
   ],
 } satisfies FrameMasterConfig;

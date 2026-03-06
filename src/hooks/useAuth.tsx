@@ -28,7 +28,7 @@ export function useAuth() {
     });
   }, []);
 
-  return ctx;
+  return ctx || {};
 }
 
 export function AuthProvider({ children }: { children: JSX.Element }) {

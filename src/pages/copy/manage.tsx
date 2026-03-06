@@ -47,8 +47,13 @@ const PASSWORD_COPY_FIELDS: Record<string, string> = {
 type ProviderType = "code" | "password";
 
 export default function CopyManagePage() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const editName = urlParams.get("edit");
+  const [urlParams, setUrlParams] = useState<URLSearchParams | null>(null);
+
+  useEffect(() => {
+    setUrlParams(new URLSearchParams(window.location.search));
+  }, []);
+
+  const editName = urlParams?.get("edit");
   const isEditing = !!editName;
 
   const {

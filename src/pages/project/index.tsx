@@ -17,6 +17,7 @@ import { Snackbar } from "@material/react-snackbar";
 import { POST as createInviteLink } from "@api/invitelink";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
 import { useWebHook } from "@hooks/useWebHook";
+import { WebHookEventsDetails } from "openauth-webui-shared-types/webhook/types";
 import type {
   WebHookConfig,
   WebHookEvents,
@@ -40,36 +41,11 @@ const STANDARD_PROJECT_DATA_FIELDS = [
   "emailFrom",
 ] as const;
 
-const WEBHOOK_EVENT_OPTIONS: Array<{
-  value: WebHookEvents;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "registration_success",
-    label: "Registration success",
-    description: "Triggered when a user completes registration.",
-  },
-  {
-    value: "login_success",
-    label: "Login success",
-    description: "Triggered when a user successfully logs in.",
-  },
-  {
-    value: "password_reset",
-    label: "Password reset",
-    description: "Triggered when a user resets their password.",
-  },
-  {
-    value: "code_sent",
-    label: "Code sent",
-    description: "Triggered when a verification code is sent.",
-  },
-];
+const WEBHOOK_EVENT_OPTIONS = WebHookEventsDetails;
 
 const getWebHookEventLabel = (event: WebHookEvents) => {
   return (
-    WEBHOOK_EVENT_OPTIONS.find((option) => option.value === event)?.label ||
+    WEBHOOK_EVENT_OPTIONS.find((option) => option.event === event)?.label ||
     event
   );
 };
@@ -1522,7 +1498,7 @@ function WebHookModal({
   }, [data]);
 
   const selectedEvent = WEBHOOK_EVENT_OPTIONS.find(
-    (option) => option.value === event,
+    (option) => option.event === event,
   );
 
   const handleHeaderChange = (
@@ -1599,7 +1575,7 @@ function WebHookModal({
               className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {WEBHOOK_EVENT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
+                <option key={option.event} value={option.event}>
                   {option.label}
                 </option>
               ))}

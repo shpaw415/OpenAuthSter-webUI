@@ -23,6 +23,8 @@ import type {
   MicrosoftProviderConfig,
   AppleOAuthProviderConfig,
   AppleOIDCProviderConfig,
+  QRProviderConfig,
+  WebAuthnProviderConfig,
 } from "openauth-webui-shared-types";
 import { getProviderMeta } from "openauth-webui-shared-types";
 import { navigate } from "../../../utils";
@@ -53,6 +55,7 @@ const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
     yahoo: () => import("@docs/providers/yahoo.mdx"),
     jumpcloud: () => import("@docs/providers/jumpcloud.mdx"),
     qr: () => import("@docs/providers/QRCode.mdx"),
+    passkey: () => import("@docs/providers/passkey.mdx"),
     default: () => import("@docs/providers/default.mdx"),
   };
 
@@ -503,10 +506,12 @@ function InputFieldForm({
   required,
   label,
   children,
+  help,
 }: {
   children: React.ReactNode;
   required?: boolean;
   label: string;
+  help?: string;
 }) {
   return (
     <div>
@@ -516,6 +521,7 @@ function InputFieldForm({
       <RequiredContext.Provider value={Boolean(required)}>
         {children}
       </RequiredContext.Provider>
+      {help && <p className="text-gray-500 text-sm mt-1">{help}</p>}
     </div>
   );
 }
@@ -544,6 +550,8 @@ function FormFields({ type }: { type: ProviderType }) {
       return <AppleOIDCFields />;
     case "qr":
       return <QrCodeFields />;
+    case "passkey":
+      return <PasskeyFields />;
     default:
       return <OAuth2Fields query pkce scopes />;
   }
@@ -645,14 +653,20 @@ function SelectField(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 // Provider setups /////////////////////////////////////////
 
 function QrCodeFields() {
-  // const data = useProviderFormState<CodeProviderConfig>();
+  const data = useProviderFormState<QRProviderConfig>();
   return (
-    <div className="text-white">
-      <p>QR code authentication is under development.</p>
-      <p>
-        There are no specific configuration options for QR code authentication.
-      </p>
-    </div>
+    <>
+      <InputFieldForm
+        label="Require MFA"
+        help="If the user has MFA set up, the MFA token will be required"
+        required
+      >
+        <ToggleBase
+          defaultChecked={data.data?.requireMFA || false}
+          name="boolean::requireMFA"
+        />
+      </InputFieldForm>
+    </>
   );
 }
 
@@ -1059,6 +1073,18 @@ function AppleOIDCFields() {
       </InputFieldForm>
       <ScopesField value={data.data?.scopes} placeholder="email, name" />
       <QueryParametersField value={data.data?.query} />
+    </>
+  );
+}
+
+function PasskeyFields() {
+  const data = useProviderFormState<WebAuthnProviderConfig>();
+
+  return (
+    <>
+      <p className="text-sm text-white mb-4">
+        There is no specific configuration required for Passkeys.
+      </p>
     </>
   );
 }

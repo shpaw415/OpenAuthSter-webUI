@@ -1173,6 +1173,9 @@
   .w-52 {
     width: calc(var(--spacing) * 52);
   }
+  .w-auto {
+    width: auto;
+  }
   .w-full {
     width: 100%;
   }
@@ -3434,6 +3437,13 @@
 [dir="rtl"] .mdc-snackbar__action + .mdc-snackbar__dismiss, .mdc-snackbar__action + .mdc-snackbar__dismiss[dir="rtl"] {
   margin-left: 0;
   margin-right: 8px;
+}
+@layer base {
+  pre, code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
 }
 @property --tw-translate-x {
   syntax: "*";

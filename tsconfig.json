@@ -18,13 +18,17 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
-    "types": ["./worker-configuration.d.ts"],
+    "types": [
+      "./worker-configuration.d.ts",
+      "frame-master-plugin-image-optimizer/types"
+    ],
     "paths": {
       "@api/*": ["./src/api/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@docs/*": ["./src/docs/*"],
       "@components/*": ["./src/components/*"],
-      "@auth": ["./src/open-auth.ts"]
+      "@auth": ["./src/open-auth.ts"],
+      "@static/*": ["./static/*"]
     }
   },
   "include": [

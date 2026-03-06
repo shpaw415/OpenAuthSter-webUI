@@ -19,6 +19,7 @@ import {
   getCurrentIssuerVersion,
   getCurrentWebUiVersion,
 } from "../version-check";
+import OpenAuthsterLogo from "@static/logo.webp";
 
 const semver = require("semver");
 
@@ -109,8 +110,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     [],
   );
 
+  const [redirectToLogin, setRedirectToLogin] = useState(false);
+
+  useEffect(() => {
+    if (!auth?.isAuthenticated && auth?.isLoaded) {
+      setTimeout(() => {
+        auth?.login();
+        console.log(auth);
+      }, 1000); // Slight delay to ensure smooth redirect
+    }
+  }, [auth?.isAuthenticated, auth?.isLoaded]);
+
   // Show loading while checking auth
-  if (!auth?.isLoaded) {
+  if (!auth?.isLoaded && typeof window !== "undefined") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
@@ -122,12 +134,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   // Show login form if not authenticated
-  if (!auth?.isAuthenticated && auth?.isLoaded) {
-    setTimeout(() => {
-      auth?.login();
-      console.log(auth);
-    }, 1000); // Slight delay to ensure smooth redirect
 
+  if (redirectToLogin) {
     return <RedirectToLogin />;
   }
 
@@ -153,9 +161,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             {/* Logo */}
             <div className="flex items-center">
               <a href="/" className="flex items-center space-x-2 sm:space-x-3">
-                <span className="text-xl sm:text-2xl">🔐</span>
+                <span className="text-xl sm:text-2xl">
+                  <img
+                    src={OpenAuthsterLogo.src(320)}
+                    alt="OpenAuthSter Logo"
+                    className="h-8 w-auto"
+                  />
+                </span>
                 <span className="text-lg sm:text-xl font-bold text-white">
-                  OpenAuth Admin
+                  OpenAuthster Admin
                 </span>
               </a>
             </div>

@@ -7,9 +7,7 @@
     {
       "binding": "PROJECT_DB",
       "database_name": "<YOUR_D1_DATABASE_NAME>",
-      "database_id": "<YOUR_D1_DATABASE_ID>",
-      "migrations_dir": "drizzle/migrations",
-      "remote": true
+      "database_id": "<YOUR_D1_DATABASE_ID>"
     }
   ],
   "vars": {

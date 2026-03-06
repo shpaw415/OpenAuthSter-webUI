@@ -3,11 +3,13 @@ import type Cloudflare from "cloudflare";
 import { createClient, createCustomDomainForProject } from "../src/cloudflare";
 
 const env: Env = {
+  CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN!,
   CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID!,
   CLOUDFLARE_AUTH_DOMAIN_ZONE_ID: process.env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID!,
   CLOUDFLARE_WORKER_SERVICE_NAME: process.env.CLOUDFLARE_WORKER_SERVICE_NAME!,
   PUBLIC_ISSUER: process.env.PUBLIC_ISSUER!,
-} as Env;
+  CLOUDFLARE_AUTH_ENDPOINT_DOMAIN: "https://webcreas.com",
+} as unknown as Env;
 
 if (
   !env.CLOUDFLARE_ACCOUNT_ID ||

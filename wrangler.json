@@ -8,7 +8,6 @@
       "binding": "PROJECT_DB",
       "database_name": "openauthster-db",
       "database_id": "e9452fa0-a2eb-40e0-a7bb-5f24d03850de",
-      "migrations_dir": "drizzle/migrations",
       "remote": true
     }
   ],

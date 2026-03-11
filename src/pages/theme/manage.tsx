@@ -739,7 +739,7 @@ export default function UIThemeManage() {
         <div className="lg:col-span-1">
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sticky top-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-300">Preview</h3>
+              <h3 className="text-base font-medium text-gray-300">Preview</h3>
               <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-1">
                 <button
                   onClick={() => setPreviewMode("light")}

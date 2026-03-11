@@ -129,7 +129,7 @@ export default function CopyListPage() {
       {templates.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg border-2 border-dashed border-gray-600">
           <Icon icon="lucide:file-text" className="w-12 h-12 mx-auto mb-4 text-gray-500" />
-          <h3 className="text-lg font-medium text-white mb-2">
+          <h3 className="text-xl font-medium text-white mb-2">
             No copy templates yet
           </h3>
           <p className="text-gray-400 mb-4">
@@ -181,7 +181,7 @@ function CopyTemplateCard({
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="text-white font-medium truncate">{template.name}</h3>
+            <h3 className="text-lg text-white font-medium truncate">{template.name}</h3>
             <div className="mt-2">
               {getProviderBadge(template.providerType)}
             </div>

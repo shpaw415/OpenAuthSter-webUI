@@ -99,7 +99,7 @@ export default function EmailTemplatesList() {
       {templates.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg border border-gray-700">
           <Icon icon="lucide:mail" className="w-12 h-12 mx-auto mb-4 text-gray-500" />
-          <h3 className="text-lg font-medium text-white mb-2">
+          <h3 className="text-xl font-medium text-white mb-2">
             No email templates yet
           </h3>
           <p className="text-gray-400 mb-4">

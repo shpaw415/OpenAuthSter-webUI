@@ -214,7 +214,7 @@ export default function ProjectDetail() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-10">
       {/* Notification */}
       {notification && (
         <Snackbar
@@ -225,13 +225,14 @@ export default function ProjectDetail() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <a
             href="/"
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
           >
-            ← Back
+            <Icon icon="lucide:arrow-left" className="w-5 h-5" />
+            <span>Back</span>
           </a>
           <div>
             <div className="flex items-center space-x-3">
@@ -286,8 +287,13 @@ export default function ProjectDetail() {
         setNotification={setNotification}
       />
 
-      {/* Theme & Email Template Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      {/* General Settings */}
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+          <Icon icon="lucide:settings" className="w-5 h-5 text-blue-400" />
+          General Settings
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Theme Selection */}
         <SelectWrapper
           icon={<Icon icon="lucide:palette" className="w-5 h-5 text-gray-300" />}
@@ -450,21 +456,23 @@ export default function ProjectDetail() {
           setNotification={setNotification}
           project={projectHook.project!}
         />
+        </div>
       </div>
 
       {/* Project Data Section */}
-      <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <button
           onClick={() => setIsProjectDataExpanded(!isProjectDataExpanded)}
           className="w-full flex items-center justify-between text-left"
         >
           <div>
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              &#127760; Global variables
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Icon icon="lucide:globe" className="w-5 h-5 text-blue-400" />
+              Global Variables
               <span className="text-xs font-normal text-gray-400">
                 (Data available in email templates)
               </span>
-            </h3>
+            </h2>
             <p className="text-gray-400 text-sm">
               Configure variables like app name, company info, and custom fields
               for email templates
@@ -480,9 +488,9 @@ export default function ProjectDetail() {
         </button>
 
         {isProjectDataExpanded && (
-          <div className="mt-4 space-y-4">
+          <div className="mt-6 space-y-6">
             {/* Standard Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="block text-gray-300 text-sm mb-1">
                   App Name
@@ -636,7 +644,7 @@ export default function ProjectDetail() {
             </div>
 
             {/* Custom Fields */}
-            <div className="border-t border-gray-700 pt-4">
+            <div className="border-t border-gray-700 pt-6">
               <h4 className="text-white font-medium mb-2">Custom Fields</h4>
               <div className="space-y-2">
                 {Object.entries(projectData)
@@ -753,13 +761,13 @@ export default function ProjectDetail() {
       </div>
 
       {/* Webhooks */}
-      <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
-        <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Icon icon="lucide:bell" className="w-5 h-5" />
+            <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+              <Icon icon="lucide:webhook" className="w-5 h-5 text-blue-400" />
               Webhooks
-            </h3>
+            </h2>
             <p className="text-gray-400 text-sm">
               Send event payloads to your endpoints in real time.
             </p>
@@ -778,7 +786,7 @@ export default function ProjectDetail() {
             <p className="text-gray-400 text-sm">No webhooks configured yet.</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {webhooks.map((webhook) => (
               <div
                 key={webhook.id}
@@ -826,8 +834,40 @@ export default function ProjectDetail() {
         )}
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
+      {/* Authentication Providers */}
+      <div>
+        <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+          <Icon icon="lucide:shield-check" className="w-5 h-5 text-blue-400" />
+          Authentication Providers
+        </h2>
+
+        {/* Enabled Providers Summary */}
+        {enabledCount > 0 && (
+          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Icon icon="lucide:check-circle" className="w-5 h-5 text-green-400" />
+              Enabled Providers
+            </h3>
+            <div className="flex flex-wrap gap-4">
+              {providers
+                .filter((p) => p.enabled)
+                .map((p) => {
+                  const meta = getProviderMeta(p.type);
+                  return (
+                    <div
+                      key={p.type}
+                      className="flex items-center space-x-2 px-3 py-2 bg-gray-700 rounded-lg"
+                    >
+                      <ProviderIcon type={p.type} className="w-4 h-4 text-gray-300" />
+                      <span className="text-white">{meta?.name}</span>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        <div className="flex space-x-2 mb-8 overflow-x-auto pb-2">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
@@ -842,10 +882,10 @@ export default function ProjectDetail() {
             {cat.label}
           </button>
         ))}
-      </div>
+        </div>
 
-      {/* Provider Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Provider Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {categoryProviders.map((meta) => {
           const config = getProviderConfig(meta.type);
           const isConfigured = !!config;
@@ -854,7 +894,7 @@ export default function ProjectDetail() {
           return (
             <div
               key={meta.type}
-              className={`bg-gray-800 rounded-lg p-5 border transition-colors ${
+              className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
                 isEnabled
                   ? "border-green-500/50"
                   : isConfigured
@@ -866,7 +906,7 @@ export default function ProjectDetail() {
                 <div className="flex items-center space-x-3">
                   <ProviderIcon type={meta.type} className="w-8 h-8 text-gray-300" />
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-xl font-semibold text-white">
                       {meta.name}
                     </h3>
                     <p className="text-gray-500 text-sm">{meta.description}</p>
@@ -932,32 +972,8 @@ export default function ProjectDetail() {
             </div>
           );
         })}
-      </div>
-
-      {/* Enabled Providers Summary */}
-      {enabledCount > 0 && (
-        <div className="mt-8 bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Enabled Providers
-          </h3>
-          <div className="flex flex-wrap gap-3">
-            {providers
-              .filter((p) => p.enabled)
-              .map((p) => {
-                const meta = getProviderMeta(p.type);
-                return (
-                  <div
-                    key={p.type}
-                    className="flex items-center space-x-2 px-3 py-2 bg-gray-700 rounded-lg"
-                  >
-                    <ProviderIcon type={p.type} className="w-4 h-4 text-gray-300" />
-                    <span className="text-white">{meta?.name}</span>
-                  </div>
-                );
-              })}
-          </div>
         </div>
-      )}
+      </div>
 
       {isWebHookModalOpen && (
         <WebHookModal
@@ -981,15 +997,15 @@ function ProjectClientInfo({
   const [showSecret, setShowSecret] = useState(false);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
-      <div className="flex items-center space-x-2 mb-4">
-        <Icon icon="lucide:key" className="w-5 h-5 text-gray-300" />
-        <h3 className="text-lg font-semibold text-white">
-          Project Client Info
-        </h3>
+    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="flex items-center space-x-2 mb-5">
+        <Icon icon="lucide:key" className="w-5 h-5 text-blue-400" />
+        <h2 className="text-xl font-semibold text-white">
+          Project Credentials
+        </h2>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="space-y-2">
           <label className="text-gray-400 text-sm">Client-ID</label>
           <div className="flex items-center gap-2">
             <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
@@ -1007,7 +1023,7 @@ function ProjectClientInfo({
             </button>
           </div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="text-gray-400 text-sm">Issuer URL</label>
           <div className="flex items-center gap-2">
             <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
@@ -1026,38 +1042,38 @@ function ProjectClientInfo({
           </div>
         </div>
         {/* Secret */}
-        <div className="space-y-1 md:col-span-2">
+        <div className="space-y-2 md:col-span-2">
           <div>
-            <label className="text-gray-400 text-sm">Client Secret</label>
+            <div className="flex items-center gap-2 mb-1">
+              <label className="text-gray-400 text-sm">Client Secret</label>
+              <button
+                type="button"
+                onClick={() => setShowSecret(!showSecret)}
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors inline-flex items-center justify-center"
+                title={
+                  showSecret ? "Hide Client Secret" : "Show Client Secret"
+                }
+              >
+                {showSecret ? <Icon icon="lucide:eye-off" className="w-4 h-4" /> : <Icon icon="lucide:eye" className="w-4 h-4" />}
+              </button>
+            </div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
+              <code className="flex-1 min-w-0 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
                 {showSecret
                   ? project?.secret
                   : "*".repeat(project.secret.length)}
               </code>
-              <div className="flex flex-col">
-                <button className="">
-                  <span
-                    onClick={() => setShowSecret(!showSecret)}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-                    title={
-                      showSecret ? "Hide Client Secret" : "Show Client Secret"
-                    }
-                  >
-                    {showSecret ? <Icon icon="lucide:eye-off" className="w-4 h-4" /> : <Icon icon="lucide:eye" className="w-4 h-4" />}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(project?.secret || "");
-                    setNotification({ message: "Client Secret copied!" });
-                  }}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-                  title="Copy Client Secret"
-                >
-                  <Icon icon="lucide:clipboard-copy" className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(project?.secret || "");
+                  setNotification({ message: "Client Secret copied!" });
+                }}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors inline-flex items-center justify-center shrink-0"
+                title="Copy Client Secret"
+              >
+                <Icon icon="lucide:clipboard-copy" className="w-4 h-4" />
+              </button>
             </div>
             <p className="text-gray-500 text-xs mt-2">
               Do not share your Client Secret with anyone. it can modify any
@@ -1116,39 +1132,34 @@ function RegisterOnInviteForm({
   return (
     <SelectWrapper icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />} name="Register on Invite Only">
       <div className="mt-4">
-        <label className="inline-flex items-center cursor-pointer group/checkbox">
-          <div className="relative">
+        <label className="inline-flex items-center cursor-pointer">
+          <div className="relative flex items-center justify-center">
             <input
               type="checkbox"
               checked={value}
               disabled={isSaving}
               onChange={handleChange}
-              className="appearance-none w-5 h-5 rounded border-2 border-gray-400 checked:border-blue-500 checked:bg-blue-500 cursor-pointer transition-all duration-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-600"
+              className="peer appearance-none w-5 h-5 rounded border-2 border-gray-400 checked:border-blue-500 checked:bg-blue-500 cursor-pointer transition-all duration-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-600"
             />
-            <svg
-              className="absolute inset-0 w-4 h-4 text-white pointer-events-none m-auto opacity-0 group-checked/checkbox:opacity-100 transition-opacity duration-150"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <Icon
+              icon="lucide:check"
+              className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity duration-150"
+            />
           </div>
-          <span className="ml-3 text-gray-300 group-hover/checkbox:text-gray-100 transition-colors duration-150 select-none font-medium">
+          <span className="ml-3 text-gray-300 hover:text-gray-100 transition-colors duration-150 select-none font-medium">
             Register on Invite Only
           </span>
         </label>
         {value && (
-          <div className="mt-2 flex items-center justify-between">
-            <span
+          <div className="mt-4">
+            <button
+              type="button"
               onClick={() => setModalOpen(true)}
-              className="text-gray-500 text-xs hover:text-blue-400 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
             >
-              create invite link
-            </span>
+              <Icon icon="lucide:user-plus" className="w-4 h-4" />
+              Create Invite Link
+            </button>
           </div>
         )}
         {modaleOpen && (
@@ -1442,11 +1453,11 @@ function SelectWrapper({
   helpText?: string | React.ReactNode;
 }) {
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-gray-800 rounded-lg p-5 border border-gray-700">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-2">
           {icon}
-          <h3 className="text-sm font-medium text-white">{name}</h3>
+          <h3 className="text-base font-medium text-white">{name}</h3>
         </div>
         {action}
       </div>

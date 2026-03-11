@@ -343,7 +343,7 @@ export default function AdminPanel() {
         dashboard.data.recentLogs.length > 0 && (
           <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
                 <Icon icon="lucide:activity" className="w-5 h-5 text-blue-400" />
                 Recent activity
               </h3>
@@ -416,7 +416,7 @@ export default function AdminPanel() {
         </div>
       ) : (
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
             <Icon icon="lucide:folder-kanban" className="w-5 h-5 text-blue-400" />
             Projects
           </h3>
@@ -448,7 +448,7 @@ export default function AdminPanel() {
                           className="w-4 h-4"
                         />
                       </div>
-                      <h3 className="text-lg font-semibold text-white truncate max-w-45">
+                      <h3 className="text-xl font-semibold text-white truncate max-w-45">
                         {project.clientID}
                       </h3>
                     </div>

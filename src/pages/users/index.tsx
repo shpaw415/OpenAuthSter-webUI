@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Icon } from "@iconify/react";
 import { useProject, useProjects } from "../../hooks/useProjects";
 import { useProjectUsers } from "../../hooks/useProjectUsers";
 import { navigate } from "../../utils";
@@ -268,7 +269,7 @@ export default function UserListPage() {
           </div>
         ) : users.length === 0 ? (
           <div className="py-12 text-center text-gray-400">
-            <div className="text-4xl mb-2">👥</div>
+            <Icon icon="lucide:users" className="w-12 h-12 mx-auto mb-2 text-gray-500" />
             <p className="text-lg text-white mb-1">No users yet</p>
             <p className="text-gray-400">
               Users will appear here after they authenticate with this project.

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Icon } from "@iconify/react";
 import {
   getCurrentIssuerVersion,
   getCurrentWebUiVersion,
@@ -90,7 +91,7 @@ export default function ConfigurationsPage() {
           {error && (
             <div className="rounded-lg border border-red-700 bg-red-900/20 p-4">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+                <Icon icon="lucide:alert-triangle" className="w-6 h-6 text-amber-400 shrink-0" />
                 <div className="flex-1">
                   <p className="font-medium text-red-300">{error}</p>
                   <button
@@ -135,7 +136,7 @@ export default function ConfigurationsPage() {
                     </p>
                   </div>
                   <div className="rounded-full bg-gray-700 p-3">
-                    <span className="text-xl">🖥️</span>
+                    <Icon icon="lucide:monitor" className="w-5 h-5 text-gray-400" />
                   </div>
                 </div>
               </div>
@@ -151,7 +152,7 @@ export default function ConfigurationsPage() {
                     </p>
                   </div>
                   <div className="rounded-full bg-gray-700 p-3">
-                    <span className="text-xl">🔐</span>
+                    <Icon icon="lucide:lock" className="w-5 h-5 text-gray-400" />
                   </div>
                 </div>
               </div>
@@ -159,7 +160,7 @@ export default function ConfigurationsPage() {
               {newVersionAvailable && (
                 <div className="rounded-lg border border-green-700 bg-green-900/20 p-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">✅</span>
+                    <Icon icon="lucide:check-circle" className="w-6 h-6 text-green-400 shrink-0" />
                     <div>
                       <p className="font-medium text-green-300">
                         New versions available

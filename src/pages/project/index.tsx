@@ -10,6 +10,8 @@ import {
   getProviderMeta,
   getProvidersByCategory,
 } from "openauth-webui-shared-types";
+import { Icon } from "@iconify/react";
+import { ProviderIcon } from "@components/provider-icons";
 import { useProject } from "../../hooks/useProjects";
 import { useUIThemes } from "../../hooks/useUIThemes";
 import { useEmailTemplates } from "../../hooks/useEmailTemplates";
@@ -25,10 +27,10 @@ import type {
 } from "openauth-webui-shared-types/webhook/types";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
-  { id: "social", label: "Social", icon: "👥" },
-  { id: "enterprise", label: "Enterprise", icon: "🏢" },
-  { id: "custom", label: "Custom", icon: "🔧" },
-  { id: "form", label: "Form-based", icon: "📝" },
+  { id: "social", label: "Social", icon: "lucide:users" },
+  { id: "enterprise", label: "Enterprise", icon: "lucide:building-2" },
+  { id: "custom", label: "Custom", icon: "lucide:wrench" },
+  { id: "form", label: "Form-based", icon: "lucide:file-text" },
 ];
 
 const STANDARD_PROJECT_DATA_FIELDS = [
@@ -288,7 +290,7 @@ export default function ProjectDetail() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Theme Selection */}
         <SelectWrapper
-          icon="🎨"
+          icon={<Icon icon="lucide:palette" className="w-5 h-5 text-gray-300" />}
           name="UI Theme"
           action={
             <a
@@ -338,7 +340,7 @@ export default function ProjectDetail() {
         {/* Email Template Selection */}
         <SelectWrapper
           name="Email/SMS Template"
-          icon={"✉️"}
+          icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />}
           action={
             <a
               href="/templates"
@@ -399,7 +401,7 @@ export default function ProjectDetail() {
         {/* codeMode Section */}
         <SelectWrapper
           name="Code Mode"
-          icon={"💻"}
+          icon={<Icon icon="lucide:monitor" className="w-5 h-5 text-gray-300" />}
           helpText="Select the mode for registration code sending"
         >
           <select
@@ -668,7 +670,7 @@ export default function ProjectDetail() {
                         }}
                         className="px-2 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
                       >
-                        ✕
+                        <Icon icon="lucide:x" className="w-4 h-4" />
                       </button>
                       <span className="text-gray-500 text-xs">
                         {`{{${key}}}`}
@@ -755,7 +757,8 @@ export default function ProjectDetail() {
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-              🔔 Webhooks
+              <Icon icon="lucide:bell" className="w-5 h-5" />
+              Webhooks
             </h3>
             <p className="text-gray-400 text-sm">
               Send event payloads to your endpoints in real time.
@@ -835,7 +838,7 @@ export default function ProjectDetail() {
                 : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
             }`}
           >
-            <span className="mr-2">{cat.icon}</span>
+            <Icon icon={cat.icon} className="w-4 h-4 mr-2 inline" />
             {cat.label}
           </button>
         ))}
@@ -861,7 +864,7 @@ export default function ProjectDetail() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{meta.icon}</span>
+                  <ProviderIcon type={meta.type} className="w-8 h-8 text-gray-300" />
                   <div>
                     <h3 className="text-lg font-semibold text-white">
                       {meta.name}
@@ -915,7 +918,7 @@ export default function ProjectDetail() {
                       className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Remove"
                     >
-                      🗑️
+                      <Icon icon="lucide:trash-2" className="w-4 h-4" />
                     </button>
                   )}
                   <a
@@ -947,7 +950,7 @@ export default function ProjectDetail() {
                     key={p.type}
                     className="flex items-center space-x-2 px-3 py-2 bg-gray-700 rounded-lg"
                   >
-                    <span>{meta?.icon}</span>
+                    <ProviderIcon type={p.type} className="w-4 h-4 text-gray-300" />
                     <span className="text-white">{meta?.name}</span>
                   </div>
                 );
@@ -980,7 +983,7 @@ function ProjectClientInfo({
   return (
     <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
       <div className="flex items-center space-x-2 mb-4">
-        <span className="text-xl">🔑</span>
+        <Icon icon="lucide:key" className="w-5 h-5 text-gray-300" />
         <h3 className="text-lg font-semibold text-white">
           Project Client Info
         </h3>
@@ -1000,7 +1003,7 @@ function ProjectClientInfo({
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               title="Copy Client-ID"
             >
-              📋
+              <Icon icon="lucide:clipboard-copy" className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1018,7 +1021,7 @@ function ProjectClientInfo({
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               title="Copy Auth Endpoint URL"
             >
-              📋
+              <Icon icon="lucide:clipboard-copy" className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1041,7 +1044,7 @@ function ProjectClientInfo({
                       showSecret ? "Hide Client Secret" : "Show Client Secret"
                     }
                   >
-                    {showSecret ? "🙈" : "👁️"}
+                    {showSecret ? <Icon icon="lucide:eye-off" className="w-4 h-4" /> : <Icon icon="lucide:eye" className="w-4 h-4" />}
                   </span>
                 </button>
                 <button
@@ -1052,7 +1055,7 @@ function ProjectClientInfo({
                   className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
                   title="Copy Client Secret"
                 >
-                  📋
+                  <Icon icon="lucide:clipboard-copy" className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -1111,7 +1114,7 @@ function RegisterOnInviteForm({
   );
 
   return (
-    <SelectWrapper icon="📩" name="Register on Invite Only">
+    <SelectWrapper icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />} name="Register on Invite Only">
       <div className="mt-4">
         <label className="inline-flex items-center cursor-pointer group/checkbox">
           <div className="relative">
@@ -1204,7 +1207,7 @@ function InviteLinkModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🔗</span>
+            <Icon icon="lucide:link" className="w-6 h-6 text-gray-300" />
             <h2 className="text-xl font-semibold text-white">
               Create Invite Link
             </h2>
@@ -1214,7 +1217,7 @@ function InviteLinkModal({
             className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
             title="Close"
           >
-            ✕
+            <Icon icon="lucide:x" className="w-5 h-5" />
           </button>
         </div>
 
@@ -1353,7 +1356,7 @@ function InviteLinkModal({
               </>
             ) : (
               <>
-                <span>✓</span>
+                <Icon icon="lucide:check" className="w-4 h-4" />
                 Create Link
               </>
             )}
@@ -1380,7 +1383,7 @@ function AllowOriginForm({
   const [value, setValue] = useState(project?.originURL || "");
 
   return (
-    <SelectWrapper icon="🌐" name="Allow Origin URL">
+    <SelectWrapper icon={<Icon icon="lucide:globe" className="w-5 h-5 text-gray-300" />} name="Allow Origin URL">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -1434,7 +1437,7 @@ function SelectWrapper({
 }: {
   children: React.ReactNode;
   name: string;
-  icon: string;
+  icon: React.ReactNode;
   action?: React.ReactNode;
   helpText?: string | React.ReactNode;
 }) {
@@ -1442,7 +1445,7 @@ function SelectWrapper({
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <span className="text-xl">{icon}</span>
+          {icon}
           <h3 className="text-sm font-medium text-white">{name}</h3>
         </div>
         {action}
@@ -1557,7 +1560,7 @@ function WebHookModal({
             className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
             title="Close"
           >
-            ✕
+            <Icon icon="lucide:x" className="w-5 h-5" />
           </button>
         </div>
 
@@ -1674,7 +1677,7 @@ function WebHookModal({
                       className="px-2 text-red-300 hover:text-red-200 hover:bg-red-500/10 rounded-lg"
                       title="Remove header"
                     >
-                      ✕
+                      <Icon icon="lucide:x" className="w-4 h-4" />
                     </button>
                   </div>
                 ))}

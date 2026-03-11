@@ -1,5 +1,6 @@
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import { useEffect, useState, useCallback } from "react";
+import { Icon } from "@iconify/react";
 import { useUITheme, useUIThemes } from "../../hooks/useUIThemes";
 import { Snackbar } from "@material/react-snackbar";
 import { navigate } from "../../utils";
@@ -748,7 +749,7 @@ export default function UIThemeManage() {
                       : "text-gray-400 hover:text-gray-300"
                   }`}
                 >
-                  ☀️ Light
+                  <Icon icon="lucide:sun" className="w-3.5 h-3.5 mr-1 inline" /> Light
                 </button>
                 <button
                   onClick={() => setPreviewMode("dark")}
@@ -758,7 +759,7 @@ export default function UIThemeManage() {
                       : "text-gray-400 hover:text-gray-300"
                   }`}
                 >
-                  🌙 Dark
+                  <Icon icon="lucide:moon" className="w-3.5 h-3.5 mr-1 inline" /> Dark
                 </button>
               </div>
             </div>

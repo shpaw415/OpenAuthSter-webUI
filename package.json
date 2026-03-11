@@ -13,7 +13,7 @@
     "wrangler": "^4.71.0"
   },
   "dependencies": {
-    "@material-icons/svg": "^1.0.33",
+    "@iconify/react": "^6.0.2",
     "@material/react-snackbar": "^0.15.0",
     "@monaco-editor/react": "^4.7.0",
     "@openauthjs/openauth": "^0.4.3",
@@ -35,6 +35,7 @@
     "openauth-webui-shared-types": "https://github.com/shpaw415/OpenAuthSter-shared.git#v0.3.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "recharts": "^3.8.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-pretty-code": "^0.14.3",
     "rehype-slug": "^6.0.0",

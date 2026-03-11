@@ -6,8 +6,8 @@
   "d1_databases": [
     {
       "binding": "PROJECT_DB",
-      "database_name": "openauthster-db",
-      "database_id": "e9452fa0-a2eb-40e0-a7bb-5f24d03850de",
+      "database_name": "auth-db",
+      "database_id": "179b35bb-7c62-4636-b9e0-e9962ec8fee2",
       "remote": true
     }
   ],

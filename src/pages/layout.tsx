@@ -8,13 +8,7 @@ import {
   useRef,
 } from "react";
 import { useAuth } from "@hooks/useAuth";
-import HomeSvg from "@material-icons/svg/svg/home/outline.svg";
-import WebAssetSvg from "@material-icons/svg/svg/web_asset/outline.svg";
-import BrushSvg from "@material-icons/svg/svg/brush/outline.svg";
-import TextAd from "@material-icons/svg/svg/text_snippet/outline.svg";
-import Group from "@material-icons/svg/svg/group/outline.svg";
-import Activity from "@material-icons/svg/svg/report/outline.svg";
-import CogWheel from "@material-icons/svg/svg/settings/outline.svg";
+import { Icon } from "@iconify/react";
 import {
   getCurrentIssuerVersion,
   getCurrentWebUiVersion,
@@ -71,40 +65,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const NavLinks = useMemo(
     () => [
-      {
-        href: "/",
-        icon: HomeSvg,
-        name: "Dashboard",
-      },
-      {
-        href: "/templates",
-        icon: WebAssetSvg,
-        name: "Templates",
-      },
-      {
-        href: "/theme",
-        icon: BrushSvg,
-        name: "UI theme",
-      },
-      {
-        name: "Copy Text",
-        href: "/copy",
-        icon: TextAd,
-      },
-      {
-        name: "Users",
-        href: "/users",
-        icon: Group,
-      },
-      {
-        name: "Logs",
-        href: "/activity",
-        icon: Activity,
-      },
+      { href: "/", icon: "lucide:home", name: "Dashboard" },
+      { href: "/templates", icon: "lucide:layout-template", name: "Templates" },
+      { href: "/theme", icon: "lucide:palette", name: "UI theme" },
+      { name: "Copy Text", href: "/copy", icon: "lucide:file-text" },
+      { name: "Users", href: "/users", icon: "lucide:users" },
+      { name: "Logs", href: "/activity", icon: "lucide:activity" },
       {
         name: "Configurations",
         href: "/configurations",
-        icon: CogWheel,
+        icon: "lucide:settings",
       },
     ],
     [],
@@ -150,12 +120,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <div className="px-4 py-2 text-sm text-center">
               {VersionWarningMessage}
             </div>
-            <span
-              className="absolute top-0 right-0 p-2 cursor-pointer"
+            <button
+              type="button"
+              className="absolute top-0 right-0 p-2 cursor-pointer hover:bg-yellow-700/50 rounded"
               onClick={() => setVersionWarningMessage(null)}
+              aria-label="Dismiss"
             >
-              X
-            </span>
+              <Icon icon="lucide:x" className="w-5 h-5" />
+            </button>
           </div>
         )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -182,7 +154,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <NavLinkDesktop
                   key={link.href}
                   href={link.href}
-                  Icon={link.icon}
+                  icon={link.icon}
                   name={link.name}
                 />
               ))}
@@ -213,33 +185,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             >
               <span className="sr-only">Open main menu</span>
               {mobileMenuOpen ? (
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <Icon icon="lucide:x" className="h-6 w-6" />
               ) : (
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                  />
-                </svg>
+                <Icon icon="lucide:menu" className="h-6 w-6" />
               )}
             </button>
           </div>
@@ -260,7 +208,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 className="flex items-center px-3 py-3 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <link.icon className="inline-block w-5 h-5 mr-1 fill-white" />
+                <Icon icon={link.icon} className="inline-block w-5 h-5 mr-1 text-white" />
                 <span className="ml-2">{link.name}</span>
               </a>
             ))}
@@ -332,11 +280,11 @@ function RedirectToLogin() {
 
 function NavLinkDesktop({
   href,
-  Icon,
+  icon,
   name,
 }: {
   href: string;
-  Icon: React.FC<React.SVGProps<SVGElement>>;
+  icon: string;
   name: string;
 }) {
   const [isRippling, setIsRippling] = useState(false);
@@ -355,7 +303,7 @@ function NavLinkDesktop({
       onClick={handleClick}
       className="group relative h-10 w-10 flex items-center justify-center rounded-lg text-gray-300 transition-all duration-500 ease-in-out hover:scale-110"
     >
-      <Icon className="w-5 h-5 fill-slate-200 group-hover:fill-white" />
+      <Icon icon={icon} className="w-5 h-5 text-slate-200 group-hover:text-white" />
       <span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out border border-gray-700">
         {name}
       </span>

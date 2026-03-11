@@ -1,5 +1,6 @@
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { Icon } from "@iconify/react";
 import Editor from "@monaco-editor/react";
 import {
   useEmailTemplate,
@@ -438,7 +439,7 @@ export default function EmailTemplatesManage() {
                                 className="text-yellow-400"
                                 title="Available from project - not used in template yet"
                               >
-                                ⚠
+                                <Icon icon="lucide:alert-triangle" className="w-3.5 h-3.5" />
                               </span>
                             )}
                             {isFromProject && isInTemplate && (
@@ -446,7 +447,7 @@ export default function EmailTemplatesManage() {
                                 className="text-green-400"
                                 title="From project data"
                               >
-                                ✓
+                                <Icon icon="lucide:check" className="w-3.5 h-3.5" />
                               </span>
                             )}
                           </label>

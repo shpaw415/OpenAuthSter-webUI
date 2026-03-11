@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@iconify/react";
 import { useEmailTemplates } from "../../hooks/useEmailTemplates";
 
 export default function EmailTemplatesList() {
@@ -97,7 +98,7 @@ export default function EmailTemplatesList() {
       {/* Templates List */}
       {templates.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg border border-gray-700">
-          <div className="text-4xl mb-4">📧</div>
+          <Icon icon="lucide:mail" className="w-12 h-12 mx-auto mb-4 text-gray-500" />
           <h3 className="text-lg font-medium text-white mb-2">
             No email templates yet
           </h3>
@@ -141,7 +142,7 @@ export default function EmailTemplatesList() {
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <span className="text-lg mr-3">📄</span>
+                      <Icon icon="lucide:file-text" className="w-5 h-5 mr-3 text-gray-400" />
                       <div className="text-sm font-medium text-white">
                         {template.name}
                       </div>

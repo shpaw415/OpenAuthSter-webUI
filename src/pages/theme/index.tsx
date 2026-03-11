@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "@iconify/react";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import { useUIThemes, type UITheme } from "../../hooks/useUIThemes";
 
@@ -113,7 +114,7 @@ export default function UIThemeList() {
       {/* Themes Grid */}
       {themes.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg border-2 border-dashed border-gray-600">
-          <div className="text-4xl mb-4">🎨</div>
+          <Icon icon="lucide:palette" className="w-12 h-12 mx-auto mb-4 text-gray-500" />
           <h3 className="text-lg font-medium text-white mb-2">No themes yet</h3>
           <p className="text-gray-400 mb-4">
             Create your first UI theme to customize your auth pages

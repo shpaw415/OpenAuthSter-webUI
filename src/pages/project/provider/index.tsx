@@ -27,6 +27,8 @@ import type {
   WebAuthnProviderConfig,
 } from "openauth-webui-shared-types";
 import { getProviderMeta } from "openauth-webui-shared-types";
+import { Icon } from "@iconify/react";
+import { ProviderIcon } from "@components/provider-icons";
 import { navigate } from "../../../utils";
 import { useProject } from "@hooks/useProjects";
 import { Snackbar } from "@material/react-snackbar";
@@ -233,7 +235,7 @@ export default function ProviderForm() {
               >
                 ←
               </a>
-              <span className="text-4xl">{meta?.icon}</span>
+              <ProviderIcon type={provider_type!} className="w-10 h-10 text-gray-300" />
               <div>
                 <h1 className="text-2xl font-bold text-white">{meta?.name}</h1>
                 <p className="text-gray-400">{meta?.description}</p>
@@ -481,7 +483,7 @@ function KeyValueEditor({
             className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
             title="Remove parameter"
           >
-            ✕
+            <Icon icon="lucide:x" className="w-4 h-4" />
           </button>
         </div>
       ))}
@@ -589,7 +591,7 @@ function OAuth2DefaultFields({
             onClick={() => setShowSecret((c) => !c)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
           >
-            {showSecret ? "🙈" : "👁️"}
+            {showSecret ? <Icon icon="lucide:eye-off" className="w-4 h-4" /> : <Icon icon="lucide:eye" className="w-4 h-4" />}
           </button>
         </div>
       </InputFieldForm>
@@ -947,7 +949,7 @@ function SlackFields() {
             onClick={() => data.setShowSecret((c) => !c)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
           >
-            {data.showSecret ? "🙈" : "👁️"}
+            {data.showSecret ? <Icon icon="lucide:eye-off" className="w-4 h-4" /> : <Icon icon="lucide:eye" className="w-4 h-4" />}
           </button>
         </div>
       </InputFieldForm>

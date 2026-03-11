@@ -1,4 +1,5 @@
 import { useState, type JSX } from "react";
+import { Icon } from "@iconify/react";
 import {
   useCopyTemplates,
   type CopyTemplate,
@@ -52,12 +53,12 @@ export default function CopyListPage() {
       code: {
         label: "Pin Code",
         color: "bg-purple-500/20 text-purple-400",
-        icon: "📧",
+        icon: "lucide:mail",
       },
       password: {
         label: "Password",
         color: "bg-blue-500/20 text-blue-400",
-        icon: "🔒",
+        icon: "lucide:lock",
       },
     };
     const { label, color, icon } = config[providerType];
@@ -65,7 +66,7 @@ export default function CopyListPage() {
       <span
         className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${color}`}
       >
-        {icon} {label}
+        <Icon icon={icon} className="w-3.5 h-3.5" /> {label}
       </span>
     );
   };
@@ -127,7 +128,7 @@ export default function CopyListPage() {
       {/* Templates Grid */}
       {templates.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg border-2 border-dashed border-gray-600">
-          <div className="text-4xl mb-4">📝</div>
+          <Icon icon="lucide:file-text" className="w-12 h-12 mx-auto mb-4 text-gray-500" />
           <h3 className="text-lg font-medium text-white mb-2">
             No copy templates yet
           </h3>

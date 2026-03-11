@@ -1,7 +1,6 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { emailTemplatesTable } from "openauth-webui-shared-types/database";
 import { drizzle } from "openauth-webui-shared-types/drizzle";
-import { createClient } from "@auth";
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
 
 export type EmailTemplate = EmailTemplateProps & {
@@ -16,16 +15,7 @@ export async function GET(): Promise<{
   data: EmailTemplate[];
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-      data: [],
-    };
+  const { env } = ctx;
 
   const db = drizzle(env.PROJECT_DB);
   const templates = await db.select().from(emailTemplatesTable);
@@ -45,15 +35,7 @@ export async function POST(params: CreateTemplateParams): Promise<{
   data?: EmailTemplate;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+  const { env } = ctx;
 
   try {
     const { name, body, subject } = params;

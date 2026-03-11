@@ -3,6 +3,10 @@ import { defaultSubjectSchema } from "openauth-webui-shared-types/client/user";
 
 export const subject = defaultSubjectSchema;
 
+export type RequestDataContext = {
+  client: ReturnType<typeof createClient>;
+};
+
 export const createClient = (token?: string) =>
   createOpenAuthsterClient({
     clientID: process.env.PUBLIC_CLIENT_ID!,

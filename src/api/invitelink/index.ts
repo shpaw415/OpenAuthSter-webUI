@@ -1,6 +1,4 @@
-import { createClient } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { parseDBProject, type Project } from "openauth-webui-shared-types";
 import {
   WebUiInviteLinkTable,
   projectTable,
@@ -17,14 +15,6 @@ export async function POST(params: {
   error?: string;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const auth = await createClient().setTokenFromRequest(
-    ctx.request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
 
   const project = await drizzle(ctx.env.PROJECT_DB)
     .select({

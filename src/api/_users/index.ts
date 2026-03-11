@@ -11,7 +11,6 @@ import {
   desc,
   eq,
 } from "openauth-webui-shared-types/drizzle";
-import { createClient } from "@auth";
 import { isClientIdValid } from "openauth-webui-shared-types/database";
 
 export type ProjectUser = {
@@ -52,14 +51,7 @@ export type DeleteUserResponse = {
 
 export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false) {
-    return { success: false, error: "Unauthorized" };
-  }
+  const { env } = ctx;
 
   const clientID = params.clientID?.trim();
   if (!clientID || !isClientIdValid(clientID)) {
@@ -132,14 +124,7 @@ export async function DELETE(
   params: DeleteUserParams,
 ): Promise<DeleteUserResponse> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false) {
-    return { success: false, error: "Unauthorized" };
-  }
+  const { env } = ctx;
 
   const clientID = params.clientID?.trim();
   const userID = params.userID?.trim();

@@ -12,15 +12,7 @@ export async function GET(params: { name: string }): Promise<{
   data?: EmailTemplate;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+  const { env } = ctx;
 
   const db = drizzle(env.PROJECT_DB);
   const template = await db

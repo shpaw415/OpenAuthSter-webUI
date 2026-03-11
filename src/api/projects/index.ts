@@ -9,7 +9,6 @@ import {
 } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import { isClientIdValid } from "openauth-webui-shared-types/database";
-import { createClient as createOpenAuthsterClient } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { createClient, createCustomDomainForProject } from "../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
@@ -20,17 +19,7 @@ export async function GET(): Promise<{
   error?: string;
   data: Project[];
 }> {
-  const { env, request } = getContext<Env, any, any>(arguments);
-
-  const auth = await createOpenAuthsterClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (!auth.isAuthenticated)
-    return {
-      success: false,
-      error: "Unauthorized",
-      data: [],
-    };
+  const { env } = getContext<Env, any, any>(arguments);
 
   const db = drizzle(env.PROJECT_DB);
   const projects = await db.select().from(projectTable);
@@ -52,15 +41,7 @@ export async function POST(params: {
   providers_data?: ProviderConfig[];
 }): Promise<{ success: boolean; error?: string; data?: Project }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createOpenAuthsterClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+  const { env } = ctx;
 
   try {
     const { clientID, providers_data = [] } = params;

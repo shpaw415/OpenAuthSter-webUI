@@ -1,7 +1,6 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { WebUiCopyTemplateTable } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import { createClient } from "@auth";
 import type { CopyTemplate } from "./index";
 
 // GET /api/copy/[name] - Get copy template by name
@@ -11,15 +10,7 @@ export async function GET(params: { name: string }): Promise<{
   data?: CopyTemplate;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+  const { env } = ctx;
 
   const db = drizzle(env.PROJECT_DB);
   const template = await db
@@ -60,15 +51,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
   data?: CopyTemplate;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+  const { env } = ctx;
 
   try {
     const db = drizzle(env.PROJECT_DB);
@@ -144,15 +127,7 @@ export async function DELETE(params: { name: string }): Promise<{
   error?: string;
 }> {
   const ctx = getContext<Env, any, any>(arguments);
-  const { request, env } = ctx;
-  const auth = await createClient().setTokenFromRequest(
-    request as unknown as Request,
-  );
-  if (auth.isAuthenticated === false)
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
+  const { env } = ctx;
 
   try {
     const db = drizzle(env.PROJECT_DB);

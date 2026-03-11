@@ -115,7 +115,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!auth?.isAuthenticated && auth?.isLoaded) {
       setTimeout(() => {
-        auth?.login();
+        if (process.env.NODE_ENV !== "development") {
+          auth?.login();
+        }
         console.log(auth);
       }, 1000); // Slight delay to ensure smooth redirect
     }

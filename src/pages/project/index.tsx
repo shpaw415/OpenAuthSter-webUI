@@ -294,168 +294,172 @@ export default function ProjectDetail() {
           General Settings
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Theme Selection */}
-        <SelectWrapper
-          icon={<Icon icon="lucide:palette" className="w-5 h-5 text-gray-300" />}
-          name="UI Theme"
-          action={
-            <a
-              href="/theme"
-              className="text-xs text-blue-400 hover:text-blue-300"
-            >
-              Manage Themes
-            </a>
-          }
-        >
-          <select
-            value={projectHook.project?.themeId || ""}
-            onChange={async (e) => {
-              setIsSaving(true);
-              try {
-                await projectHook.updateProject({
-                  themeId: e.target.value || null,
-                });
-                setNotification({ message: "Theme updated" });
-              } catch (err) {
-                setNotification({
-                  message:
-                    err instanceof Error
-                      ? err.message
-                      : "Failed to update theme",
-                });
-              } finally {
-                setIsSaving(false);
-              }
-            }}
-            disabled={isSaving || themesLoading}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-          >
-            <option value="">No theme selected</option>
-            {themes.map((theme) => (
-              <option key={theme.id} value={theme.id}>
-                {theme.themeData.title || theme.id}
-              </option>
-            ))}
-          </select>
-          {projectHook.project?.themeId && (
-            <p className="text-gray-500 text-xs mt-2">
-              Using theme: {projectHook.project.themeId}
-            </p>
-          )}
-        </SelectWrapper>
-        {/* Email Template Selection */}
-        <SelectWrapper
-          name="Email/SMS Template"
-          icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />}
-          action={
-            <a
-              href="/templates"
-              className="text-xs text-blue-400 hover:text-blue-300"
-            >
-              Manage Templates
-            </a>
-          }
-        >
-          <select
-            value={projectHook.project?.emailTemplateId || ""}
-            onChange={async (e) => {
-              setIsSaving(true);
-              try {
-                await projectHook.updateProject({
-                  emailTemplateId: e.target.value || null,
-                });
-                setNotification({ message: "Email template updated" });
-              } catch (err) {
-                setNotification({
-                  message:
-                    err instanceof Error
-                      ? err.message
-                      : "Failed to update email template",
-                });
-              } finally {
-                setIsSaving(false);
-              }
-            }}
-            disabled={isSaving || templatesLoading}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-          >
-            <option value="">No template selected</option>
-            {templates.map((template) => (
-              <option key={template.name} value={template.name}>
-                {template.name} - {template.subject}
-              </option>
-            ))}
-          </select>
-          {projectHook.project?.emailTemplateId && (
-            <div className="flex items-center justify-between mt-2">
-              <p className="text-gray-500 text-xs">
-                Using template: {projectHook.project.emailTemplateId}
-              </p>
+          {/* Theme Selection */}
+          <SelectWrapper
+            icon={
+              <Icon icon="lucide:palette" className="w-5 h-5 text-gray-300" />
+            }
+            name="UI Theme"
+            action={
               <a
-                href={`/templates/manage?edit=${encodeURIComponent(
-                  projectHook.project.emailTemplateId,
-                )}&project_id=${encodeURIComponent(
-                  projectHook.project.clientID,
-                )}`}
+                href="/theme"
                 className="text-xs text-blue-400 hover:text-blue-300"
               >
-                Edit Template
+                Manage Themes
               </a>
-            </div>
-          )}
-        </SelectWrapper>
-        {/* codeMode Section */}
-        <SelectWrapper
-          name="Code Mode"
-          icon={<Icon icon="lucide:monitor" className="w-5 h-5 text-gray-300" />}
-          helpText="Select the mode for registration code sending"
-        >
-          <select
-            defaultValue={projectHook.project?.codeMode || "email"}
-            disabled={isSaving}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-            onChange={(e) => {
-              const value = e.currentTarget.value as "email" | "phone";
-
-              setIsSaving(true);
-              projectHook
-                .updateProject({
-                  codeMode: value,
-                })
-                .then(() => {
-                  setNotification({ message: "Code mode updated" });
-                })
-                .catch((err) => {
+            }
+          >
+            <select
+              value={projectHook.project?.themeId || ""}
+              onChange={async (e) => {
+                setIsSaving(true);
+                try {
+                  await projectHook.updateProject({
+                    themeId: e.target.value || null,
+                  });
+                  setNotification({ message: "Theme updated" });
+                } catch (err) {
                   setNotification({
                     message:
                       err instanceof Error
                         ? err.message
-                        : "Failed to update code mode",
+                        : "Failed to update theme",
                   });
-                })
-                .finally(() => {
+                } finally {
                   setIsSaving(false);
-                });
-            }}
+                }
+              }}
+              disabled={isSaving || themesLoading}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            >
+              <option value="">No theme selected</option>
+              {themes.map((theme) => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.themeData.title || theme.id}
+                </option>
+              ))}
+            </select>
+            {projectHook.project?.themeId && (
+              <p className="text-gray-500 text-xs mt-2">
+                Using theme: {projectHook.project.themeId}
+              </p>
+            )}
+          </SelectWrapper>
+          {/* Email Template Selection */}
+          <SelectWrapper
+            name="Email/SMS Template"
+            icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />}
+            action={
+              <a
+                href="/templates"
+                className="text-xs text-blue-400 hover:text-blue-300"
+              >
+                Manage Templates
+              </a>
+            }
           >
-            <option value="email">Email Code Mode</option>
-            <option value="phone">Phone Code Mode</option>
-          </select>
-        </SelectWrapper>
-        <AllowOriginForm
-          isSaving={isSaving}
-          setIsSaving={setIsSaving}
-          updateProject={projectHook.updateProject}
-          setNotification={setNotification}
-          project={projectHook.project!}
-        />
-        <RegisterOnInviteForm
-          isSaving={isSaving}
-          setIsSaving={setIsSaving}
-          updateProject={projectHook.updateProject}
-          setNotification={setNotification}
-          project={projectHook.project!}
-        />
+            <select
+              value={projectHook.project?.emailTemplateId || ""}
+              onChange={async (e) => {
+                setIsSaving(true);
+                try {
+                  await projectHook.updateProject({
+                    emailTemplateId: e.target.value || null,
+                  });
+                  setNotification({ message: "Email template updated" });
+                } catch (err) {
+                  setNotification({
+                    message:
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to update email template",
+                  });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              disabled={isSaving || templatesLoading}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            >
+              <option value="">No template selected</option>
+              {templates.map((template) => (
+                <option key={template.name} value={template.name}>
+                  {template.name} - {template.subject}
+                </option>
+              ))}
+            </select>
+            {projectHook.project?.emailTemplateId && (
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-gray-500 text-xs">
+                  Using template: {projectHook.project.emailTemplateId}
+                </p>
+                <a
+                  href={`/templates/manage?edit=${encodeURIComponent(
+                    projectHook.project.emailTemplateId,
+                  )}&project_id=${encodeURIComponent(
+                    projectHook.project.clientID,
+                  )}`}
+                  className="text-xs text-blue-400 hover:text-blue-300"
+                >
+                  Edit Template
+                </a>
+              </div>
+            )}
+          </SelectWrapper>
+          {/* codeMode Section */}
+          <SelectWrapper
+            name="Code Mode"
+            icon={
+              <Icon icon="lucide:monitor" className="w-5 h-5 text-gray-300" />
+            }
+            helpText="Select the mode for registration code sending"
+          >
+            <select
+              defaultValue={projectHook.project?.codeMode || "email"}
+              disabled={isSaving}
+              className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+              onChange={(e) => {
+                const value = e.currentTarget.value as "email" | "phone";
+
+                setIsSaving(true);
+                projectHook
+                  .updateProject({
+                    codeMode: value,
+                  })
+                  .then(() => {
+                    setNotification({ message: "Code mode updated" });
+                  })
+                  .catch((err) => {
+                    setNotification({
+                      message:
+                        err instanceof Error
+                          ? err.message
+                          : "Failed to update code mode",
+                    });
+                  })
+                  .finally(() => {
+                    setIsSaving(false);
+                  });
+              }}
+            >
+              <option value="email">Email Code Mode</option>
+              <option value="phone">Phone Code Mode</option>
+            </select>
+          </SelectWrapper>
+          <AllowOriginForm
+            isSaving={isSaving}
+            setIsSaving={setIsSaving}
+            updateProject={projectHook.updateProject}
+            setNotification={setNotification}
+            project={projectHook.project!}
+          />
+          <RegisterOnInviteForm
+            isSaving={isSaving}
+            setIsSaving={setIsSaving}
+            updateProject={projectHook.updateProject}
+            setNotification={setNotification}
+            project={projectHook.project!}
+          />
         </div>
       </div>
 
@@ -576,7 +580,7 @@ export default function ProjectDetail() {
                   Website URL
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={projectData.websiteUrl || ""}
                   onChange={(e) =>
                     setProjectData({
@@ -584,7 +588,7 @@ export default function ProjectDetail() {
                       websiteUrl: e.target.value,
                     })
                   }
-                  placeholder="https://example.com"
+                  placeholder="https://example.com,http://localhost:3000"
                   className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <p className="text-gray-500 text-xs mt-1">
@@ -845,7 +849,10 @@ export default function ProjectDetail() {
         {enabledCount > 0 && (
           <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <Icon icon="lucide:check-circle" className="w-5 h-5 text-green-400" />
+              <Icon
+                icon="lucide:check-circle"
+                className="w-5 h-5 text-green-400"
+              />
               Enabled Providers
             </h3>
             <div className="flex flex-wrap gap-4">
@@ -858,7 +865,10 @@ export default function ProjectDetail() {
                       key={p.type}
                       className="flex items-center space-x-2 px-3 py-2 bg-gray-700 rounded-lg"
                     >
-                      <ProviderIcon type={p.type} className="w-4 h-4 text-gray-300" />
+                      <ProviderIcon
+                        type={p.type}
+                        className="w-4 h-4 text-gray-300"
+                      />
                       <span className="text-white">{meta?.name}</span>
                     </div>
                   );
@@ -868,110 +878,115 @@ export default function ProjectDetail() {
         )}
 
         <div className="flex space-x-2 mb-8 overflow-x-auto pb-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              activeCategory === cat.id
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-            }`}
-          >
-            <Icon icon={cat.icon} className="w-4 h-4 mr-2 inline" />
-            {cat.label}
-          </button>
-        ))}
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                activeCategory === cat.id
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+              }`}
+            >
+              <Icon icon={cat.icon} className="w-4 h-4 mr-2 inline" />
+              {cat.label}
+            </button>
+          ))}
         </div>
 
         {/* Provider Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categoryProviders.map((meta) => {
-          const config = getProviderConfig(meta.type);
-          const isConfigured = !!config;
-          const isEnabled = config?.enabled || false;
+          {categoryProviders.map((meta) => {
+            const config = getProviderConfig(meta.type);
+            const isConfigured = !!config;
+            const isEnabled = config?.enabled || false;
 
-          return (
-            <div
-              key={meta.type}
-              className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
-                isEnabled
-                  ? "border-green-500/50"
-                  : isConfigured
-                  ? "border-yellow-500/30"
-                  : "border-gray-700"
-              }`}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <ProviderIcon type={meta.type} className="w-8 h-8 text-gray-300" />
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">
-                      {meta.name}
-                    </h3>
-                    <p className="text-gray-500 text-sm">{meta.description}</p>
+            return (
+              <div
+                key={meta.type}
+                className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
+                  isEnabled
+                    ? "border-green-500/50"
+                    : isConfigured
+                    ? "border-yellow-500/30"
+                    : "border-gray-700"
+                }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <ProviderIcon
+                      type={meta.type}
+                      className="w-8 h-8 text-gray-300"
+                    />
+                    <div>
+                      <h3 className="text-xl font-semibold text-white">
+                        {meta.name}
+                      </h3>
+                      <p className="text-gray-500 text-sm">
+                        {meta.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center space-x-2">
+                    {isConfigured ? (
+                      <>
+                        <span
+                          className={`px-2 py-1 text-xs rounded ${
+                            isEnabled
+                              ? "bg-green-500/10 text-green-400"
+                              : "bg-yellow-500/10 text-yellow-400"
+                          }`}
+                        >
+                          {isEnabled ? "Enabled" : "Configured"}
+                        </span>
+                        {isConfigured && (
+                          <button
+                            onClick={() => handleToggleProvider(meta.type)}
+                            disabled={isSaving}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                              isEnabled ? "bg-green-600" : "bg-gray-600"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                                isEnabled ? "translate-x-5" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <span className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">
+                        Not configured
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-2">
+                    {isConfigured && (
+                      <button
+                        onClick={() => handleRemoveProvider(meta.type)}
+                        disabled={isSaving}
+                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Remove"
+                      >
+                        <Icon icon="lucide:trash-2" className="w-4 h-4" />
+                      </button>
+                    )}
+                    <a
+                      href={`/project/provider?project_id=${projectHook.project?.clientID}&provider_type=${meta.type}`}
+                      className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      {isConfigured ? "Edit" : "Configure"}
+                    </a>
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center space-x-2">
-                  {isConfigured ? (
-                    <>
-                      <span
-                        className={`px-2 py-1 text-xs rounded ${
-                          isEnabled
-                            ? "bg-green-500/10 text-green-400"
-                            : "bg-yellow-500/10 text-yellow-400"
-                        }`}
-                      >
-                        {isEnabled ? "Enabled" : "Configured"}
-                      </span>
-                      {isConfigured && (
-                        <button
-                          onClick={() => handleToggleProvider(meta.type)}
-                          disabled={isSaving}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                            isEnabled ? "bg-green-600" : "bg-gray-600"
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                              isEnabled ? "translate-x-5" : "translate-x-1"
-                            }`}
-                          />
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <span className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-400">
-                      Not configured
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex space-x-2">
-                  {isConfigured && (
-                    <button
-                      onClick={() => handleRemoveProvider(meta.type)}
-                      disabled={isSaving}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-                      title="Remove"
-                    >
-                      <Icon icon="lucide:trash-2" className="w-4 h-4" />
-                    </button>
-                  )}
-                  <a
-                    href={`/project/provider?project_id=${projectHook.project?.clientID}&provider_type=${meta.type}`}
-                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
-                  >
-                    {isConfigured ? "Edit" : "Configure"}
-                  </a>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </div>
 
@@ -1050,11 +1065,13 @@ function ProjectClientInfo({
                 type="button"
                 onClick={() => setShowSecret(!showSecret)}
                 className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors inline-flex items-center justify-center"
-                title={
-                  showSecret ? "Hide Client Secret" : "Show Client Secret"
-                }
+                title={showSecret ? "Hide Client Secret" : "Show Client Secret"}
               >
-                {showSecret ? <Icon icon="lucide:eye-off" className="w-4 h-4" /> : <Icon icon="lucide:eye" className="w-4 h-4" />}
+                {showSecret ? (
+                  <Icon icon="lucide:eye-off" className="w-4 h-4" />
+                ) : (
+                  <Icon icon="lucide:eye" className="w-4 h-4" />
+                )}
               </button>
             </div>
             <div className="flex items-center gap-2">
@@ -1130,7 +1147,10 @@ function RegisterOnInviteForm({
   );
 
   return (
-    <SelectWrapper icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />} name="Register on Invite Only">
+    <SelectWrapper
+      icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />}
+      name="Register on Invite Only"
+    >
       <div className="mt-4">
         <label className="inline-flex items-center cursor-pointer">
           <div className="relative flex items-center justify-center">
@@ -1394,7 +1414,10 @@ function AllowOriginForm({
   const [value, setValue] = useState(project?.originURL || "");
 
   return (
-    <SelectWrapper icon={<Icon icon="lucide:globe" className="w-5 h-5 text-gray-300" />} name="Allow Origin URL">
+    <SelectWrapper
+      icon={<Icon icon="lucide:globe" className="w-5 h-5 text-gray-300" />}
+      name="Allow Origin URL"
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault();

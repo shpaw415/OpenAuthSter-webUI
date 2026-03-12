@@ -36,9 +36,30 @@ export async function POST(params: {
     };
   }
 
+  if (
+    !Number.isFinite(params.expireInMin) ||
+    params.expireInMin < 1 ||
+    params.expireInMin > 10080
+  ) {
+    return {
+      success: false,
+      error: "expireInMin must be between 1 and 10080 (1 week)",
+    };
+  }
+
+  let originUrl: URL;
+  try {
+    originUrl = new URL(project.originURL);
+  } catch {
+    return {
+      success: false,
+      error: "Project origin URL is invalid",
+    };
+  }
+
   const id = crypto.randomUUID();
 
-  const url = new URL(project.originURL);
+  const url = originUrl;
   url.searchParams.set("invite_id", id);
   url.searchParams.set("client_id", params.clientID);
   if (params.copyID) {

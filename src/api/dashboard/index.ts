@@ -6,8 +6,7 @@ import {
   and,
   gt,
 } from "openauth-webui-shared-types/drizzle";
-import {
-  getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
+import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
   projectTable,
   LogsTable,
@@ -73,35 +72,6 @@ export type UsageOverTime = {
   buckets: string[];
   series: UsageSeries[];
 };
-
-function getMockUsageOverTime(clientIDs?: string[]): UsageOverTime {
-  const now = new Date();
-  const buckets: string[] = [];
-  for (let i = 23; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 60 * 60 * 1000);
-    buckets.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:00`
-    );
-  }
-  const projects = clientIDs?.length
-    ? clientIDs
-    : ["my-app", "web-client", "demo-project"];
-  const series: UsageSeries[] = projects.map((clientID, idx) => ({
-    clientID,
-    color: USAGE_COLOR_PALETTE[idx % USAGE_COLOR_PALETTE.length],
-    counts: buckets.map((_, i) =>
-      Math.max(
-        0,
-        Math.round(
-          (15 - idx * 4) +
-            10 * Math.sin((i + idx) / 4) +
-            4 * Math.cos((i + idx * 2) / 5)
-        )
-      )
-    ),
-  }));
-  return { buckets, series };
-}
 
 export type DashboardData = {
   kpis: DashboardKPIs;
@@ -192,7 +162,7 @@ export async function GET(): Promise<{
       .select()
       .from(LogsTable)
       .where(
-        and(eq(LogsTable.type, "error"), gt(LogsTable.timestamp, oneDayAgo))
+        and(eq(LogsTable.type, "error"), gt(LogsTable.timestamp, oneDayAgo)),
       );
 
     const totalErrors24h = errors24hRows.length;
@@ -212,7 +182,7 @@ export async function GET(): Promise<{
         // Last error = most recent (errors24hRows are not necessarily sorted by project, but we have them)
         const sorted = [...errs].sort(
           (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         );
         stats.lastError = {
           message: sorted[0]!.message,
@@ -254,8 +224,7 @@ export async function GET(): Promise<{
       const msg = (log.message || "").toLowerCase();
       if (msg.includes("webhook") && msg.includes("fail")) {
         const existing = alerts.find(
-          (a) =>
-            a.type === "webhook_failure" && a.projectId === log.clientID
+          (a) => a.type === "webhook_failure" && a.projectId === log.clientID,
         );
         if (!existing) {
           alerts.push({
@@ -270,7 +239,7 @@ export async function GET(): Promise<{
     // 7. Build KPIs
     const totalUsers = [...projectStatsMap.values()].reduce(
       (sum, s) => sum + s.userCount,
-      0
+      0,
     );
     const totalWebhooks = webhooks.length;
 
@@ -292,7 +261,12 @@ export async function GET(): Promise<{
     for (let i = 23; i >= 0; i--) {
       const d = new Date(now.getTime() - i * 60 * 60 * 1000);
       buckets.push(
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:00`
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          "0",
+        )}-${String(d.getDate()).padStart(2, "0")}T${String(
+          d.getHours(),
+        ).padStart(2, "0")}:00`,
       );
     }
 
@@ -300,19 +274,21 @@ export async function GET(): Promise<{
 
     const countByProjectAndBucket = new Map<string, number[]>();
     for (const p of parsedProjects) {
-      countByProjectAndBucket.set(
-        p.clientID,
-        Array(buckets.length).fill(0)
-      );
+      countByProjectAndBucket.set(p.clientID, Array(buckets.length).fill(0));
     }
 
     for (const row of logs24hRows) {
       const d = new Date(row.timestamp);
-      const bucketKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:00`;
+      const bucketKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0",
+      )}-${String(d.getDate()).padStart(2, "0")}T${String(
+        d.getHours(),
+      ).padStart(2, "0")}:00`;
       const idx = bucketToIndex.get(bucketKey);
       if (idx !== undefined) {
         const arr = countByProjectAndBucket.get(row.clientID);
-        if (arr) arr[idx]++;
+        if (arr) arr[idx]!++;
         else {
           const newArr = Array(buckets.length).fill(0);
           newArr[idx] = 1;
@@ -323,19 +299,13 @@ export async function GET(): Promise<{
 
     const usageSeries: UsageSeries[] = parsedProjects.map((p, i) => ({
       clientID: p.clientID,
-      color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length],
-      counts: countByProjectAndBucket.get(p.clientID) ?? Array(buckets.length).fill(0),
+      color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length]!,
+      counts:
+        countByProjectAndBucket.get(p.clientID) ??
+        Array(buckets.length).fill(0),
     }));
 
-    let usageOverTime: UsageOverTime = { buckets, series: usageSeries };
-    const hasAnyActivity = usageOverTime.series.some((s) =>
-      s.counts.some((c) => c > 0)
-    );
-    if (!hasAnyActivity) {
-      usageOverTime = getMockUsageOverTime(
-        parsedProjects.map((p) => p.clientID)
-      );
-    }
+    const usageOverTime: UsageOverTime = { buckets, series: usageSeries };
 
     return {
       success: true,

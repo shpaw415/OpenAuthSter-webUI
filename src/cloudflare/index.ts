@@ -11,9 +11,10 @@ export async function createCustomDomainForProject(
   const issuer_url = new URL(
     env.CLOUDFLARE_AUTH_ENDPOINT_DOMAIN ?? env.PUBLIC_ISSUER,
   );
-  const newDomaineName = `${crypto.randomUUID().replaceAll("-", "")}-${
+  const rawName = `${crypto.randomUUID().replaceAll("-", "")}-${
     issuer_url.hostname
   }`;
+  const newDomaineName = rawName.slice(0, 63);
 
   try {
     const domaine = await cf.workers.domains.update({

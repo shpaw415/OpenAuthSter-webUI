@@ -3,6 +3,13 @@ import { type Project, parseDBProject } from "openauth-webui-shared-types";
 import {
   DeleteOTFusersTable,
   projectTable,
+  WebHookTable,
+  totpTable,
+  totpTokenTable,
+  webauthnCredentialsTable,
+  webauthnChallengesTable,
+  webAuthnTokenAccessTable,
+  WebUiInviteLinkTable,
 } from "openauth-webui-shared-types/database";
 
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
@@ -162,16 +169,31 @@ export async function DELETE(params: {
       error: "Project not found",
     };
 
+  // Clean up all orphan records associated with this project
+  await Promise.allSettled([
+    db.delete(WebHookTable).where(eq(WebHookTable.clientID, params.clientID)),
+    db.delete(totpTable).where(eq(totpTable.clientID, params.clientID)),
+    db.delete(totpTokenTable).where(eq(totpTokenTable.clientID, params.clientID)),
+    db.delete(webauthnCredentialsTable).where(eq(webauthnCredentialsTable.clientID, params.clientID)),
+    db.delete(webauthnChallengesTable).where(eq(webauthnChallengesTable.clientID, params.clientID)),
+    db.delete(webAuthnTokenAccessTable).where(eq(webAuthnTokenAccessTable.clientID, params.clientID)),
+    db.delete(WebUiInviteLinkTable).where(eq(WebUiInviteLinkTable.clientID, params.clientID)),
+  ]);
+
   await db
     .delete(projectTable)
     .where(eq(projectTable.clientID, params.clientID));
 
   const cfClient = createClient(env);
-  await deleteCustomDomainForProject(
-    env,
-    cfClient,
-    existing.cloudflareDomaineID,
-  );
+  try {
+    await deleteCustomDomainForProject(
+      env,
+      cfClient,
+      existing.cloudflareDomaineID,
+    );
+  } catch (error) {
+    console.error(`Failed to delete CF domain ${existing.cloudflareDomaineID}:`, error);
+  }
 
   try {
     await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);

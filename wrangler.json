@@ -11,5 +11,6 @@
       "remote": true
     }
   ],
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "c4dac0bc0538db5e8d63fe89fd112238"
 }

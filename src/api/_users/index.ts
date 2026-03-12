@@ -3,6 +3,8 @@ import {
   OTFusersTable,
   parseDBUser,
   type OTFUsersParsedType,
+  totpTable,
+  webauthnCredentialsTable,
 } from "openauth-webui-shared-types/database";
 import {
   drizzle,
@@ -10,6 +12,7 @@ import {
   sql,
   desc,
   eq,
+  and,
 } from "openauth-webui-shared-types/drizzle";
 import { isClientIdValid } from "openauth-webui-shared-types/database";
 
@@ -153,6 +156,12 @@ export async function DELETE(
     }
 
     await db.delete(usersTable).where(eq(usersTable.id, userID));
+
+    // Clean up orphan MFA records for this user
+    await Promise.allSettled([
+      db.delete(totpTable).where(and(eq(totpTable.user_id, userID), eq(totpTable.clientID, clientID))),
+      db.delete(webauthnCredentialsTable).where(and(eq(webauthnCredentialsTable.user_id, userID), eq(webauthnCredentialsTable.clientID, clientID))),
+    ]);
 
     return { success: true };
   } catch (error) {

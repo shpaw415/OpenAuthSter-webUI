@@ -69,12 +69,17 @@ export async function POST({
 
 export async function DELETE({
   webHookID,
+  clientID,
 }: {
   webHookID: string;
+  clientID: string;
 }): Promise<ActionResponse<null>> {
   const ctx = getContext<Env, any, any>(arguments);
   try {
-    await new WebHook({ db: ctx.env.PROJECT_DB }).deleteWebHook(webHookID);
+    await new WebHook({ db: ctx.env.PROJECT_DB }).deleteWebHook(
+      webHookID,
+      clientID,
+    );
     return {
       success: true,
       data: null,

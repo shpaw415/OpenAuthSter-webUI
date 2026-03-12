@@ -7,6 +7,16 @@ export async function onRequest(
 ) {
   //@ts-ignore
   if (context.env.NODE_ENV === "development") {
+    const host = new URL(context.request.url).hostname;
+    if (host !== "localhost" && host !== "127.0.0.1") {
+      console.error(
+        "Unauthorized request in development environment from host:",
+        host,
+        ". Only localhost and 127.0.0.1 are allowed.",
+        "Set NODE_ENV to production to disable this check.",
+      );
+      return new Response("Unauthorized", { status: 401 });
+    }
     return await context.next();
   }
 
@@ -25,7 +35,7 @@ export async function onRequest(
   } catch (err) {
     if (err instanceof Error) {
       console.error("Error in API middleware:", err);
-      return new Response(`${err.message}\n${err.stack}`, { status: 500 });
+      return new Response("Internal Server Error", { status: 500 });
     }
     return new Response("Unknown error", { status: 500 });
   }

@@ -31,7 +31,7 @@ export function useWebHook(projectID: string) {
 
   const deleteWebHook = useCallback(
     async (webHookID: string) => {
-      const res = await DeleteWebHook({ webHookID });
+      const res = await DeleteWebHook({ webHookID, clientID: projectID });
       if (!res.success) return res;
       setWebHooks((prev) => prev.filter((webhook) => webhook.id !== webHookID));
       return res;

@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
       c.setTokenToCookie();
     });
     client.current.init();
-  }, [client.current.fetch]);
+  }, []);
 
   return (
     <globalThis.__OPENAUTHSTER_CLIENT__.Provider value={client.current}>

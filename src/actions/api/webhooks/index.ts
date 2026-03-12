@@ -5,7 +5,7 @@ import type {
   ExtendedWebHookConfig,
 } from "openauth-webui-shared-types/webhook/types";
 import { WebHook } from "openauth-webui-shared-types/webhook";
-import type { ActionResponse } from "../../api-helper";
+import type { ActionResponse } from "../../../api-helper";
 
 export async function GET({
   clientID,

@@ -14,7 +14,7 @@ import {
   createClient,
   createCustomDomainForProject,
   deleteCustomDomainForProject,
-} from "../../cloudflare";
+} from "../../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
 
 // GET /api/projects - List all projects

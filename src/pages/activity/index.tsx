@@ -1,4 +1,4 @@
-import { GET as getLogs } from "@api/_logs";
+import { GET as getLogs } from "@api/logs";
 import { useProjects } from "@hooks/useProjects";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LogsTable } from "openauth-webui-shared-types/database";

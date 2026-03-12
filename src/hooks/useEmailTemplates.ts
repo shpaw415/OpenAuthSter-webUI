@@ -5,13 +5,13 @@ import {
   POST as createNewTemplate,
   type EmailTemplate,
   type CreateTemplateParams,
-} from "@api/_templates";
+} from "@api/templates";
 import {
   GET as getTemplateByName,
   PUT as updateTemplateByName,
   DELETE as deleteTemplateByName,
   type UpdateTemplateParams,
-} from "@api/_templates/id";
+} from "@api/templates/id";
 
 export type { EmailTemplate };
 

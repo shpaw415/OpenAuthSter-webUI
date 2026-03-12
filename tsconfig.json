@@ -23,7 +23,7 @@
       "frame-master-plugin-image-optimizer/types"
     ],
     "paths": {
-      "@api/*": ["./src/api/*"],
+      "@api/*": ["./src/actions/api/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@docs/*": ["./src/docs/*"],
       "@components/*": ["./src/components/*"],

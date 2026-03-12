@@ -50,7 +50,7 @@ export default {
       entries: ["NODE_ENV"],
     }),
     CloudflareAction({
-      actionBasePath: "src/api",
+      actionBasePath: "src/actions",
       outDir: ".frame-master/build",
     }),
     svgToJsxPlugin(),

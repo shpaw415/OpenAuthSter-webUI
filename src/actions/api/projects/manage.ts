@@ -13,7 +13,10 @@ import {
 } from "openauth-webui-shared-types/database";
 
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { createClient, deleteCustomDomainForProject } from "../../cloudflare";
+import {
+  createClient,
+  deleteCustomDomainForProject,
+} from "../../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
 
 // GET /projects/manage - Get a single project
@@ -173,11 +176,21 @@ export async function DELETE(params: {
   await Promise.allSettled([
     db.delete(WebHookTable).where(eq(WebHookTable.clientID, params.clientID)),
     db.delete(totpTable).where(eq(totpTable.clientID, params.clientID)),
-    db.delete(totpTokenTable).where(eq(totpTokenTable.clientID, params.clientID)),
-    db.delete(webauthnCredentialsTable).where(eq(webauthnCredentialsTable.clientID, params.clientID)),
-    db.delete(webauthnChallengesTable).where(eq(webauthnChallengesTable.clientID, params.clientID)),
-    db.delete(webAuthnTokenAccessTable).where(eq(webAuthnTokenAccessTable.clientID, params.clientID)),
-    db.delete(WebUiInviteLinkTable).where(eq(WebUiInviteLinkTable.clientID, params.clientID)),
+    db
+      .delete(totpTokenTable)
+      .where(eq(totpTokenTable.clientID, params.clientID)),
+    db
+      .delete(webauthnCredentialsTable)
+      .where(eq(webauthnCredentialsTable.clientID, params.clientID)),
+    db
+      .delete(webauthnChallengesTable)
+      .where(eq(webauthnChallengesTable.clientID, params.clientID)),
+    db
+      .delete(webAuthnTokenAccessTable)
+      .where(eq(webAuthnTokenAccessTable.clientID, params.clientID)),
+    db
+      .delete(WebUiInviteLinkTable)
+      .where(eq(WebUiInviteLinkTable.clientID, params.clientID)),
   ]);
 
   await db
@@ -192,7 +205,10 @@ export async function DELETE(params: {
       existing.cloudflareDomaineID,
     );
   } catch (error) {
-    console.error(`Failed to delete CF domain ${existing.cloudflareDomaineID}:`, error);
+    console.error(
+      `Failed to delete CF domain ${existing.cloudflareDomaineID}:`,
+      error,
+    );
   }
 
   try {

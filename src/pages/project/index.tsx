@@ -580,7 +580,7 @@ export default function ProjectDetail() {
                   Website URL
                 </label>
                 <input
-                  type="text"
+                  type="url"
                   value={projectData.websiteUrl || ""}
                   onChange={(e) =>
                     setProjectData({
@@ -588,7 +588,7 @@ export default function ProjectDetail() {
                       websiteUrl: e.target.value,
                     })
                   }
-                  placeholder="https://example.com,http://localhost:3000"
+                  placeholder="https://example.com"
                   className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <p className="text-gray-500 text-xs mt-1">
@@ -1443,13 +1443,16 @@ function AllowOriginForm({
       >
         <input
           name="origin"
-          type="url"
+          type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="https://example.com"
+          placeholder="https://example.com,https://app.example.com"
           className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           disabled={isSaving}
         />
+        <p className="mt-1 text-xs text-gray-400">
+          Separate multiple origins with a comma.
+        </p>
         <button
           type="submit"
           disabled={isSaving}

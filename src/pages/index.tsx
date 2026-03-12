@@ -56,7 +56,9 @@ function StatCard({
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="text-base font-medium text-gray-400">{label}</p>
-        <p className={`text-2xl font-semibold leading-tight mt-1 ${tone}`}>{value}</p>
+        <p className={`text-2xl font-semibold leading-tight mt-1 ${tone}`}>
+          {value}
+        </p>
       </div>
       <Icon icon={icon} className={`w-10 h-10 shrink-0 ${tone} opacity-80`} />
     </div>
@@ -92,7 +94,10 @@ function RecentActivitySkeleton() {
       </div>
       <div className="space-y-2">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="flex gap-3 py-2 border-b border-gray-700 last:border-0">
+          <div
+            key={i}
+            className="flex gap-3 py-2 border-b border-gray-700 last:border-0"
+          >
             <div className="h-5 w-12 bg-gray-700 rounded shrink-0" />
             <div className="h-4 flex-1 bg-gray-700/70 rounded" />
             <div className="h-4 w-20 bg-gray-700/50 rounded shrink-0" />
@@ -146,10 +151,10 @@ export default function AdminPanel() {
       ]);
       const currentWebUI = getCurrentWebUiVersion();
       const currentIssuer = await getCurrentIssuerVersion(
-        process.env.PUBLIC_ISSUER ?? ""
+        process.env.PUBLIC_ISSUER ?? "",
       );
       setVersionOutdated(
-        currentWebUI !== latestWebUI || currentIssuer !== latestIssuer
+        currentWebUI !== latestWebUI || currentIssuer !== latestIssuer,
       );
     } catch (_) {
       // Ignore version check errors
@@ -191,7 +196,7 @@ export default function AdminPanel() {
       await dashboard.refetch();
     } catch (err) {
       setCreateError(
-        err instanceof Error ? err.message : "Failed to create project"
+        err instanceof Error ? err.message : "Failed to create project",
       );
     } finally {
       setIsCreating(false);
@@ -220,7 +225,10 @@ export default function AdminPanel() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-gray-800 border border-gray-700">
-            <Icon icon="lucide:layout-dashboard" className="w-8 h-8 text-blue-400" />
+            <Icon
+              icon="lucide:layout-dashboard"
+              className="w-8 h-8 text-blue-400"
+            />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white">Dashboard</h2>
@@ -303,7 +311,9 @@ export default function AdminPanel() {
                 <div className="mt-2 flex gap-2">
                   {alert.type === "errors" && alert.projectId && (
                     <a
-                      href={`/activity?project_id=${encodeURIComponent(alert.projectId)}`}
+                      href={`/activity?project_id=${encodeURIComponent(
+                        alert.projectId,
+                      )}`}
                       className="text-xs text-amber-300 hover:text-amber-200 underline inline-flex items-center gap-1"
                     >
                       <Icon icon="lucide:scroll-text" className="w-3.5 h-3.5" />
@@ -312,7 +322,9 @@ export default function AdminPanel() {
                   )}
                   {alert.type === "webhook_failure" && alert.projectId && (
                     <a
-                      href={`/project?project_id=${encodeURIComponent(alert.projectId)}`}
+                      href={`/project?project_id=${encodeURIComponent(
+                        alert.projectId,
+                      )}`}
                       className="text-xs text-amber-300 hover:text-amber-200 underline inline-flex items-center gap-1"
                     >
                       <Icon icon="lucide:settings" className="w-3.5 h-3.5" />
@@ -344,7 +356,10 @@ export default function AdminPanel() {
           <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Icon icon="lucide:activity" className="w-5 h-5 text-blue-400" />
+                <Icon
+                  icon="lucide:activity"
+                  className="w-5 h-5 text-blue-400"
+                />
                 Recent activity
               </h3>
               <a
@@ -357,27 +372,29 @@ export default function AdminPanel() {
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {dashboard.data.recentLogs.slice(0, 10).map((log) => (
-              <div
-                key={log.id}
-                className="flex items-start gap-3 py-2 border-b border-gray-700 last:border-0"
-              >
-                <span
-                  className={`shrink-0 px-2 py-0.5 rounded text-xs font-medium inline-flex items-center gap-1 ${typeTone[log.type]}`}
+                <div
+                  key={log.id}
+                  className="flex items-start gap-3 py-2 border-b border-gray-700 last:border-0"
                 >
-                  <Icon icon={typeIcon[log.type]} className="w-3.5 h-3.5" />
-                  {typeLabel[log.type]}
-                </span>
-                <p className="text-sm text-gray-300 line-clamp-2 flex-1 min-w-0">
-                  {log.message}
-                </p>
-                <span className="text-xs text-gray-500 shrink-0">
-                  {log.clientID}
-                </span>
-                <span className="text-xs text-gray-500 shrink-0">
-                  {formatDate(log.timestamp)}
-                </span>
-              </div>
-            ))}
+                  <span
+                    className={`shrink-0 px-2 py-0.5 rounded text-xs font-medium inline-flex items-center gap-1 ${
+                      typeTone[log.type]
+                    }`}
+                  >
+                    <Icon icon={typeIcon[log.type]} className="w-3.5 h-3.5" />
+                    {typeLabel[log.type]}
+                  </span>
+                  <p className="text-sm text-gray-300 line-clamp-2 flex-1 min-w-0">
+                    {log.message}
+                  </p>
+                  <span className="text-xs text-gray-500 shrink-0">
+                    {log.clientID}
+                  </span>
+                  <span className="text-xs text-gray-500 shrink-0">
+                    {formatDate(log.timestamp)}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )
@@ -417,7 +434,10 @@ export default function AdminPanel() {
       ) : (
         <div>
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Icon icon="lucide:folder-kanban" className="w-5 h-5 text-blue-400" />
+            <Icon
+              icon="lucide:folder-kanban"
+              className="w-5 h-5 text-blue-400"
+            />
             Projects
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -444,7 +464,11 @@ export default function AdminPanel() {
                         }`}
                       >
                         <Icon
-                          icon={project.active ? "lucide:folder-open" : "lucide:folder"}
+                          icon={
+                            project.active
+                              ? "lucide:folder-open"
+                              : "lucide:folder"
+                          }
                           className="w-4 h-4"
                         />
                       </div>
@@ -465,14 +489,20 @@ export default function AdminPanel() {
 
                   <div className="text-sm text-gray-400 mb-4 space-y-2">
                     <div className="flex items-center gap-2">
-                      <Icon icon="lucide:calendar" className="w-4 h-4 shrink-0 text-gray-500" />
+                      <Icon
+                        icon="lucide:calendar"
+                        className="w-4 h-4 shrink-0 text-gray-500"
+                      />
                       <span>
                         Created:{" "}
                         {new Date(project.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Icon icon="lucide:shield-check" className="w-4 h-4 shrink-0 text-gray-500" />
+                      <Icon
+                        icon="lucide:shield-check"
+                        className="w-4 h-4 shrink-0 text-gray-500"
+                      />
                       <span>
                         Providers:{" "}
                         {project.providers_data?.filter((p) => p.enabled)
@@ -483,11 +513,17 @@ export default function AdminPanel() {
                     {stats !== undefined && (
                       <>
                         <div className="flex items-center gap-2">
-                          <Icon icon="lucide:users" className="w-4 h-4 shrink-0 text-gray-500" />
+                          <Icon
+                            icon="lucide:users"
+                            className="w-4 h-4 shrink-0 text-gray-500"
+                          />
                           <span>Users: {stats.userCount}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Icon icon="lucide:webhook" className="w-4 h-4 shrink-0 text-gray-500" />
+                          <Icon
+                            icon="lucide:webhook"
+                            className="w-4 h-4 shrink-0 text-gray-500"
+                          />
                           <span>Webhooks: {stats.webhookCount}</span>
                         </div>
                         {stats.lastError && (
@@ -495,7 +531,10 @@ export default function AdminPanel() {
                             className="flex items-center gap-2 text-red-400 truncate"
                             title={stats.lastError.message}
                           >
-                            <Icon icon="lucide:alert-circle" className="w-4 h-4 shrink-0" />
+                            <Icon
+                              icon="lucide:alert-circle"
+                              className="w-4 h-4 shrink-0"
+                            />
                             <span>
                               Last error:{" "}
                               {stats.lastError.message.length > 40
@@ -511,7 +550,7 @@ export default function AdminPanel() {
                   <div className="flex space-x-2">
                     <a
                       href={`/project?project_id=${encodeURIComponent(
-                        project.clientID
+                        project.clientID,
                       )}`}
                       className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors text-center inline-flex items-center justify-center gap-2"
                     >
@@ -538,7 +577,10 @@ export default function AdminPanel() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
             <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Icon icon="lucide:folder-plus" className="w-6 h-6 text-blue-400" />
+              <Icon
+                icon="lucide:folder-plus"
+                className="w-6 h-6 text-blue-400"
+              />
               Create New Project
             </h3>
 
@@ -550,7 +592,7 @@ export default function AdminPanel() {
             )}
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
                 <Icon icon="lucide:tag" className="w-4 h-4 text-gray-500" />
                 Client ID
               </label>
@@ -585,7 +627,10 @@ export default function AdminPanel() {
               >
                 {isCreating ? (
                   <>
-                    <Icon icon="lucide:loader-2" className="w-4 h-4 animate-spin" />
+                    <Icon
+                      icon="lucide:loader-2"
+                      className="w-4 h-4 animate-spin"
+                    />
                     Creating...
                   </>
                 ) : (

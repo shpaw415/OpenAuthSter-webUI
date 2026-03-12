@@ -1042,11 +1042,13 @@ function ProjectClientInfo({
           <label className="text-gray-400 text-sm">Issuer URL</label>
           <div className="flex items-center gap-2">
             <code className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
-              {project?.authEndpointURL}
+              https://{project?.authEndpointURL}
             </code>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(project?.authEndpointURL || "");
+                navigator.clipboard.writeText(
+                  `https://${project?.authEndpointURL}` || "",
+                );
                 setNotification({ message: "Auth Endpoint URL copied!" });
               }}
               className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"

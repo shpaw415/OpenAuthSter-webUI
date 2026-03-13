@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "openauthster-webui",
+  "name": "openauthster-webui-test",
   "pages_build_output_dir": ".frame-master/build",
   "compatibility_date": "2025-11-09",
   "d1_databases": [

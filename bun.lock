@@ -11,6 +11,7 @@
         "@openauthjs/openauth": "^0.4.3",
         "@shpaw415/formdata-parser": "^0.1.1",
         "@tailwindcss/cli": "^4.2.1",
+        "@tailwindcss/typography": "^0.5.19",
         "@types/js-cookie": "^3.0.6",
         "cloudflare": "^5.2.0",
         "drizzle-orm": "^0.45.1",
@@ -38,7 +39,6 @@
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20260305.1",
-        "@tailwindcss/typography": "^0.5.19",
         "@types/bun": "latest",
         "@types/mustache": "^4.2.6",
         "@types/react": "^19.2.14",
@@ -984,7 +984,7 @@
 
     "oniguruma-to-es": ["oniguruma-to-es@4.3.4", "", { "dependencies": { "oniguruma-parser": "^0.12.1", "regex": "^6.0.1", "regex-recursion": "^6.0.2" } }, "sha512-3VhUGN3w2eYxnTzHn+ikMI+fp/96KoRSVK9/kMTcFqj1NRDh2IhQCKvYxDnWePKRXY/AqH+Fuiyb7VHSzBjHfA=="],
 
-    "openauth-webui-shared-types": ["openauthster-shared@github:shpaw415/OpenAuthSter-shared#cceebcb", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "@simplewebauthn/browser": "^13.2.2", "@simplewebauthn/server": "^13.2.3", "cloudflare": "^5.2.0", "mustache": "^4.2.0", "openauth-webui-shared-types": ".", "uqr": "^0.1.2", "valibot": "^1.2.0" }, "peerDependencies": { "drizzle-orm": "^0.45.1", "hono": "^4.12.2", "typescript": "^5" } }, "shpaw415-OpenAuthSter-shared-cceebcb", "sha512-Ro60B4DslDh9MkDcIiTrND1bmLwN5SiY4T2Ar5vGOEIeJqe7vP/r9PRmQGjfbHTYXS/lefwsPGgC5GVJxADsDA=="],
+    "openauth-webui-shared-types": ["openauthster-shared@github:shpaw415/OpenAuthSter-shared#c592d4b", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "@simplewebauthn/browser": "^13.2.2", "@simplewebauthn/server": "^13.2.3", "cloudflare": "^5.2.0", "mustache": "^4.2.0", "openauth-webui-shared-types": ".", "uqr": "^0.1.2", "valibot": "^1.2.0" }, "peerDependencies": { "drizzle-orm": "^0.45.1", "hono": "^4.12.2", "typescript": "^5" } }, "shpaw415-OpenAuthSter-shared-c592d4b", "sha512-9OQZu1R6knnl/nv1vgsMJyrAf24m4uCVZWlFgpIhN6umkZZeXWtU4DBny/1gVUBiqJFsoQTCEL4Xh5mFvbagYQ=="],
 
     "parent-module": ["parent-module@1.0.1", "", { "dependencies": { "callsites": "^3.0.0" } }, "sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g=="],
 
@@ -1614,7 +1614,7 @@
 
     "npm/yallist": ["yallist@5.0.0", "", {}, "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw=="],
 
-    "openauth-webui-shared-types/openauth-webui-shared-types": ["openauth-webui-shared-types@file:../../.bun/install/cache/@GH@shpaw415-OpenAuthSter-shared-cceebcb@@@1", {}],
+    "openauth-webui-shared-types/openauth-webui-shared-types": ["openauth-webui-shared-types@file:../../.bun/install/cache/@GH@shpaw415-OpenAuthSter-shared-c592d4b@@@1", {}],
 
     "parse-entities/@types/unist": ["@types/unist@2.0.11", "", {}, "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA=="],
 

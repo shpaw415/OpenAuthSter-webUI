@@ -1208,6 +1208,14 @@ function InviteLinkModal({
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copyID, setCopyID] = useState<string | null>(null);
   const [expiresIn, setExpiresIn] = useState<number>(60);
+  const allowedOrigins =
+    project.originURL
+      ?.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean) || [];
+  const [allowOrigin, setAllowOrigin] = useState<string>(
+    allowedOrigins[0] || "",
+  );
   const [isLoading, setIsLoading] = useState(false);
   const { templates, isLoading: isTemplatesLoading } = useCopyTemplates();
 
@@ -1218,6 +1226,7 @@ function InviteLinkModal({
         clientID: project.clientID,
         copyID: copyID || undefined,
         expireInMin: expiresIn,
+        originURL: allowOrigin,
       });
       if (res.error) {
         throw new Error(res.error);
@@ -1232,7 +1241,7 @@ function InviteLinkModal({
     } finally {
       setIsLoading(false);
     }
-  }, [copyID, expiresIn, project.clientID, onClose, setNotification]);
+  }, [copyID, expiresIn, allowOrigin, project.clientID, onClose, setNotification]);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1255,6 +1264,32 @@ function InviteLinkModal({
         </div>
 
         <div className="space-y-4">
+          {/* Allow Origin Select */}
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Allow Origin
+            </label>
+            <select
+              value={allowOrigin}
+              onChange={(e) => setAllowOrigin(e.target.value)}
+              disabled={isLoading || allowedOrigins.length === 0}
+              className="w-full px-3 py-2.5 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {allowedOrigins.length === 0 ? (
+                <option value="">No origins configured</option>
+              ) : (
+                allowedOrigins.map((origin) => (
+                  <option key={origin} value={origin}>
+                    {origin}
+                  </option>
+                ))
+              )}
+            </select>
+            <p className="text-gray-500 text-xs mt-1">
+              The origin the invite link will redirect to
+            </p>
+          </div>
+
           {/* Copy Template Select */}
           <div>
             <label className="block text-gray-300 text-sm font-medium mb-2">

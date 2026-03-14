@@ -9,6 +9,7 @@ export async function POST(params: {
   clientID: string;
   copyID?: string;
   expireInMin: number;
+  originURL: string;
 }): Promise<{
   success: boolean;
   data?: { link: string };
@@ -49,7 +50,15 @@ export async function POST(params: {
 
   let originUrl: URL;
   try {
-    originUrl = new URL(project.originURL);
+    const authorizedOrigins = project.originURL.split(",").map((u) => u.trim());
+    if (!authorizedOrigins.includes(params.originURL)) {
+      return {
+        success: false,
+        error:
+          "Provided origin URL is not in the list of authorized origins for this project",
+      };
+    }
+    originUrl = new URL(params.originURL);
   } catch {
     return {
       success: false,

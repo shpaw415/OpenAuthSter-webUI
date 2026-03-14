@@ -4,7 +4,7 @@ import { drizzle } from "openauth-webui-shared-types/drizzle";
 
 export type CopyTemplate = {
   name: string;
-  providerType: "code" | "password";
+  providerType: "code" | "password" | "qr" | "passkey";
   copyData: Record<string, string>;
   created_at: string;
   updated_at: string;
@@ -26,7 +26,7 @@ export async function GET(): Promise<{
     success: true,
     data: templates.map((t) => ({
       ...t,
-      providerType: t.providerType as "code" | "password",
+      providerType: t.providerType as "code" | "password" | "qr" | "passkey",
       copyData: t.copyData as Record<string, string>,
     })),
   };
@@ -34,7 +34,7 @@ export async function GET(): Promise<{
 
 export type CreateCopyTemplateParams = {
   name: string;
-  providerType: "code" | "password";
+  providerType: "code" | "password" | "qr" | "passkey";
   copyData: Record<string, string>;
 };
 
@@ -57,10 +57,10 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
       };
     }
 
-    if (!providerType || !["code", "password"].includes(providerType)) {
+    if (!providerType || !["code", "password", "qr", "passkey"].includes(providerType)) {
       return {
         success: false,
-        error: "Invalid provider type. Must be 'code' or 'password'",
+        error: "Invalid provider type. Must be 'code', 'password', 'qr', or 'passkey'",
       };
     }
 

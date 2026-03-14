@@ -30,7 +30,7 @@ export async function GET(params: { name: string }): Promise<{
     success: true,
     data: {
       ...template,
-      providerType: template.providerType as "code" | "password",
+      providerType: template.providerType as "code" | "password" | "qr" | "passkey",
       copyData: template.copyData as Record<string, string>,
     },
   };
@@ -39,7 +39,7 @@ export async function GET(params: { name: string }): Promise<{
 export type UpdateCopyTemplateParams = {
   name: string;
   data: {
-    providerType?: "code" | "password";
+    providerType?: "code" | "password" | "qr" | "passkey";
     copyData?: Record<string, string>;
   };
 };
@@ -76,10 +76,10 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
     };
 
     if (params.data.providerType) {
-      if (!["code", "password"].includes(params.data.providerType)) {
+      if (!["code", "password", "qr", "passkey"].includes(params.data.providerType)) {
         return {
           success: false,
-          error: "Invalid provider type. Must be 'code' or 'password'",
+          error: "Invalid provider type. Must be 'code', 'password', 'qr', or 'passkey'",
         };
       }
       updateData.providerType = params.data.providerType;
@@ -107,7 +107,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
       data: updated
         ? {
             ...updated,
-            providerType: updated.providerType as "code" | "password",
+            providerType: updated.providerType as "code" | "password" | "qr" | "passkey",
             copyData: updated.copyData as Record<string, string>,
           }
         : undefined,

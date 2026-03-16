@@ -1,50 +1,82 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   useCopyTemplate,
   useCopyTemplates,
 } from "../../hooks/useCopyTemplates";
 import { navigate } from "../../utils";
 
-// Default copy fields based on OpenAuth source
-const CODE_COPY_FIELDS: Record<string, string> = {
-  email_placeholder: "email@example.com",
-  email_invalid: "Invalid email address",
-  button_continue: "Continue",
-  code_info: "We'll send a pin code to your email",
-  code_placeholder: "Code",
-  code_invalid: "Invalid code",
-  code_sent: "Code sent to ",
-  code_resent: "Code resent to ",
-  code_didnt_get: "Didn't get code?",
-  code_resend: "Resend",
+// ──────────────────────────────────────────────
+// Default values (from @openauthjs/openauth source)
+// ──────────────────────────────────────────────
+
+const PROVIDER_DEFAULTS = {
+  code: {
+    email_placeholder: "Email",
+    email_invalid: "Email address is not valid",
+    button_continue: "Continue",
+    code_info: "We'll send a pin code to your email.",
+    code_placeholder: "Code",
+    code_invalid: "Invalid code",
+    code_sent: "Code sent to ",
+    code_resent: "Code resent to ",
+    code_didnt_get: "Didn't get code?",
+    code_resend: "Resend",
+  },
+  password: {
+    error_email_taken: "There is already an account with this email.",
+    error_invalid_code: "Code is incorrect.",
+    error_invalid_email: "Email is not valid.",
+    error_invalid_password: "Password is incorrect.",
+    error_password_mismatch: "Passwords do not match.",
+    error_validation_error: "Password does not meet requirements.",
+    register_title: "Welcome to the app",
+    register_description: "Sign in with your email",
+    login_title: "Welcome to the app",
+    login_description: "Sign in with your email",
+    register: "Register",
+    register_prompt: "Don't have an account?",
+    login_prompt: "Already have an account?",
+    login: "Login",
+    change_prompt: "Forgot password?",
+    code_resend: "Resend code",
+    code_return: "Back to",
+    logo: "A",
+    input_email: "Email",
+    input_password: "Password",
+    input_code: "Code",
+    input_repeat: "Repeat password",
+    button_continue: "Continue",
+  },
+  qr: {
+    title: "Sign in with QR Code",
+    description: "Scan this QR Code with your mobile app to sign in.",
+  },
+  passkey: {
+    title: "Sign in with Passkey",
+  },
+} as const;
+
+type ProviderKey = keyof typeof PROVIDER_DEFAULTS;
+
+const PROVIDERS: { key: ProviderKey; label: string }[] = [
+  { key: "code", label: "Code (OTP)" },
+  { key: "password", label: "Password" },
+  { key: "qr", label: "QR Code" },
+  { key: "passkey", label: "Passkey" },
+];
+
+type PerProviderCopy = Record<ProviderKey, Record<string, string>>;
+
+const EMPTY_COPY: PerProviderCopy = {
+  code: {},
+  password: {},
+  qr: {},
+  passkey: {},
 };
 
-const PASSWORD_COPY_FIELDS: Record<string, string> = {
-  error_email_taken: "Email is already registered",
-  error_invalid_code: "Invalid code",
-  error_invalid_email: "Invalid email address",
-  error_invalid_password: "Invalid password",
-  error_password_mismatch: "Passwords do not match",
-  error_validation_error: "Validation error",
-  register_title: "Register",
-  register_description: "Create your account",
-  login_title: "Login",
-  login_description: "Welcome back",
-  register: "Register",
-  register_prompt: "Don't have an account?",
-  login_prompt: "Already have an account?",
-  login: "Login",
-  change_prompt: "Change password?",
-  code_resend: "Resend",
-  code_return: "Return to login",
-  input_email: "Email",
-  input_password: "Password",
-  input_code: "Code",
-  input_repeat: "Repeat Password",
-  button_continue: "Continue",
-};
-
-type ProviderType = "code" | "password";
+// ──────────────────────────────────────────────
+// Component
+// ──────────────────────────────────────────────
 
 export default function CopyManagePage() {
   const [urlParams, setUrlParams] = useState<URLSearchParams | null>(null);
@@ -64,34 +96,28 @@ export default function CopyManagePage() {
   const { createTemplate } = useCopyTemplates();
 
   const [name, setName] = useState("");
-  const [providerType, setProviderType] = useState<ProviderType>("code");
-  const [copyData, setCopyData] = useState<Record<string, string>>({});
+  const [activeProvider, setActiveProvider] = useState<ProviderKey>("code");
+  const [perProviderCopy, setPerProviderCopy] =
+    useState<PerProviderCopy>(EMPTY_COPY);
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const defaultFields = useMemo(
-    () => (providerType === "code" ? CODE_COPY_FIELDS : PASSWORD_COPY_FIELDS),
-    [providerType],
-  );
-
   // Load existing template data
   useEffect(() => {
-    if (template) {
-      setName(template.name);
-      setProviderType(template.providerType);
-      setCopyData(template.copyData);
+    if (!template) return;
+    setName(template.name);
+    const loaded: PerProviderCopy = { ...EMPTY_COPY };
+    const data = template.copyData as Partial<PerProviderCopy>;
+    for (const p of PROVIDERS) {
+      if (data[p.key]) {
+        loaded[p.key] = { ...(data[p.key] as Record<string, string>) };
+      }
     }
+    setPerProviderCopy(loaded);
   }, [template]);
-
-  // Reset copy data when provider type changes (only for new templates)
-  useEffect(() => {
-    if (!isEditing) {
-      setCopyData({});
-    }
-  }, [providerType, isEditing]);
 
   const showNotification = (type: "success" | "error", message: string) => {
     setNotification({ type, message });
@@ -99,14 +125,29 @@ export default function CopyManagePage() {
   };
 
   const handleFieldChange = (key: string, value: string) => {
-    setCopyData((prev) => {
-      if (value === "" || value === defaultFields[key]) {
-        // Remove field if empty or matches default
-        const { [key]: _, ...rest } = prev;
-        return rest;
+    setPerProviderCopy((prev) => {
+      const current = { ...prev[activeProvider] };
+      if (value === "") {
+        delete current[key];
+      } else {
+        current[key] = value;
       }
-      return { ...prev, [key]: value };
+      return { ...prev, [activeProvider]: current };
     });
+  };
+
+  const buildCopyData = () => {
+    const copyData: Record<string, Record<string, string>> = {};
+    for (const p of PROVIDERS) {
+      const nonEmpty: Record<string, string> = {};
+      for (const [k, v] of Object.entries(perProviderCopy[p.key])) {
+        if (v.trim()) nonEmpty[k] = v.trim();
+      }
+      if (Object.keys(nonEmpty).length > 0) {
+        copyData[p.key] = nonEmpty;
+      }
+    }
+    return copyData;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,17 +160,13 @@ export default function CopyManagePage() {
 
     setIsSaving(true);
     try {
+      const copyData = buildCopyData();
       if (isEditing) {
         await updateTemplate({ copyData });
         showNotification("success", "Copy template updated successfully");
       } else {
-        await createTemplate({
-          name: name.trim(),
-          providerType,
-          copyData,
-        });
+        await createTemplate({ name: name.trim(), copyData });
         showNotification("success", "Copy template created successfully");
-        // Redirect to list after short delay
         setTimeout(() => {
           navigate("/copy");
         }, 1000);
@@ -144,9 +181,20 @@ export default function CopyManagePage() {
     }
   };
 
-  const customizedCount = Object.keys(copyData).filter(
-    (key) => copyData[key] && copyData[key] !== defaultFields[key],
-  ).length;
+  const providerFilledCount = (provider: ProviderKey) =>
+    Object.values(perProviderCopy[provider]).filter((v) => v.trim()).length;
+
+  const totalCustomized = PROVIDERS.reduce(
+    (sum, p) => sum + providerFilledCount(p.key),
+    0,
+  );
+
+  const totalFields = PROVIDERS.reduce(
+    (sum, p) => sum + Object.keys(PROVIDER_DEFAULTS[p.key]).length,
+    0,
+  );
+
+  const currentDefaults = PROVIDER_DEFAULTS[activeProvider];
 
   if (isEditing && isLoadingTemplate) {
     return (
@@ -195,10 +243,10 @@ export default function CopyManagePage() {
         </a>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white">
-            {isEditing ? `Edit Copy Template` : "Create Copy Template"}
+            {isEditing ? "Edit Copy Template" : "Create Copy Template"}
           </h1>
           <p className="text-gray-400 text-sm mt-1">
-            Customize UI text for authentication flows
+            Customize UI text for all authentication providers under one name
           </p>
         </div>
       </div>
@@ -222,31 +270,12 @@ export default function CopyManagePage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={isEditing}
-                  placeholder="e.g., custom-login-text"
+                  placeholder="e.g., fr_FR, es_ES, my-brand"
                   className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-              </div>
-
-              {/* Provider Type */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Provider Type
-                </label>
-                <select
-                  value={providerType}
-                  onChange={(e) =>
-                    setProviderType(e.target.value as ProviderType)
-                  }
-                  disabled={isEditing}
-                  className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="code">Pin Code (Email)</option>
-                  <option value="password">Password</option>
-                </select>
                 <p className="text-gray-500 text-xs mt-1">
-                  {providerType === "code"
-                    ? "Customize text for email-based code authentication"
-                    : "Customize text for username/password authentication"}
+                  One name covers all providers for consistent multilingual
+                  support.
                 </p>
               </div>
 
@@ -254,13 +283,27 @@ export default function CopyManagePage() {
               <div className="pt-4 border-t border-gray-700">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Total fields</span>
-                  <span className="text-white">
-                    {Object.keys(defaultFields).length}
-                  </span>
+                  <span className="text-white">{totalFields}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm mt-2">
                   <span className="text-gray-400">Customized</span>
-                  <span className="text-blue-400">{customizedCount}</span>
+                  <span className="text-blue-400">{totalCustomized}</span>
+                </div>
+                <div className="mt-3 space-y-1">
+                  {PROVIDERS.map((p) => {
+                    const count = providerFilledCount(p.key);
+                    return (
+                      count > 0 && (
+                        <div
+                          key={p.key}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <span className="text-gray-500">{p.label}</span>
+                          <span className="text-blue-400/80">{count}</span>
+                        </div>
+                      )
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -294,26 +337,56 @@ export default function CopyManagePage() {
 
           {/* Copy Fields */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">
-                  Copy Fields
-                </h2>
-                <span className="text-gray-400 text-sm">
-                  Leave blank to use default value
-                </span>
+            <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+              {/* Provider Tabs */}
+              <div className="flex border-b border-gray-700 overflow-x-auto">
+                {PROVIDERS.map((p) => {
+                  const count = providerFilledCount(p.key);
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setActiveProvider(p.key)}
+                      className={`flex-1 min-w-max px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                        activeProvider === p.key
+                          ? "bg-gray-900 text-white border-b-2 border-blue-500"
+                          : "text-gray-400 hover:text-gray-200"
+                      }`}
+                    >
+                      {p.label}
+                      {count > 0 && (
+                        <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full leading-none">
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="space-y-4">
-                {Object.entries(defaultFields).map(([key, defaultValue]) => (
-                  <CopyFieldInput
-                    key={key}
-                    fieldKey={key}
-                    defaultValue={defaultValue}
-                    value={copyData[key] || ""}
-                    onChange={(value) => handleFieldChange(key, value)}
-                  />
-                ))}
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-white">
+                    Copy Fields
+                  </h2>
+                  <span className="text-gray-400 text-sm">
+                    Leave blank to use default
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {Object.entries(currentDefaults).map(
+                    ([key, defaultValue]) => (
+                      <CopyFieldInput
+                        key={`${activeProvider}-${key}`}
+                        fieldKey={key}
+                        defaultValue={defaultValue}
+                        value={perProviderCopy[activeProvider][key] ?? ""}
+                        onChange={(value) => handleFieldChange(key, value)}
+                      />
+                    ),
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -334,9 +407,8 @@ function CopyFieldInput({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const isCustomized = value && value !== defaultValue;
+  const isCustomized = value !== "";
 
-  // Format key for display
   const displayKey = fieldKey
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

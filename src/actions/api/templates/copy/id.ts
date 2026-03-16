@@ -1,6 +1,10 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { WebUiCopyTemplateTable } from "openauth-webui-shared-types/database";
+import {
+  WebUiCopyTemplateTable,
+  parseDBCopyTemplate,
+} from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import type { CopyDataSelection } from "openauth-webui-shared-types";
 import type { CopyTemplate } from "./index";
 
 // GET /api/copy/[name] - Get copy template by name
@@ -28,19 +32,14 @@ export async function GET(params: { name: string }): Promise<{
 
   return {
     success: true,
-    data: {
-      ...template,
-      providerType: template.providerType as "code" | "password" | "qr" | "passkey",
-      copyData: template.copyData as Record<string, string>,
-    },
+    data: parseDBCopyTemplate(template),
   };
 }
 
 export type UpdateCopyTemplateParams = {
   name: string;
   data: {
-    providerType?: "code" | "password" | "qr" | "passkey";
-    copyData?: Record<string, string>;
+    copyData?: Partial<CopyDataSelection>;
   };
 };
 
@@ -56,7 +55,6 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
   try {
     const db = drizzle(env.PROJECT_DB);
 
-    // Check if template exists
     const existing = await db
       .select()
       .from(WebUiCopyTemplateTable)
@@ -75,17 +73,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
       updated_at: new Date().toISOString(),
     };
 
-    if (params.data.providerType) {
-      if (!["code", "password", "qr", "passkey"].includes(params.data.providerType)) {
-        return {
-          success: false,
-          error: "Invalid provider type. Must be 'code', 'password', 'qr', or 'passkey'",
-        };
-      }
-      updateData.providerType = params.data.providerType;
-    }
-
-    if (params.data.copyData) {
+    if (params.data.copyData !== undefined) {
       updateData.copyData = params.data.copyData;
     }
 
@@ -94,7 +82,6 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
       .set(updateData)
       .where(eq(WebUiCopyTemplateTable.name, params.name));
 
-    // Fetch updated template
     const updated = await db
       .select()
       .from(WebUiCopyTemplateTable)
@@ -104,13 +91,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
 
     return {
       success: true,
-      data: updated
-        ? {
-            ...updated,
-            providerType: updated.providerType as "code" | "password" | "qr" | "passkey",
-            copyData: updated.copyData as Record<string, string>,
-          }
-        : undefined,
+      data: updated ? parseDBCopyTemplate(updated) : undefined,
     };
   } catch (err) {
     return {
@@ -132,7 +113,6 @@ export async function DELETE(params: { name: string }): Promise<{
   try {
     const db = drizzle(env.PROJECT_DB);
 
-    // Check if template exists
     const existing = await db
       .select()
       .from(WebUiCopyTemplateTable)
@@ -151,9 +131,7 @@ export async function DELETE(params: { name: string }): Promise<{
       .delete(WebUiCopyTemplateTable)
       .where(eq(WebUiCopyTemplateTable.name, params.name));
 
-    return {
-      success: true,
-    };
+    return { success: true };
   } catch (err) {
     return {
       success: false,

@@ -1,11 +1,19 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { WebUiCopyTemplateTable } from "openauth-webui-shared-types/database";
+import {
+  WebUiCopyTemplateTable,
+  parseDBCopyTemplate,
+} from "openauth-webui-shared-types/database";
 import { drizzle } from "openauth-webui-shared-types/drizzle";
+import {
+  insertLog,
+  PUBLIC_CLIENT_ID,
+  type CopyDataSelection,
+} from "openauth-webui-shared-types";
+import type { RequestDataContext } from "@auth";
 
 export type CopyTemplate = {
   name: string;
-  providerType: "code" | "password" | "qr" | "passkey";
-  copyData: Record<string, string>;
+  copyData: Partial<CopyDataSelection>;
   created_at: string;
   updated_at: string;
 };
@@ -24,18 +32,13 @@ export async function GET(): Promise<{
 
   return {
     success: true,
-    data: templates.map((t) => ({
-      ...t,
-      providerType: t.providerType as "code" | "password" | "qr" | "passkey",
-      copyData: t.copyData as Record<string, string>,
-    })),
+    data: templates.map((t) => parseDBCopyTemplate(t)),
   };
 }
 
 export type CreateCopyTemplateParams = {
   name: string;
-  providerType: "code" | "password" | "qr" | "passkey";
-  copyData: Record<string, string>;
+  copyData: Partial<CopyDataSelection>;
 };
 
 // POST /api/copy - Create a new copy template
@@ -44,23 +47,16 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
   error?: string;
   data?: CopyTemplate;
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
   try {
-    const { name, providerType, copyData } = params;
+    const { name, copyData } = params;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return {
         success: false,
         error: "Invalid or missing template name",
-      };
-    }
-
-    if (!providerType || !["code", "password", "qr", "passkey"].includes(providerType)) {
-      return {
-        success: false,
-        error: "Invalid provider type. Must be 'code', 'password', 'qr', or 'passkey'",
       };
     }
 
@@ -74,21 +70,41 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
     const db = drizzle(env.PROJECT_DB);
     const now = new Date().toISOString();
 
-    const newTemplate = {
+    const userData = await ctx.data.client.getMetaData();
+
+    if (!userData || !userData.id) {
+      insertLog({
+        type: "error",
+        message: "Unauthorized attempt to create copy template",
+        database: env.PROJECT_DB,
+        clientID: PUBLIC_CLIENT_ID,
+        context: {
+          action: "create_copy_template",
+          userData,
+        },
+      });
+
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
+    }
+
+    await db.insert(WebUiCopyTemplateTable).values({
       name: name.trim(),
-      providerType,
-      copyData: copyData as any,
+      owner: userData.id!,
+      copyData: copyData,
       created_at: now,
       updated_at: now,
-    };
-
-    await db.insert(WebUiCopyTemplateTable).values(newTemplate);
+    });
 
     return {
       success: true,
       data: {
-        ...newTemplate,
+        name: name.trim(),
         copyData,
+        created_at: now,
+        updated_at: now,
       },
     };
   } catch (err) {

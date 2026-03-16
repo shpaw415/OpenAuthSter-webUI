@@ -51,6 +51,7 @@
     "init:db": "wrangler d1 migrations apply PROJECT_DB",
     "db:generate": "bun --bun drizzle-kit generate",
     "db:migrate": "bun --bun drizzle-kit migrate",
-    "update:share": "bun update openauth-webui-shared-types"
+    "update:share": "bun update openauth-webui-shared-types",
+    "dev:deploy": "NODE_ENV=production wrangler pages deploy"
   }
 }

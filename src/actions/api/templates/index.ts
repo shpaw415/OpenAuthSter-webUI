@@ -1,9 +1,11 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { emailTemplatesTable } from "openauth-webui-shared-types/database";
-import { drizzle } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
+import type { RequestDataContext } from "@auth";
 
 export type EmailTemplate = EmailTemplateProps & {
+  owner_id: string;
   created_at: string;
   updated_at: string;
 };
@@ -14,11 +16,24 @@ export async function GET(): Promise<{
   error?: string;
   data: EmailTemplate[];
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+      data: [],
+    };
+  }
+
   const db = drizzle(env.PROJECT_DB);
-  const templates = await db.select().from(emailTemplatesTable);
+  const templates = await db
+    .select()
+    .from(emailTemplatesTable)
+    .where(eq(emailTemplatesTable.owner_id, currentUserId));
 
   return {
     success: true,
@@ -34,10 +49,19 @@ export async function POST(params: CreateTemplateParams): Promise<{
   error?: string;
   data?: EmailTemplate;
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
   try {
+    const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+    if (!currentUserId) {
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
+    }
+
     const { name, body, subject } = params;
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -68,6 +92,7 @@ export async function POST(params: CreateTemplateParams): Promise<{
       name: name.trim(),
       body,
       subject,
+      owner_id: currentUserId,
       created_at: now,
       updated_at: now,
     };

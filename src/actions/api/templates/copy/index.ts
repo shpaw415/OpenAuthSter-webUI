@@ -3,7 +3,7 @@ import {
   WebUiCopyTemplateTable,
   parseDBCopyTemplate,
 } from "openauth-webui-shared-types/database";
-import { drizzle } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import {
   insertLog,
   PUBLIC_CLIENT_ID,
@@ -14,7 +14,7 @@ import type { RequestDataContext } from "@auth";
 export type CopyTemplate = {
   name: string;
   copyData: Partial<CopyDataSelection>;
-  owner: string;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 };
@@ -25,11 +25,23 @@ export async function GET(): Promise<{
   error?: string;
   data?: ReturnType<typeof parseDBCopyTemplate>[];
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
   const db = drizzle(env.PROJECT_DB);
-  const templates = await db.select().from(WebUiCopyTemplateTable);
+  const templates = await db
+    .select()
+    .from(WebUiCopyTemplateTable)
+    .where(eq(WebUiCopyTemplateTable.owner_id, currentUserId));
 
   return {
     success: true,
@@ -93,8 +105,8 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
 
     await db.insert(WebUiCopyTemplateTable).values({
       name: name.trim(),
-      owner: userData.id!,
-      copyData: copyData,
+      owner_id: userData.id,
+      copyData,
       created_at: now,
       updated_at: now,
     });
@@ -106,7 +118,7 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
         copyData,
         created_at: now,
         updated_at: now,
-        owner: userData.id!,
+        owner_id: userData.id,
       },
     };
   } catch (err) {

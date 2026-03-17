@@ -1,8 +1,9 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { uiStyleTable } from "openauth-webui-shared-types/database";
-import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import type { UITheme } from "./index";
+import type { RequestDataContext } from "@auth";
 
 // GET /api/themes/:id - Get a specific theme
 export async function GET(params: { id: string }): Promise<{
@@ -22,9 +23,27 @@ export async function GET(params: { id: string }): Promise<{
     };
   }
 
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
   const db = drizzle(env.PROJECT_DB);
   const themes = (
-    await db.select().from(uiStyleTable).where(eq(uiStyleTable.id, id)).limit(1)
+    await db
+      .select()
+      .from(uiStyleTable)
+      .where(
+        and(
+          eq(uiStyleTable.id, parseInt(id)),
+          eq(uiStyleTable.owner, currentUserId),
+        ),
+      )
+      .limit(1)
   ).at(0);
   if (!themes) {
     return {
@@ -37,6 +56,7 @@ export async function GET(params: { id: string }): Promise<{
     success: true,
     data: {
       id: themes.id,
+      name: themes.name,
       themeData: themes.themeData as Theme,
     },
   };
@@ -53,7 +73,7 @@ export async function PUT(params: UpdateThemeParams): Promise<{
   error?: string;
   data?: UITheme;
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
   const { id, data } = params;
@@ -67,11 +87,25 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 
   const db = drizzle(env.PROJECT_DB);
 
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
   // Get current theme
   const existing = await db
     .select()
     .from(uiStyleTable)
-    .where(eq(uiStyleTable.id, id))
+    .where(
+      and(
+        eq(uiStyleTable.id, parseInt(id)),
+        eq(uiStyleTable.owner, currentUserId),
+      ),
+    )
     .limit(1);
 
   if (existing.length === 0) {
@@ -91,14 +125,15 @@ export async function PUT(params: UpdateThemeParams): Promise<{
   await db
     .update(uiStyleTable)
     .set({
-      themeData: updatedTheme as unknown as string,
+      themeData: updatedTheme,
     })
-    .where(eq(uiStyleTable.id, id));
+    .where(eq(uiStyleTable.id, parseInt(id)));
 
   return {
     success: true,
     data: {
-      id,
+      id: parseInt(id),
+      name: existing.at(0)?.name || "",
       themeData: updatedTheme,
     },
   };
@@ -109,7 +144,8 @@ export async function DELETE(params: { id: string }): Promise<{
   success: boolean;
   error?: string;
 }> {
-  const { env } = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
+  const { env } = ctx;
 
   const { id } = params;
 
@@ -122,11 +158,25 @@ export async function DELETE(params: { id: string }): Promise<{
 
   const db = drizzle(env.PROJECT_DB);
 
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
+
   // Check if theme exists
   const existing = await db
     .select()
     .from(uiStyleTable)
-    .where(eq(uiStyleTable.id, id))
+    .where(
+      and(
+        eq(uiStyleTable.id, parseInt(id)),
+        eq(uiStyleTable.owner, currentUserId),
+      ),
+    )
     .limit(1);
 
   if (existing.length === 0) {
@@ -136,7 +186,14 @@ export async function DELETE(params: { id: string }): Promise<{
     };
   }
 
-  await db.delete(uiStyleTable).where(eq(uiStyleTable.id, id));
+  await db
+    .delete(uiStyleTable)
+    .where(
+      and(
+        eq(uiStyleTable.id, parseInt(id)),
+        eq(uiStyleTable.owner, currentUserId),
+      ),
+    );
 
   return {
     success: true,

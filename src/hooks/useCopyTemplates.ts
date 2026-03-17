@@ -11,11 +11,17 @@ import {
   DELETE as deleteCopyTemplateByName,
   type UpdateCopyTemplateParams,
 } from "@api/templates/copy/id";
+import type {
+  CopyDataSelection,
+  parseDBCopyTemplate,
+} from "openauth-webui-shared-types";
 
 export type { CopyTemplate };
 
 export function useCopyTemplates() {
-  const [templates, setTemplates] = useState<CopyTemplate[]>([]);
+  const [templates, setTemplates] = useState<
+    Array<ReturnType<typeof parseDBCopyTemplate>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,6 +52,7 @@ export function useCopyTemplates() {
       if (!res.success) {
         throw new Error(res.error || "Failed to create copy template");
       }
+
       setTemplates((prev) => [...prev, res.data!]);
       return res.data!;
     },

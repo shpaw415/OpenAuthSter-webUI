@@ -20,9 +20,11 @@ export async function onRequest(
     return await context.next();
   }
 
-  const auth = await createClient().setTokenFromRequest(
-    context.request as unknown as Request,
-  );
+  const auth = await createClient({
+    clientID: context.env.PUBLIC_CLIENT_ID,
+    issuerURI: context.env.PUBLIC_ISSUER,
+    redirectURI: context.env.PUBLIC_REDIRECT_URI,
+  }).setTokenFromRequest(context.request as unknown as Request);
 
   if (!auth.isAuthenticated) {
     return new Response("Unauthorized", { status: 401 });

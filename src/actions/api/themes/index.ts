@@ -1,10 +1,12 @@
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { uiStyleTable } from "openauth-webui-shared-types/database";
-import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
+import type { RequestDataContext } from "@auth";
 
 export type UITheme = {
-  id: string;
+  id: number;
+  name: string;
   themeData: Theme;
 };
 
@@ -24,13 +26,14 @@ export async function GET(): Promise<{
     success: true,
     data: themes.map((t) => ({
       id: t.id,
+      name: t.name,
       themeData: t.themeData as Theme,
     })),
   };
 }
 
 export type CreateThemeParams = {
-  id: string;
+  name: string;
   themeData: Theme;
 };
 
@@ -40,16 +43,16 @@ export async function POST(params: CreateThemeParams): Promise<{
   error?: string;
   data?: UITheme;
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
   try {
-    const { id, themeData } = params;
+    const { name, themeData } = params;
 
-    if (!id || typeof id !== "string" || id.trim().length === 0) {
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
       return {
         success: false,
-        error: "Invalid or missing theme ID",
+        error: "Invalid or missing theme name",
       };
     }
 
@@ -69,33 +72,47 @@ export async function POST(params: CreateThemeParams): Promise<{
 
     const db = drizzle(env.PROJECT_DB);
 
+    const userId = (await ctx.data.client.getMetaData()).id;
+
+    if (!userId) {
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
+    }
+
     // Check if theme already exists
     const existing = await db
       .select()
       .from(uiStyleTable)
-      .where(eq(uiStyleTable.id, id.trim()))
+      .where(
+        and(eq(uiStyleTable.name, name.trim()), eq(uiStyleTable.owner, userId)),
+      )
       .limit(1);
 
     if (existing.length > 0) {
       return {
         success: false,
-        error: "A theme with this ID already exists",
+        error: "A theme with this name already exists",
       };
     }
 
-    const newTheme = {
-      id: id.trim(),
-      themeData: themeData as unknown as string,
-    };
-
-    await db.insert(uiStyleTable).values(newTheme);
-
     return {
       success: true,
-      data: {
-        id: newTheme.id,
-        themeData: themeData,
-      },
+      data: (
+        await db
+          .insert(uiStyleTable)
+          .values({
+            name: name.trim(),
+            themeData: themeData,
+            owner: userId,
+          })
+          .returning({
+            id: uiStyleTable.id,
+            name: uiStyleTable.name,
+            themeData: uiStyleTable.themeData,
+          })
+      ).at(0) as UITheme,
     };
   } catch (err) {
     console.error("Error creating theme:", err);

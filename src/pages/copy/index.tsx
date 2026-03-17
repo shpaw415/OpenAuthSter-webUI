@@ -4,6 +4,7 @@ import {
   useCopyTemplates,
   type CopyTemplate,
 } from "../../hooks/useCopyTemplates";
+import type { CopyDataSelection } from "openauth-webui-shared-types";
 
 export default function CopyListPage() {
   const { templates, isLoading, error, deleteTemplate } = useCopyTemplates();
@@ -48,8 +49,11 @@ export default function CopyListPage() {
     });
   };
 
-  const getProviderBadge = (providerType: "code" | "password") => {
-    const config = {
+  const getProviderBadge = (providerType: keyof CopyDataSelection) => {
+    const config: Record<
+      keyof CopyDataSelection,
+      { label: string; color: string; icon: string }
+    > = {
       code: {
         label: "Pin Code",
         color: "bg-purple-500/20 text-purple-400",
@@ -59,6 +63,16 @@ export default function CopyListPage() {
         label: "Password",
         color: "bg-blue-500/20 text-blue-400",
         icon: "lucide:lock",
+      },
+      passkey: {
+        label: "Passkey",
+        color: "bg-green-500/20 text-green-400",
+        icon: "lucide:key",
+      },
+      qr: {
+        label: "QR Code",
+        color: "bg-yellow-500/20 text-yellow-400",
+        icon: "lucide:qrcode",
       },
     };
     const { label, color, icon } = config[providerType];
@@ -128,7 +142,10 @@ export default function CopyListPage() {
       {/* Templates Grid */}
       {templates.length === 0 ? (
         <div className="text-center py-12 bg-gray-800 rounded-lg border-2 border-dashed border-gray-600">
-          <Icon icon="lucide:file-text" className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+          <Icon
+            icon="lucide:file-text"
+            className="w-12 h-12 mx-auto mb-4 text-gray-500"
+          />
           <h3 className="text-xl font-medium text-white mb-2">
             No copy templates yet
           </h3>
@@ -171,7 +188,7 @@ function CopyTemplateCard({
   onDelete: (name: string) => void;
   isDeleting: boolean;
   formatDate: (dateString: string) => string;
-  getProviderBadge: (providerType: "code" | "password") => JSX.Element;
+  getProviderBadge: (providerType: keyof CopyDataSelection) => JSX.Element;
 }) {
   const copyCount = Object.keys(template.copyData).length;
 
@@ -181,9 +198,15 @@ function CopyTemplateCard({
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg text-white font-medium truncate">{template.name}</h3>
-            <div className="mt-2">
-              {getProviderBadge(template.providerType)}
+            <h3 className="text-lg text-white font-medium truncate">
+              {template.name}
+            </h3>
+            <div className="mt-1 flex items-center gap-1 flex-wrap">
+              {Object.keys(template.copyData).map((key) => (
+                <div className="mt-2" key={key}>
+                  {getProviderBadge(key as keyof CopyDataSelection)}
+                </div>
+              ))}
             </div>
           </div>
         </div>

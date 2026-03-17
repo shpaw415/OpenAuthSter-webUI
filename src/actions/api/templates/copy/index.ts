@@ -14,6 +14,7 @@ import type { RequestDataContext } from "@auth";
 export type CopyTemplate = {
   name: string;
   copyData: Partial<CopyDataSelection>;
+  owner: string;
   created_at: string;
   updated_at: string;
 };
@@ -22,7 +23,7 @@ export type CopyTemplate = {
 export async function GET(): Promise<{
   success: boolean;
   error?: string;
-  data: CopyTemplate[];
+  data?: ReturnType<typeof parseDBCopyTemplate>[];
 }> {
   const ctx = getContext<Env, any, any>(arguments);
   const { env } = ctx;
@@ -105,6 +106,7 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
         copyData,
         created_at: now,
         updated_at: now,
+        owner: userData.id!,
       },
     };
   } catch (err) {

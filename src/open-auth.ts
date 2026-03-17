@@ -7,17 +7,24 @@ export type RequestDataContext = {
   client: ReturnType<typeof createClient>;
 };
 
-export const createClient = (token?: string) =>
+export const createClient = ({
+  token,
+  clientID,
+  issuerURI,
+  redirectURI,
+  copyID,
+}: {
+  token?: string;
+  clientID?: string;
+  issuerURI?: string;
+  redirectURI?: string;
+  copyID?: string;
+} = {}) =>
   createOpenAuthsterClient({
-    clientID: process.env.PUBLIC_CLIENT_ID!,
-    issuerURI: process.env.PUBLIC_ISSUER!,
-    redirectURI: process.env.PUBLIC_REDIRECT_URI!,
-    copyID: null,
+    clientID: clientID ?? process.env.PUBLIC_CLIENT_ID!,
+    issuerURI: issuerURI ?? process.env.PUBLIC_ISSUER!,
+    redirectURI: redirectURI ?? process.env.PUBLIC_REDIRECT_URI!,
+    copyID,
     subject,
     token,
-    authFlowCallbacks: {
-      onLoginRequired(client) {
-        client.login();
-      },
-    },
   });

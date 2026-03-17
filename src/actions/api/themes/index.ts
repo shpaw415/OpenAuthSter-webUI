@@ -10,7 +10,7 @@ export type UITheme = {
   themeData: Theme;
 };
 
-// GET /api/themes - List all UI themes
+// GET /api/themes - List all UI themes for current user
 export async function GET(): Promise<{
   success: boolean;
   error?: string;
@@ -19,16 +19,29 @@ export async function GET(): Promise<{
   const ctx = getContext<Env, any, any>(arguments);
   const { env } = ctx;
 
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+      data: [],
+    };
+  }
+
   const db = drizzle(env.PROJECT_DB);
-  const themes = await db.select().from(uiStyleTable);
+  const themes = (await db
+    .select({
+      id: uiStyleTable.id,
+      name: uiStyleTable.name,
+      themeData: uiStyleTable.themeData,
+    })
+    .from(uiStyleTable)
+    .where(eq(uiStyleTable.owner, currentUserId))) as UITheme[];
 
   return {
     success: true,
-    data: themes.map((t) => ({
-      id: t.id,
-      name: t.name,
-      themeData: t.themeData as Theme,
-    })),
+    data: themes,
   };
 }
 

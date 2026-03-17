@@ -1,131 +1,130 @@
+import type { RequestDataContext } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
-  WebUiCopyTemplateTable,
-  parseDBCopyTemplate,
+	type CopyDataSelection,
+	insertLog,
+	PUBLIC_CLIENT_ID,
+} from "openauth-webui-shared-types";
+import {
+	parseDBCopyTemplate,
+	WebUiCopyTemplateTable,
 } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import {
-  insertLog,
-  PUBLIC_CLIENT_ID,
-  type CopyDataSelection,
-} from "openauth-webui-shared-types";
-import type { RequestDataContext } from "@auth";
-
-export type CopyTemplate = {
-  name: string;
-  copyData: Partial<CopyDataSelection>;
-  owner_id: string;
-  created_at: string;
-  updated_at: string;
-};
 
 // GET /api/copy - List all copy templates
 export async function GET(): Promise<{
-  success: boolean;
-  error?: string;
-  data?: ReturnType<typeof parseDBCopyTemplate>[];
+	success: boolean;
+	error?: string;
+	data?: ReturnType<typeof parseDBCopyTemplate>[];
 }> {
-  const ctx = getContext<Env, any, RequestDataContext>(arguments);
-  const { env } = ctx;
+	const ctx = getContext<Env, string, RequestDataContext>(arguments);
+	const { env } = ctx;
 
-  const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const currentUserId = (await ctx.data.client.getMetaData()).id;
 
-  if (!currentUserId) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
-  }
+	if (!currentUserId) {
+		return {
+			success: false,
+			error: "Unauthorized",
+		};
+	}
 
-  const db = drizzle(env.PROJECT_DB);
-  const templates = await db
-    .select()
-    .from(WebUiCopyTemplateTable)
-    .where(eq(WebUiCopyTemplateTable.owner_id, currentUserId));
+	const db = drizzle(env.PROJECT_DB);
+	const templates = await db
+		.select()
+		.from(WebUiCopyTemplateTable)
+		.where(eq(WebUiCopyTemplateTable.owner_id, currentUserId));
 
-  return {
-    success: true,
-    data: templates.map((t) => parseDBCopyTemplate(t)),
-  };
+	return {
+		success: true,
+		data: templates.map((t) => parseDBCopyTemplate(t)),
+	};
 }
 
 export type CreateCopyTemplateParams = {
-  name: string;
-  copyData: Partial<CopyDataSelection>;
+	name: string;
+	copyData: Partial<CopyDataSelection>;
 };
 
 // POST /api/copy - Create a new copy template
 export async function POST(params: CreateCopyTemplateParams): Promise<{
-  success: boolean;
-  error?: string;
-  data?: CopyTemplate;
+	success: boolean;
+	error?: string;
+	data?: ReturnType<typeof parseDBCopyTemplate>;
 }> {
-  const ctx = getContext<Env, any, RequestDataContext>(arguments);
-  const { env } = ctx;
+	const ctx = getContext<Env, string, RequestDataContext>(arguments);
+	const { env } = ctx;
 
-  try {
-    const { name, copyData } = params;
+	try {
+		const { name, copyData } = params;
 
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return {
-        success: false,
-        error: "Invalid or missing template name",
-      };
-    }
+		if (!name || typeof name !== "string" || name.trim().length === 0) {
+			return {
+				success: false,
+				error: "Invalid or missing template name",
+			};
+		}
 
-    if (!copyData || typeof copyData !== "object") {
-      return {
-        success: false,
-        error: "Invalid or missing copy data",
-      };
-    }
+		if (!copyData || typeof copyData !== "object") {
+			return {
+				success: false,
+				error: "Invalid or missing copy data",
+			};
+		}
 
-    const db = drizzle(env.PROJECT_DB);
-    const now = new Date().toISOString();
+		const db = drizzle(env.PROJECT_DB);
+		const now = new Date().toISOString();
 
-    const userData = await ctx.data.client.getMetaData();
+		const userData = await ctx.data.client.getMetaData();
 
-    if (!userData || !userData.id) {
-      insertLog({
-        type: "error",
-        message: "Unauthorized attempt to create copy template",
-        database: env.PROJECT_DB,
-        clientID: PUBLIC_CLIENT_ID,
-        context: {
-          action: "create_copy_template",
-          userData,
-        },
-      });
+		if (!userData || !userData.id) {
+			insertLog({
+				type: "error",
+				message: "Unauthorized attempt to create copy template",
+				database: env.PROJECT_DB,
+				clientID: PUBLIC_CLIENT_ID,
+				context: {
+					action: "create_copy_template",
+					userData,
+				},
+			});
 
-      return {
-        success: false,
-        error: "Unauthorized",
-      };
-    }
+			return {
+				success: false,
+				error: "Unauthorized",
+			};
+		}
 
-    await db.insert(WebUiCopyTemplateTable).values({
-      name: name.trim(),
-      owner_id: userData.id,
-      copyData,
-      created_at: now,
-      updated_at: now,
-    });
+		const newTemplateEntry = (
+			await db
+				.insert(WebUiCopyTemplateTable)
+				.values({
+					name: name.trim(),
+					owner_id: userData.id,
+					owner_group_id: crypto.randomUUID(),
+					copyData,
+					created_at: now,
+					updated_at: now,
+				})
+				.returning()
+		).at(0);
 
-    return {
-      success: true,
-      data: {
-        name: name.trim(),
-        copyData,
-        created_at: now,
-        updated_at: now,
-        owner_id: userData.id,
-      },
-    };
-  } catch (err) {
-    return {
-      success: false,
-      error:
-        err instanceof Error ? err.message : "Failed to create copy template",
-    };
-  }
+		if (!newTemplateEntry) {
+			return {
+				success: false,
+				error: "Failed to create copy template",
+			};
+		}
+
+		return {
+			success: true,
+			data: parseDBCopyTemplate(newTemplateEntry),
+		};
+	} catch (err) {
+		return {
+			success: false,
+			error:
+				err instanceof Error ? err.message : "Failed to create copy template",
+		};
+	}
 }

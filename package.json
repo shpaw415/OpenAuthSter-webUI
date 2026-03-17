@@ -2,6 +2,7 @@
   "name": "openauth-webui",
   "version": "0.3.1",
   "devDependencies": {
+    "@biomejs/biome": "2.4.7",
     "@cloudflare/workers-types": "^4.20260316.1",
     "@types/bun": "latest",
     "@types/mustache": "^4.2.6",

@@ -16,6 +16,7 @@ import {
   deleteCustomDomainForProject,
 } from "../../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
+import type { RequestDataContext } from "@auth";
 
 // GET /api/projects - List all projects
 export async function GET(): Promise<{
@@ -44,8 +45,17 @@ export async function POST(params: {
   clientID: string;
   providers_data?: ProviderConfig[];
 }): Promise<{ success: boolean; error?: string; data?: Project }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
+
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
 
   try {
     const { clientID, providers_data = [] } = params;
@@ -93,7 +103,8 @@ export async function POST(params: {
     }
 
     const newProject: Project = {
-      clientID: clientID,
+      clientID,
+      owner_id: currentUserId,
       created_at: new Date().toISOString(),
       active: true,
       providers_data: JSON.stringify(providers_data) as any,
@@ -107,9 +118,9 @@ export async function POST(params: {
         crypto.randomUUID(),
         crypto.randomUUID(),
       ].join("-"),
-      themeId: null,
+      theme_id: null,
       emailTemplateId: null,
-      projectData: null,
+      projectData: {},
     };
 
     const [insertedProject] = await db

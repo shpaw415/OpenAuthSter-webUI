@@ -1,4 +1,4 @@
-import { eq, drizzle } from "openauth-webui-shared-types/drizzle";
+import { eq, drizzle, and } from "openauth-webui-shared-types/drizzle";
 import { type Project, parseDBProject } from "openauth-webui-shared-types";
 import {
   DeleteOTFusersTable,
@@ -18,18 +18,33 @@ import {
   deleteCustomDomainForProject,
 } from "../../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
+import type { RequestDataContext } from "@auth";
 
 // GET /projects/manage - Get a single project
 export async function GET(params: {
   clientID: string;
 }): Promise<{ success: boolean; data?: Project; error?: string }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
+
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
 
   const db = drizzle(ctx.env.PROJECT_DB);
   const projects = await db
     .select()
     .from(projectTable)
-    .where(eq(projectTable.clientID, params.clientID))
+    .where(
+      and(
+        eq(projectTable.clientID, params.clientID),
+        eq(projectTable.owner_id, currentUserId),
+      ),
+    )
     .limit(1);
 
   const project = projects.at(0);
@@ -62,8 +77,17 @@ export type updateProjectParams = {
 export async function PUT(
   params: updateProjectParams,
 ): Promise<UpdateResponse> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
+
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
 
   try {
     const db = drizzle(env.PROJECT_DB);
@@ -73,7 +97,12 @@ export async function PUT(
       await db
         .select()
         .from(projectTable)
-        .where(eq(projectTable.clientID, params.clientID))
+        .where(
+          and(
+            eq(projectTable.clientID, params.clientID),
+            eq(projectTable.owner_id, currentUserId),
+          ),
+        )
         .limit(1)
     ).at(0);
 
@@ -91,8 +120,8 @@ export async function PUT(
     if (params.data.providers_data !== undefined) {
       updates.providers_data = JSON.stringify(params.data.providers_data);
     }
-    if (params.data.themeId !== undefined) {
-      updates.themeId = params.data.themeId;
+    if (params.data.theme_id !== undefined) {
+      updates.theme_id = params.data.theme_id;
     }
     if (params.data.emailTemplateId !== undefined) {
       updates.emailTemplateId = params.data.emailTemplateId;
@@ -120,7 +149,12 @@ export async function PUT(
       await db
         .update(projectTable)
         .set(updates)
-        .where(eq(projectTable.clientID, params.clientID))
+        .where(
+          and(
+            eq(projectTable.clientID, params.clientID),
+            eq(projectTable.owner_id, currentUserId),
+          ),
+        )
         .returning()
     ).at(0);
 
@@ -153,8 +187,17 @@ export async function PUT(
 export async function DELETE(params: {
   clientID: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
+
+  const currentUserId = (await ctx.data.client.getMetaData()).id;
+
+  if (!currentUserId) {
+    return {
+      success: false,
+      error: "Unauthorized",
+    };
+  }
 
   const db = drizzle(env.PROJECT_DB);
 
@@ -162,7 +205,12 @@ export async function DELETE(params: {
   const existing = await db
     .select()
     .from(projectTable)
-    .where(eq(projectTable.clientID, params.clientID))
+    .where(
+      and(
+        eq(projectTable.clientID, params.clientID),
+        eq(projectTable.owner_id, currentUserId),
+      ),
+    )
     .limit(1)
     .get();
 
@@ -195,7 +243,12 @@ export async function DELETE(params: {
 
   await db
     .delete(projectTable)
-    .where(eq(projectTable.clientID, params.clientID));
+    .where(
+      and(
+        eq(projectTable.clientID, params.clientID),
+        eq(projectTable.owner_id, currentUserId),
+      ),
+    );
 
   const cfClient = createClient(env);
   try {

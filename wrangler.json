@@ -7,7 +7,7 @@
 		{
 			"binding": "PROJECT_DB",
 			"database_id": "fbd2f747-c950-48bc-8939-addccae17553",
-			"remote": true
+			"remote": false
 		}
 	],
 	"compatibility_flags": ["nodejs_compat"]

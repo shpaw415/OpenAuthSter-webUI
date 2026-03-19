@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-19T00:57:15.862Z",
+  "generatedAt": "2026-03-19T20:57:02.055Z",
   "images": {
     "logo.png": {
       "original": "logo.png",
@@ -26,6 +26,27 @@
           "path": "logo-320w.webp",
           "width": 320,
           "height": 281
+        }
+      ]
+    },
+    "testimonials-bg.png": {
+      "original": "testimonials-bg.png",
+      "width": 1024,
+      "height": 682,
+      "variants": [
+        {
+          "format": "webp",
+          "size": 320,
+          "path": "testimonials-bg-320w.webp",
+          "width": 320,
+          "height": 213
+        },
+        {
+          "format": "webp",
+          "size": 1024,
+          "path": "testimonials-bg-1024w.webp",
+          "width": 1024,
+          "height": 682
         }
       ]
     }

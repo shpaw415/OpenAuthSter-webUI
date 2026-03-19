@@ -1,5 +1,18 @@
 import type { FrameMasterConfig } from "frame-master/server/types";
+import { join } from "path";
 import ReactToHtml from "frame-master-plugin-react-to-html";
+
+function getMime(path: string): string {
+  const ext = path.split(".").pop() ?? "";
+  const mime: Record<string, string> = {
+    png: "image/png",
+    webp: "image/webp",
+    ico: "image/x-icon",
+    css: "text/css",
+    js: "application/javascript",
+  };
+  return mime[ext] ?? "application/octet-stream";
+}
 import ApplyReact from "frame-master-plugin-apply-react/plugin";
 import TailwindPlugin from "frame-master-plugin-tailwind";
 import CloudflareAction from "frame-master-plugin-cloudflare-pages-functions-action";
@@ -43,6 +56,41 @@ export default {
             asset: "[dir]/[name].[ext]",
           },
         },
+        async afterBuild(_buildConfig, result) {
+          if (!result.success) return;
+          const cwd = process.cwd();
+          const staticDir = join(cwd, "static");
+          const outDir = join(cwd, ".frame-master/build");
+          const destStatic = join(outDir, "static");
+          await Bun.$`mkdir -p ${destStatic} && cp -r ${staticDir}/* ${destStatic}/`;
+          for (const name of ["testimonials-bg.png", "favicon.ico"]) {
+            const src = join(staticDir, name);
+            if (await Bun.file(src).exists()) {
+              result.outputs.push({
+                path: join(destStatic, name),
+                kind: "asset",
+                hash: "",
+                loader: "file",
+              } as Bun.BuildArtifact);
+            }
+          }
+        },
+      },
+      serverConfig: {
+        routes: {
+          ["/static/*"]: async (req) => {
+            const pathname = new URL(req.url).pathname;
+            const subpath = pathname.replace(/^\/static\//, "").replace(/\.\./g, "") || ".";
+            const staticDir = join(process.cwd(), "static");
+            const filePath = join(staticDir, subpath);
+            if (!filePath.startsWith(staticDir)) return new Response("Forbidden", { status: 403 });
+            const file = Bun.file(filePath);
+            if (!(await file.exists())) return new Response("Not Found", { status: 404 });
+            return new Response(file, {
+              headers: { "Content-Type": getMime(subpath) },
+            });
+          },
+        },
       },
     },
     EnvInHtml({
@@ -69,8 +117,8 @@ export default {
       input: "static",
       output: "optimized",
       formats: ["webp"],
-      quality: 75,
-      sizes: [320],
+      quality: 100,
+      sizes: [320, 1024],
       skipExisting: true,
       enableImports: true,
     }),

@@ -36,7 +36,7 @@
     	*/
 		"CLOUDFLARE_AUTH_ENDPOINT_DOMAIN": "<YOUR_AUTH_ENDPOINT_DOMAIN>",
 		/**
-		 * A random string used as a secret for your webui instance, you can generate it using any random string generator.
+		 * A random string used as a secret for your webui instance, you can generate it using any random string generator (min 7 characters).
 		 * It is used to set/update projects and groups.
 		 */
 		"WEBUI_SECRET": "<YOUR_RANDOM_STRING_FOR_WEBUI_SECRET>",

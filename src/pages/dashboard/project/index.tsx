@@ -1,6 +1,6 @@
 import { POST as createInviteLink } from "@api/invitelink";
-import { POST as CreateInvite } from "@api/invites/manage/project";
 import { ProviderIcon } from "@components/provider-icons";
+import { InviteCollaboratorSectionProject } from "@components/vary";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
 import { useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useProject } from "@hooks/useProjects";
@@ -25,12 +25,7 @@ import type {
 	WebHookEvents,
 } from "openauth-webui-shared-types/webhook/types";
 import { WebHookEventsDetails } from "openauth-webui-shared-types/webhook/types";
-import {
-	type SubmitEventHandler,
-	useCallback,
-	useEffect,
-	useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
 	{ id: "social", label: "Social", icon: "lucide:users" },
@@ -880,7 +875,7 @@ export default function ProjectDetail() {
 			</div>
 
 			{/* Invite Collaborator */}
-			<InviteCollaboratorSection
+			<InviteCollaboratorSectionProject
 				project={projectHook.project as Project}
 				setNotification={setNotification}
 			/>
@@ -1574,109 +1569,6 @@ function AllowOriginForm({
 				</button>
 			</form>
 		</SelectWrapper>
-	);
-}
-
-function InviteCollaboratorSection({
-	project,
-	setNotification,
-}: {
-	project: Project;
-	setNotification: (notif: { message: string } | null) => void;
-}) {
-	const [userId, setUserId] = useState("");
-	const [inviteUrl, setInviteUrl] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	const handleInvite: SubmitEventHandler<HTMLFormElement> = async (e) => {
-		e.preventDefault();
-		if (!userId.trim()) return;
-		setIsLoading(true);
-		setError(null);
-		setInviteUrl(null);
-		try {
-			const res = await CreateInvite({
-				user_id: userId.trim(),
-				client_id: project.clientID,
-			});
-			if (!res.success) {
-				setError(res.error ?? "Unknown error");
-			} else {
-				setInviteUrl(res.url ?? null);
-				setNotification({ message: "Collaborator invite created!" });
-			}
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to create invite");
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	return (
-		<div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-			<div className="mb-6">
-				<h2 className="text-xl font-semibold text-white flex items-center gap-2">
-					<Icon icon="lucide:users" className="w-5 h-5 text-blue-400" />
-					Invite Collaborator
-				</h2>
-				<p className="text-gray-400 text-sm mt-1">
-					Invite another user to co-manage this project by their username or
-					email.
-				</p>
-			</div>
-			<form onSubmit={handleInvite} className="flex gap-3">
-				<input
-					type="text"
-					value={userId}
-					onChange={(e) => setUserId(e.target.value)}
-					placeholder="Username or email"
-					disabled={isLoading}
-					className="flex-1 px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-				/>
-				<button
-					type="submit"
-					disabled={isLoading || !userId.trim()}
-					className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					{isLoading ? (
-						<>
-							<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-							Sending...
-						</>
-					) : (
-						<>
-							<Icon icon="lucide:user-plus" className="w-4 h-4" />
-							Send Invite
-						</>
-					)}
-				</button>
-			</form>
-			{error && <p className="mt-3 text-red-400 text-sm">{error}</p>}
-			{inviteUrl && (
-				<div className="mt-4 p-4 bg-green-900/20 border border-green-600/30 rounded-lg">
-					<p className="text-green-400 text-sm mb-2 font-medium">
-						Invite link created — share it with the user:
-					</p>
-					<div className="flex items-center gap-2">
-						<code className="flex-1 min-w-0 px-3 py-2 bg-gray-900 border border-gray-700 text-green-300 font-mono text-xs rounded break-all">
-							{inviteUrl}
-						</code>
-						<button
-							type="button"
-							onClick={() => {
-								navigator.clipboard.writeText(inviteUrl);
-								setNotification({ message: "Invite link copied!" });
-							}}
-							className="p-2.5 text-green-400 hover:text-green-300 hover:bg-green-900/20 rounded-lg transition-colors border border-green-600/30 hover:border-green-500/50 shrink-0"
-							title="Copy to clipboard"
-						>
-							<Icon icon="lucide:clipboard-copy" className="w-4 h-4" />
-						</button>
-					</div>
-				</div>
-			)}
-		</div>
 	);
 }
 

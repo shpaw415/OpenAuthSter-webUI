@@ -12,7 +12,11 @@ export type PrivateSessionData = {
 	group_ids?: string[];
 };
 
-export type PublicSessionData = {};
+export type PublicSessionData = {
+	name: string;
+	email: string;
+};
+
 export type RequestDataContext = {
 	client: ReturnType<typeof createClient>;
 };

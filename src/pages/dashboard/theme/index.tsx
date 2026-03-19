@@ -1,7 +1,7 @@
 import { Icon } from "@iconify/react";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import { useState } from "react";
-import { type UITheme, useUIThemes } from "../../hooks/useUIThemes";
+import { type UITheme, useUIThemes } from "@hooks/useUIThemes";
 
 export default function UIThemeList() {
 	const { themes, isLoading, error, deleteTheme } = useUIThemes();
@@ -103,7 +103,7 @@ export default function UIThemeList() {
 					</p>
 				</div>
 				<a
-					href="/theme/manage"
+					href="/dashboard/theme/manage"
 					className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
 				>
 					<span className="text-lg">+</span>
@@ -123,7 +123,7 @@ export default function UIThemeList() {
 						Create your first UI theme to customize your auth pages
 					</p>
 					<a
-						href="/theme/manage"
+						href="/dashboard/theme/manage"
 						className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
 					>
 						Create Theme
@@ -250,7 +250,7 @@ function ThemeCard({
 				{/* Actions */}
 				<div className="flex items-center gap-2">
 					<a
-						href={`/theme/manage?edit=${encodeURIComponent(theme.id)}`}
+						href={`/dashboard/theme/manage?edit=${encodeURIComponent(theme.id)}`}
 						className="flex-1 px-3 py-2 text-center text-sm bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
 					>
 						Edit

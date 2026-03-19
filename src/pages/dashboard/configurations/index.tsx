@@ -4,7 +4,7 @@ import {
   getCurrentIssuerVersion,
   getCurrentWebUiVersion,
   getLatestVersion,
-} from "../../version-check";
+} from "../../../version-check";
 import { Snackbar } from "@material/react-snackbar";
 
 export default function ConfigurationsPage() {

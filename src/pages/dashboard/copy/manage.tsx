@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import {
   useCopyTemplate,
   useCopyTemplates,
-} from "../../hooks/useCopyTemplates";
-import { navigate } from "../../utils";
+} from "@hooks/useCopyTemplates";
+import { navigate } from "@utils";
 
 // ──────────────────────────────────────────────
 // Default values (from @openauthjs/openauth source)
@@ -224,7 +224,7 @@ export default function CopyManagePage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <a
-          href="/copy"
+          href="/dashboard/copy"
           className="p-2 text-gray-400 hover:text-white transition-colors"
         >
           <svg
@@ -327,7 +327,7 @@ export default function CopyManagePage() {
                 )}
               </button>
               <a
-                href="/copy"
+                href="/dashboard/copy"
                 className="block w-full mt-3 px-4 py-2 text-center bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Cancel

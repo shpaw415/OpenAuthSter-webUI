@@ -5,10 +5,10 @@ import Editor from "@monaco-editor/react";
 import {
   useEmailTemplate,
   useEmailTemplates,
-} from "../../hooks/useEmailTemplates";
-import { useProject } from "../../hooks/useProjects";
+} from "@hooks/useEmailTemplates";
+import { useProject } from "@hooks/useProjects";
 import Mustache from "mustache";
-import { navigate } from "../../utils";
+import { navigate } from "@utils";
 
 const DEFAULT_MOCK_DATA = {
   code: "123456",
@@ -238,7 +238,7 @@ export default function EmailTemplatesManage() {
         <div className="bg-red-900/50 border border-red-700 rounded-lg p-4">
           <p className="text-red-300">{error}</p>
           <a
-            href="/templates"
+            href="/dashboard/templates"
             className="inline-block mt-4 text-blue-400 hover:text-blue-300 transition-colors"
           >
             ← Back to Templates
@@ -267,7 +267,7 @@ export default function EmailTemplatesManage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <a
-            href="/templates"
+            href="/dashboard/templates"
             className="text-gray-300 hover:text-white flex items-center gap-2 transition-colors"
           >
             <span>←</span>

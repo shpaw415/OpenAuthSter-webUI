@@ -6,9 +6,9 @@
       "name": "openauth-webui",
       "dependencies": {
         "@iconify/react": "^6.0.2",
+        "@kagii/openauth": "^0.5.2",
         "@material/react-snackbar": "^0.15.0",
         "@monaco-editor/react": "^4.7.0",
-        "@openauthjs/openauth": "^0.4.3",
         "@shpaw415/formdata-parser": "^0.1.1",
         "@tailwindcss/cli": "^4.2.1",
         "@tailwindcss/typography": "^0.5.19",
@@ -247,6 +247,8 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.9", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.0.3", "@jridgewell/sourcemap-codec": "^1.4.10" } }, "sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ=="],
 
+    "@kagii/openauth": ["@kagii/openauth@0.5.2", "", { "dependencies": { "@standard-schema/spec": "1.0.0-beta.3", "aws4fetch": "1.0.20", "jose": "6.2.1" }, "peerDependencies": { "arctic": "^2.2.2", "hono": "^4.0.0" } }, "sha512-xg2oGa/RHiQOrpz8NIbqEUoTFvM1pWUNfiO/zSoaMlsE4EptBdlGhbTgZZkhIaXgP4wqIPo01yUzldDuGDS5kw=="],
+
     "@levischuck/tiny-cbor": ["@levischuck/tiny-cbor@0.2.11", "", {}, "sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow=="],
 
     "@material/animation": ["@material/animation@1.0.0", "", { "dependencies": { "tslib": "^1.9.3" } }, "sha512-Ed5/vggn6ZhSJ87yn3ZS1d826VJNFz73jHF2bSsgRtHDoB8KCuOwQMfdgAgDa4lKDF6CDIPCKBZPKrs2ubehdw=="],
@@ -282,8 +284,6 @@
     "@monaco-editor/loader": ["@monaco-editor/loader@1.7.0", "", { "dependencies": { "state-local": "^1.0.6" } }, "sha512-gIwR1HrJrrx+vfyOhYmCZ0/JcWqG5kbfG7+d3f/C1LXk2EvzAbHSg3MQ5lO2sMlo9izoAZ04shohfKLVT6crVA=="],
 
     "@monaco-editor/react": ["@monaco-editor/react@4.7.0", "", { "dependencies": { "@monaco-editor/loader": "^1.5.0" }, "peerDependencies": { "monaco-editor": ">= 0.25.0 < 1", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-cyzXQCtO47ydzxpQtCGSQGOC8Gk3ZUeBXFAxD+CWXYFo5OqZyZUonFl0DwUlTyAfRHntBfw2p3w4s9R6oe1eCA=="],
-
-    "@openauthjs/openauth": ["@openauthjs/openauth@0.4.3", "", { "dependencies": { "@standard-schema/spec": "1.0.0-beta.3", "aws4fetch": "1.0.20", "jose": "5.9.6" }, "peerDependencies": { "arctic": "^2.2.2", "hono": "^4.0.0" } }, "sha512-RlnjqvHzqcbFVymEwhlUEuac4utA5h4nhSK/i2szZuQmxTIqbGUxZ+nM+avM+VV4Ing+/ZaNLKILoXS3yrkOOw=="],
 
     "@oslojs/asn1": ["@oslojs/asn1@1.0.0", "", { "dependencies": { "@oslojs/binary": "1.0.0" } }, "sha512-zw/wn0sj0j0QKbIXfIlnEcTviaCzYOY3V5rAyjR6YtOByFtJiT574+8p9Wlach0lZH9fddD4yb9laEAIl4vXQA=="],
 
@@ -809,7 +809,7 @@
 
     "jiti": ["jiti@2.6.1", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ=="],
 
-    "jose": ["jose@5.9.6", "", {}, "sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ=="],
+    "jose": ["jose@6.2.1", "", {}, "sha512-jUaKr1yrbfaImV7R2TN/b3IcZzsw38/chqMpo2XJ7i2F8AfM/lA4G1goC3JVEwg0H7UldTmSt3P68nt31W7/mw=="],
 
     "js-tokens": ["js-tokens@4.0.0", "", {}, "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ=="],
 
@@ -1007,7 +1007,7 @@
 
     "oniguruma-to-es": ["oniguruma-to-es@4.3.4", "", { "dependencies": { "oniguruma-parser": "^0.12.1", "regex": "^6.0.1", "regex-recursion": "^6.0.2" } }, "sha512-3VhUGN3w2eYxnTzHn+ikMI+fp/96KoRSVK9/kMTcFqj1NRDh2IhQCKvYxDnWePKRXY/AqH+Fuiyb7VHSzBjHfA=="],
 
-    "openauth-webui-shared-types": ["openauthster-shared@github:shpaw415/OpenAuthSter-shared#293d56e", { "dependencies": { "@openauthjs/openauth": "^0.4.3", "@simplewebauthn/browser": "^13.2.2", "@simplewebauthn/server": "^13.2.3", "cloudflare": "^5.2.0", "mustache": "^4.2.0", "openauth-webui-shared-types": ".", "uqr": "^0.1.2", "valibot": "^1.2.0" }, "peerDependencies": { "drizzle-orm": "^0.45.1", "hono": "^4.12.2", "typescript": "^5" } }, "shpaw415-OpenAuthSter-shared-293d56e", "sha512-RaaLU6YC3iV4X4qtpd8pkjcUY3CY9x1qpT8wE8xtq0jjRcqjnVNorzbZN1WmeB81ewBFVmybksePw5PKgL+X3Q=="],
+    "openauth-webui-shared-types": ["openauthster-shared@github:shpaw415/OpenAuthSter-shared#6d82cae", { "dependencies": { "@kagii/openauth": "^0.5.2", "@simplewebauthn/browser": "^13.2.2", "@simplewebauthn/server": "^13.2.3", "cloudflare": "^5.2.0", "mustache": "^4.2.0", "openauth-webui-shared-types": ".", "uqr": "^0.1.2", "valibot": "^1.2.0" }, "peerDependencies": { "drizzle-orm": "^0.45.1", "hono": "^4.12.2", "typescript": "^5" } }, "shpaw415-OpenAuthSter-shared-6d82cae", "sha512-46x62cwKcJwcPAV9NDfqRjlID106VrwG8uwtqWtcsglgisMDItdLwWhXTMeOGGruM51mEss0kcxwcYLY7y/ioA=="],
 
     "parent-module": ["parent-module@1.0.1", "", { "dependencies": { "callsites": "^3.0.0" } }, "sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g=="],
 
@@ -1639,7 +1639,7 @@
 
     "npm/yallist": ["yallist@5.0.0", "", {}, "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw=="],
 
-    "openauth-webui-shared-types/openauth-webui-shared-types": ["openauth-webui-shared-types@file:../../.bun/install/cache/@GH@shpaw415-OpenAuthSter-shared-293d56e@@@1", {}],
+    "openauth-webui-shared-types/openauth-webui-shared-types": ["openauth-webui-shared-types@file:../../.bun/install/cache/@GH@shpaw415-OpenAuthSter-shared-6d82cae@@@1", {}],
 
     "parse-entities/@types/unist": ["@types/unist@2.0.11", "", {}, "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA=="],
 

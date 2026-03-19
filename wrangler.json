@@ -1,14 +1,14 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "openauthster-webui-test",
-  "pages_build_output_dir": ".frame-master/build",
-  "compatibility_date": "2025-11-09",
-  "d1_databases": [
-    {
-      "binding": "PROJECT_DB",
-      "database_id": "ed2717d1-ed2f-4c4b-9e3b-219fde9b320a",
-      "remote": true
-    }
-  ],
-  "compatibility_flags": ["nodejs_compat"]
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "openauthster-webui-test",
+	"pages_build_output_dir": ".frame-master/build",
+	"compatibility_date": "2025-11-09",
+	"d1_databases": [
+		{
+			"binding": "PROJECT_DB",
+			"database_id": "fbd2f747-c950-48bc-8939-addccae17553",
+			"remote": true
+		}
+	],
+	"compatibility_flags": ["nodejs_compat"]
 }

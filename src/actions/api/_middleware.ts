@@ -1,44 +1,71 @@
 "no action";
 import type { EventContext } from "@cloudflare/workers-types";
-import { type RequestDataContext, createClient } from "@auth";
+import {
+	type PrivateSessionData,
+	type PublicSessionData,
+	type RequestDataContext,
+	createClient,
+} from "@auth";
+import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
 
 export async function onRequest(
-  context: EventContext<Env, any, RequestDataContext>,
+	context: EventContext<Env, any, RequestDataContext>,
 ) {
-  //@ts-ignore
-  if (context.env.NODE_ENV === "development") {
-    const host = new URL(context.request.url).hostname;
-    if (host !== "localhost" && host !== "127.0.0.1") {
-      console.error(
-        "Unauthorized request in development environment from host:",
-        host,
-        ". Only localhost and 127.0.0.1 are allowed.",
-        "Set NODE_ENV to production to disable this check.",
-      );
-      return new Response("Unauthorized", { status: 401 });
-    }
-    return await context.next();
-  }
+	//@ts-ignore
+	if (context.env.NODE_ENV === "development") {
+		const host = new URL(context.request.url).hostname;
+		if (host !== "localhost" && host !== "127.0.0.1") {
+			console.error(
+				"Unauthorized request in development environment from host:",
+				host,
+				". Only localhost and 127.0.0.1 are allowed.",
+				"Set NODE_ENV to production to disable this check.",
+			);
+			return new Response("Unauthorized", { status: 401 });
+		}
+		/**
+		 * In development, we mock the authentication by injecting a fake client into the context.
+		 */
+		//@ts-ignore
+		context.data.client = {
+			getMetaData: async () => ({
+				id: "admin",
+				identifier: "admin@example.com",
+				provider: "password",
+			}),
+			getUserSession: async () => ({
+				public: {},
+				private: {
+					group_ids: ["admin"],
+				},
+				user_id: "admin",
+				provider: "password",
+				user_identifier: "admin@example.com",
+			}),
+		} as OpenAuthsterClient<PublicSessionData, PrivateSessionData>;
 
-  const auth = await createClient({
-    clientID: context.env.PUBLIC_CLIENT_ID,
-    issuerURI: context.env.PUBLIC_ISSUER,
-    redirectURI: context.env.PUBLIC_REDIRECT_URI,
-  }).setTokenFromRequest(context.request as unknown as Request);
+		return await context.next();
+	}
 
-  if (!auth.isAuthenticated) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+	const auth = await createClient({
+		clientID: context.env.PUBLIC_CLIENT_ID,
+		issuerURI: context.env.PUBLIC_ISSUER,
+		redirectURI: context.env.PUBLIC_REDIRECT_URI,
+	}).setTokenFromRequest(context.request as unknown as Request);
 
-  context.data.client = auth;
+	if (!auth.isAuthenticated) {
+		return new Response("Unauthorized", { status: 401 });
+	}
 
-  try {
-    return await context.next();
-  } catch (err) {
-    if (err instanceof Error) {
-      console.error("Error in API middleware:", err);
-      return new Response("Internal Server Error", { status: 500 });
-    }
-    return new Response("Unknown error", { status: 500 });
-  }
+	context.data.client = auth;
+
+	try {
+		return await context.next();
+	} catch (err) {
+		if (err instanceof Error) {
+			console.error("Error in API middleware:", err);
+			return new Response("Internal Server Error", { status: 500 });
+		}
+		return new Response("Unknown error", { status: 500 });
+	}
 }

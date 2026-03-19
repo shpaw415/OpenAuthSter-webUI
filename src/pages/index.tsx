@@ -1,682 +1,192 @@
-"use client";
+import Logo from "@static/logo.webp";
+import { Icon } from "@components/icon";
+import { useAuth } from "@hooks/useAuth";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Icon } from "@iconify/react";
-import { useProjects } from "../hooks/useProjects";
-import { useDashboard } from "../hooks/useDashboard";
-import {
-  getCurrentIssuerVersion,
-  getCurrentWebUiVersion,
-  getLatestVersion,
-} from "../version-check";
-import type { DashboardAlert } from "@api/dashboard";
-import { UsageChart } from "@components/UsageChart";
+const features = [
+	{
+		icon: "lucide:layers",
+		title: "Multi-Tenant",
+		description:
+			"Manage multiple projects and isolated user pools from a single admin dashboard.",
+	},
+	{
+		icon: "lucide:shield-check",
+		title: "Secure by Default",
+		description:
+			"HMAC-signed requests, two-tier sessions, TOTP and WebAuthn MFA built in.",
+	},
+	{
+		icon: "lucide:zap",
+		title: "Cloudflare-Native",
+		description:
+			"Runs on Cloudflare Workers + D1. Zero cold starts, globally distributed.",
+	},
+	{
+		icon: "lucide:plug",
+		title: "Extensible Providers",
+		description:
+			"Social, enterprise, custom QR and WebAuthn flows — all configurable per project.",
+	},
+];
 
-const typeTone: Record<"info" | "warning" | "error", string> = {
-  info: "bg-blue-500/10 text-blue-200 border border-blue-500/30",
-  warning: "bg-amber-500/10 text-amber-200 border border-amber-500/30",
-  error: "bg-red-500/10 text-red-200 border border-red-500/30",
-};
+const techStack = [
+	{ icon: "simple-icons:cloudflare", label: "Workers" },
+	{ icon: "simple-icons:hono", label: "Hono" },
+	{ icon: "simple-icons:react", label: "React" },
+	{ icon: "simple-icons:tailwindcss", label: "Tailwind" },
+	{ icon: "simple-icons:drizzle", label: "Drizzle" },
+];
 
-const typeLabel: Record<"info" | "warning" | "error", string> = {
-  info: "Info",
-  warning: "Warning",
-  error: "Error",
-};
+export default function LandingPage() {
+	const auth = useAuth();
 
-const typeIcon: Record<"info" | "warning" | "error", string> = {
-  info: "lucide:info",
-  warning: "lucide:alert-triangle",
-  error: "lucide:alert-circle",
-};
+	return (
+		<div className="min-h-screen bg-[#09090b] text-zinc-300 font-sans selection:bg-sky-400 selection:text-black flex flex-col relative overflow-hidden">
+			{/* Grid Background */}
+			<div className="absolute inset-0 z-0 opacity-20 pointer-events-none" 
+				style={{ backgroundImage: 'linear-gradient(#27272a 1px, transparent 1px), linear-gradient(90deg, #27272a 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+			/>
 
-const formatDate = (iso: string) => {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(iso));
-  } catch (_) {
-    return iso;
-  }
-};
+			{/* Header */}
+			<header className="relative z-10 w-full border-b flex-none border-zinc-800 bg-[#09090b]/80 backdrop-blur-md px-6 py-4">
+				<div className="max-w-6xl mx-auto flex items-center justify-between">
+					<div className="flex items-center gap-3">
+						<div className="w-9 h-9 bg-zinc-900 flex items-center justify-center -rotate-3 border border-sky-400 shadow-[2px_2px_0px_0px_rgba(56,189,248,0.2)]">
+							<img src={Logo.src()} alt="Logo" className="w-6 h-6 object-contain" />
+						</div>
+						<span className="font-mono font-bold text-lg tracking-tighter text-white uppercase">
+							openauthster_
+						</span>
+					</div>
 
-function StatCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string;
-  value: number | string;
-  tone: string;
-  icon: string;
-}) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-base font-medium text-gray-400">{label}</p>
-        <p className={`text-2xl font-semibold leading-tight mt-1 ${tone}`}>
-          {value}
-        </p>
-      </div>
-      <Icon icon={icon} className={`w-10 h-10 shrink-0 ${tone} opacity-80`} />
-    </div>
-  );
-}
+					{auth.isLoaded && (
+						<div>
+							{auth.isAuthenticated ? (
+								<a
+									href="/dashboard"
+									className="group inline-flex items-center gap-2 px-5 py-2 text-sm bg-zinc-900 text-white border border-zinc-700 hover:border-sky-400 hover:text-sky-300 transition-colors font-mono uppercase tracking-wider"
+								>
+									<Icon icon="lucide:cpu" className="w-4 h-4" />
+									[ Initialize ]
+								</a>
+							) : (
+								<button
+									type="button"
+									onClick={() => auth.login()}
+									className="inline-flex items-center gap-2 px-5 py-2 text-sm bg-sky-400 text-black hover:bg-sky-300 transition-colors font-mono font-bold uppercase tracking-wider shadow-[4px_4px_0px_0px_rgba(255,255,255,0.1)] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,0.1)]"
+								>
+									<Icon icon="lucide:key" className="w-4 h-4" />
+									Access
+								</button>
+							)}
+						</div>
+					)}
+				</div>
+			</header>
 
-function StatCardSkeleton() {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 animate-pulse">
-      <div className="h-4 w-16 bg-gray-700 rounded mb-1" />
-      <div className="h-8 w-12 bg-gray-700 rounded" />
-    </div>
-  );
-}
+			{/* Hero */}
+			<section className="relative z-10 flex flex-col items-start justify-center px-6 pt-32 pb-24 gap-8 max-w-6xl mx-auto w-full flex-grow">
+				<div className="inline-flex items-center gap-3 px-4 py-2 bg-zinc-900 border-l-4 border-sky-400 text-zinc-400 text-xs font-mono font-bold uppercase tracking-widest shadow-sm">
+					<Icon icon="lucide:server" className="w-4 h-4 text-sky-400" />
+					Self-Hosted Identity Matrix
+				</div>
 
-function ChartSkeleton() {
-  return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 animate-pulse">
-      <div className="h-5 w-48 bg-gray-700 rounded mb-4" />
-      <div className="h-64 bg-gray-700/50 rounded flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-600" />
-      </div>
-    </div>
-  );
-}
+				<h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tighter max-w-4xl leading-[0.9] text-white uppercase">
+					Auth Infrastructure,<br />
+					<span className="text-transparent bg-clip-text bg-linear-to-r from-sky-300 to-sky-500 drop-shadow-[0_0_15px_rgba(56,189,248,0.3)]">Built Raw.</span>
+				</h1>
 
-function RecentActivitySkeleton() {
-  return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 animate-pulse">
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-5 w-32 bg-gray-700 rounded" />
-        <div className="h-4 w-16 bg-gray-700 rounded" />
-      </div>
-      <div className="space-y-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className="flex gap-3 py-2 border-b border-gray-700 last:border-0"
-          >
-            <div className="h-5 w-12 bg-gray-700 rounded shrink-0" />
-            <div className="h-4 flex-1 bg-gray-700/70 rounded" />
-            <div className="h-4 w-20 bg-gray-700/50 rounded shrink-0" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+				<p className="text-zinc-400 text-lg sm:text-xl font-mono max-w-2xl leading-relaxed pl-4 border-l-2 border-zinc-800">
+					OpenAuthster is a brutalist, multi-tenant authentication engine 
+					running on Cloudflare edge. Own your identity layer. Zero fluff, absolute control.
+				</p>
 
-function ProjectCardSkeleton() {
-  return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-pulse">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-3 h-3 rounded-full bg-gray-600" />
-          <div className="h-5 w-24 bg-gray-700 rounded" />
-        </div>
-        <div className="h-5 w-14 bg-gray-700 rounded" />
-      </div>
-      <div className="space-y-2 mb-4">
-        <div className="h-4 w-full bg-gray-700/70 rounded" />
-        <div className="h-4 w-3/4 bg-gray-700/70 rounded" />
-        <div className="h-4 w-1/2 bg-gray-700/70 rounded" />
-      </div>
-      <div className="flex gap-2">
-        <div className="flex-1 h-9 bg-gray-700 rounded" />
-        <div className="h-9 w-20 bg-gray-700 rounded" />
-      </div>
-    </div>
-  );
-}
+				<div className="flex flex-wrap gap-4 mt-4">
+					{auth.isLoaded ? (
+						auth.isAuthenticated ? (
+							<a
+								href="/dashboard"
+								className="inline-flex items-center gap-3 px-8 py-4 bg-sky-400 text-black font-mono font-bold uppercase tracking-widest text-sm hover:bg-sky-300 transition-all shadow-[6px_6px_0px_0px_rgba(255,255,255,0.1)] active:translate-y-[3px] active:translate-x-[3px] active:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.1)]"
+							>
+								<Icon icon="lucide:terminal-square" className="w-5 h-5" />
+								Enter Dashboard
+							</a>
+						) : (
+							<button
+								type="button"
+								onClick={() => auth.login()}
+								className="inline-flex items-center gap-3 px-8 py-4 bg-sky-400 text-black font-mono font-bold uppercase tracking-widest text-sm hover:bg-sky-300 transition-all shadow-[6px_6px_0px_0px_rgba(255,255,255,0.1)] active:translate-y-[3px] active:translate-x-[3px] active:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.1)]"
+							>
+								<Icon icon="lucide:zap" className="w-5 h-5" />
+								Deploy Instance
+							</button>
+						)
+					) : (
+						<div className="h-14 w-48 bg-zinc-800 animate-pulse border border-zinc-700" />
+					)}
+					<a
+						href="https://github.com/openauthster/openauthster"
+						target="_blank"
+						rel="noreferrer"
+						className="inline-flex items-center gap-3 px-8 py-4 bg-transparent text-white border-2 border-zinc-700 font-mono font-bold uppercase tracking-widest text-sm hover:border-white transition-all shadow-[6px_6px_0px_0px_rgba(255,255,255,0.05)] active:translate-y-[3px] active:translate-x-[3px] active:shadow-[3px_3px_0px_0px_rgba(255,255,255,0.05)]"
+					>
+						<Icon icon="simple-icons:github" className="w-5 h-5" />
+						Source
+					</a>
+				</div>
 
-export default function AdminPanel() {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newClientID, setNewClientID] = useState("");
-  const [createError, setCreateError] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [versionOutdated, setVersionOutdated] = useState(false);
+				{/* Tech stack */}
+				<div className="flex flex-col gap-3 mt-12 bg-zinc-900 border border-zinc-800 p-4 w-full max-w-2xl">
+					<div className="text-xs font-mono text-zinc-500 uppercase tracking-widest pb-2 border-b border-zinc-800">System_Architecture</div>
+					<div className="flex flex-wrap items-center gap-x-6 gap-y-4 pt-2">
+						{techStack.map((t) => (
+							<div
+								key={t.label}
+								className="flex items-center gap-2 font-mono text-zinc-400 text-sm hover:text-sky-400 transition-colors cursor-default"
+							>
+								<Icon icon={t.icon} className="w-4 h-4 opacity-70" />
+								{t.label}
+							</div>
+						))}
+					</div>
+				</div>
+			</section>
 
-  const projectHook = useProjects();
-  const dashboard = useDashboard({ pollInterval: 60000 });
+			{/* Features Matrix */}
+			<section className="relative z-10 w-full bg-zinc-950 border-t border-zinc-800">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-zinc-800 border-b border-zinc-800">
+					{features.map((f, i) => (
+						<div
+							key={f.title}
+							className="group p-8 flex flex-col gap-5 hover:bg-zinc-900 transition-colors relative overflow-hidden"
+						>
+							<div className="absolute top-0 right-0 p-4 text-zinc-800 font-mono text-4xl font-black opacity-30 select-none group-hover:text-sky-400 group-hover:opacity-10 transition-all">0{i + 1}</div>
+							<div className="w-12 h-12 bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-400 group-hover:text-sky-400 group-hover:border-sky-400 transition-colors relative z-10">
+								<Icon icon={f.icon} className="w-6 h-6" />
+							</div>
+							<div className="relative z-10">
+								<h3 className="font-mono font-bold text-lg text-white mb-2 uppercase tracking-wide">{f.title}</h3>
+								<p className="text-sm font-sans text-zinc-500 leading-relaxed">
+									{f.description}
+								</p>
+							</div>
+						</div>
+					))}
+				</div>
+			</section>
 
-  const checkVersions = useCallback(async () => {
-    if (process.env.NODE_ENV === "development") return;
-    try {
-      const [latestWebUI, latestIssuer] = await Promise.all([
-        getLatestVersion("OpenAuthSter-webUI"),
-        getLatestVersion("OpenAuthSter-issuer"),
-      ]);
-      const currentWebUI = getCurrentWebUiVersion();
-      const currentIssuer = await getCurrentIssuerVersion(
-        process.env.PUBLIC_ISSUER ?? "",
-      );
-      setVersionOutdated(
-        currentWebUI !== latestWebUI || currentIssuer !== latestIssuer,
-      );
-    } catch (_) {
-      // Ignore version check errors
-    }
-  }, []);
-
-  useEffect(() => {
-    checkVersions();
-  }, [checkVersions]);
-
-  const allAlerts = useMemo((): DashboardAlert[] => {
-    const apiAlerts = dashboard.data?.alerts ?? [];
-    if (versionOutdated) {
-      return [
-        ...apiAlerts,
-        {
-          type: "version_outdated",
-          message:
-            "A newer version of OpenAuthSter is available. Update for the latest features.",
-        },
-      ];
-    }
-    return apiAlerts;
-  }, [dashboard.data?.alerts, versionOutdated]);
-
-  const handleCreate = async () => {
-    if (!newClientID.trim()) {
-      setCreateError("Client ID is required");
-      return;
-    }
-
-    setIsCreating(true);
-    setCreateError("");
-
-    try {
-      await projectHook.createProject(newClientID.trim());
-      setShowCreateModal(false);
-      setNewClientID("");
-      await dashboard.refetch();
-    } catch (err) {
-      setCreateError(
-        err instanceof Error ? err.message : "Failed to create project",
-      );
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleDelete = async (clientID: string) => {
-    try {
-      await projectHook.deleteProject(clientID);
-      setDeleteConfirm(null);
-      await dashboard.refetch();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete project");
-    }
-  };
-
-  const getProjectStats = (clientID: string) =>
-    dashboard.data?.projectStats.find((s) => s.clientID === clientID);
-
-  const isInitialLoading =
-    projectHook.isLoading || (dashboard.isLoading && !dashboard.data);
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gray-800 border border-gray-700">
-            <Icon
-              icon="lucide:layout-dashboard"
-              className="w-8 h-8 text-blue-400"
-            />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-            <p className="text-gray-400 mt-1">
-              Manage authentication providers for your projects
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-        >
-          <Icon icon="lucide:plus" className="w-5 h-5" />
-          <span>New Project</span>
-        </button>
-      </div>
-
-      {/* KPIs */}
-      {isInitialLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <StatCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        dashboard.data && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              label="Projects"
-              value={dashboard.data.kpis.totalProjects}
-              tone="text-white"
-              icon="lucide:folder-kanban"
-            />
-            <StatCard
-              label="Users"
-              value={dashboard.data.kpis.totalUsers}
-              tone="text-blue-200"
-              icon="lucide:users"
-            />
-            <StatCard
-              label="Errors (24h)"
-              value={dashboard.data.kpis.totalErrors24h}
-              tone="text-red-200"
-              icon="lucide:alert-circle"
-            />
-            <StatCard
-              label="Webhooks"
-              value={dashboard.data.kpis.totalWebhooks}
-              tone="text-green-200"
-              icon="lucide:webhook"
-            />
-          </div>
-        )
-      )}
-
-      {/* Usage chart */}
-      {isInitialLoading ? (
-        <ChartSkeleton />
-      ) : (
-        <UsageChart
-          usageOverTime={dashboard.data?.usageOverTime}
-          isLoading={dashboard.isLoading && !dashboard.data}
-        />
-      )}
-
-      {/* Alerts */}
-      {allAlerts.length > 0 && (
-        <div className="space-y-2">
-          {allAlerts.map((alert, idx) => (
-            <div
-              key={idx}
-              className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/30 bg-amber-500/10"
-            >
-              <Icon
-                icon="lucide:alert-triangle"
-                className="w-5 h-5 text-amber-400 shrink-0 mt-0.5"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-amber-200">{alert.message}</p>
-                <div className="mt-2 flex gap-2">
-                  {alert.type === "errors" && alert.projectId && (
-                    <a
-                      href={`/activity?project_id=${encodeURIComponent(
-                        alert.projectId,
-                      )}`}
-                      className="text-xs text-amber-300 hover:text-amber-200 underline inline-flex items-center gap-1"
-                    >
-                      <Icon icon="lucide:scroll-text" className="w-3.5 h-3.5" />
-                      View logs
-                    </a>
-                  )}
-                  {alert.type === "webhook_failure" && alert.projectId && (
-                    <a
-                      href={`/project?project_id=${encodeURIComponent(
-                        alert.projectId,
-                      )}`}
-                      className="text-xs text-amber-300 hover:text-amber-200 underline inline-flex items-center gap-1"
-                    >
-                      <Icon icon="lucide:settings" className="w-3.5 h-3.5" />
-                      Configure
-                    </a>
-                  )}
-                  {alert.type === "version_outdated" && (
-                    <a
-                      href="/configurations"
-                      className="text-xs text-amber-300 hover:text-amber-200 underline inline-flex items-center gap-1"
-                    >
-                      <Icon icon="lucide:download" className="w-3.5 h-3.5" />
-                      Check updates
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Recent activity */}
-      {isInitialLoading ? (
-        <RecentActivitySkeleton />
-      ) : (
-        dashboard.data &&
-        dashboard.data.recentLogs.length > 0 && (
-          <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Icon
-                  icon="lucide:activity"
-                  className="w-5 h-5 text-blue-400"
-                />
-                Recent activity
-              </h3>
-              <a
-                href="/activity"
-                className="text-sm text-blue-400 hover:text-blue-300 inline-flex items-center gap-1"
-              >
-                View all
-                <Icon icon="lucide:arrow-right" className="w-4 h-4" />
-              </a>
-            </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {dashboard.data.recentLogs.slice(0, 10).map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-start gap-3 py-2 border-b border-gray-700 last:border-0"
-                >
-                  <span
-                    className={`shrink-0 px-2 py-0.5 rounded text-xs font-medium inline-flex items-center gap-1 ${
-                      typeTone[log.type]
-                    }`}
-                  >
-                    <Icon icon={typeIcon[log.type]} className="w-3.5 h-3.5" />
-                    {typeLabel[log.type]}
-                  </span>
-                  <p className="text-sm text-gray-300 line-clamp-2 flex-1 min-w-0">
-                    {log.message}
-                  </p>
-                  <span className="text-xs text-gray-500 shrink-0">
-                    {log.clientID}
-                  </span>
-                  <span className="text-xs text-gray-500 shrink-0">
-                    {formatDate(log.timestamp)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      )}
-
-      {/* Project Grid */}
-      {isInitialLoading ? (
-        <div>
-          <div className="h-6 w-24 bg-gray-700 rounded animate-pulse mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <ProjectCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      ) : projectHook.projects.length === 0 ? (
-        <div className="bg-gray-800 rounded-lg p-12 text-center">
-          <Icon
-            icon="lucide:package"
-            className="w-12 h-12 mx-auto mb-4 text-gray-500"
-          />
-          <h3 className="text-xl font-medium text-white mb-2">
-            No projects yet
-          </h3>
-          <p className="text-gray-400 mb-6">
-            Create your first project to start configuring authentication
-            providers
-          </p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors inline-flex items-center gap-2"
-          >
-            <Icon icon="lucide:plus" className="w-5 h-5" />
-            Create Project
-          </button>
-        </div>
-      ) : (
-        <div>
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-            <Icon
-              icon="lucide:folder-kanban"
-              className="w-5 h-5 text-blue-400"
-            />
-            Projects
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projectHook.projects.map((project) => {
-              const stats = getProjectStats(project.clientID);
-              const hasRecentErrors = (stats?.errorsCount24h ?? 0) > 0;
-
-              return (
-                <div
-                  key={project.clientID}
-                  className={`bg-gray-800 rounded-lg p-6 border transition-colors ${
-                    hasRecentErrors
-                      ? "border-red-500/50 hover:border-red-500/70"
-                      : "border-gray-700 hover:border-gray-600"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`p-1.5 rounded-lg ${
-                          project.active
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-gray-600/50 text-gray-500"
-                        }`}
-                      >
-                        <Icon
-                          icon={
-                            project.active
-                              ? "lucide:folder-open"
-                              : "lucide:folder"
-                          }
-                          className="w-4 h-4"
-                        />
-                      </div>
-                      <h3 className="text-xl font-semibold text-white truncate max-w-45">
-                        {project.clientID}
-                      </h3>
-                    </div>
-                    <span
-                      className={`px-2 py-1 text-xs rounded ${
-                        project.active
-                          ? "bg-green-500/10 text-green-400"
-                          : "bg-gray-500/10 text-gray-400"
-                      }`}
-                    >
-                      {project.active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-
-                  <div className="text-sm text-gray-400 mb-4 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Icon
-                        icon="lucide:calendar"
-                        className="w-4 h-4 shrink-0 text-gray-500"
-                      />
-                      <span>
-                        Created:{" "}
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Icon
-                        icon="lucide:shield-check"
-                        className="w-4 h-4 shrink-0 text-gray-500"
-                      />
-                      <span>
-                        Providers:{" "}
-                        {project.providers_data?.filter((p) => p.enabled)
-                          .length || 0}{" "}
-                        enabled
-                      </span>
-                    </div>
-                    {stats !== undefined && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <Icon
-                            icon="lucide:users"
-                            className="w-4 h-4 shrink-0 text-gray-500"
-                          />
-                          <span>Users: {stats.userCount}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Icon
-                            icon="lucide:webhook"
-                            className="w-4 h-4 shrink-0 text-gray-500"
-                          />
-                          <span>Webhooks: {stats.webhookCount}</span>
-                        </div>
-                        {stats.lastError && (
-                          <div
-                            className="flex items-center gap-2 text-red-400 truncate"
-                            title={stats.lastError.message}
-                          >
-                            <Icon
-                              icon="lucide:alert-circle"
-                              className="w-4 h-4 shrink-0"
-                            />
-                            <span>
-                              Last error:{" "}
-                              {stats.lastError.message.length > 40
-                                ? stats.lastError.message.slice(0, 40) + "…"
-                                : stats.lastError.message}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <a
-                      href={`/project?project_id=${encodeURIComponent(
-                        project.clientID,
-                      )}`}
-                      className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors text-center inline-flex items-center justify-center gap-2"
-                    >
-                      <Icon icon="lucide:settings" className="w-4 h-4" />
-                      Manage
-                    </a>
-                    <button
-                      onClick={() => setDeleteConfirm(project.clientID)}
-                      className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2"
-                    >
-                      <Icon icon="lucide:trash-2" className="w-4 h-4" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Icon
-                icon="lucide:folder-plus"
-                className="w-6 h-6 text-blue-400"
-              />
-              Create New Project
-            </h3>
-
-            {createError && (
-              <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
-                <Icon icon="lucide:alert-circle" className="w-5 h-5 shrink-0" />
-                {createError}
-              </div>
-            )}
-
-            <div className="mb-6">
-              <label className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                <Icon icon="lucide:tag" className="w-4 h-4 text-gray-500" />
-                Client ID
-              </label>
-              <input
-                type="text"
-                value={newClientID}
-                onChange={(e) => setNewClientID(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="my-app"
-              />
-              <p className="text-gray-500 text-sm mt-2">
-                A unique identifier for your project (e.g., my-app, web-client)
-              </p>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewClientID("");
-                  setCreateError("");
-                }}
-                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <Icon icon="lucide:x" className="w-4 h-4" />
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={isCreating}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
-              >
-                {isCreating ? (
-                  <>
-                    <Icon
-                      icon="lucide:loader-2"
-                      className="w-4 h-4 animate-spin"
-                    />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Icon icon="lucide:plus" className="w-4 h-4" />
-                    Create
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Icon icon="lucide:trash-2" className="w-6 h-6 text-red-400" />
-              Delete Project
-            </h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete{" "}
-              <span className="text-white font-semibold">{deleteConfirm}</span>?
-              This action cannot be undone.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <Icon icon="lucide:x" className="w-4 h-4" />
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
-              >
-                <Icon icon="lucide:trash-2" className="w-4 h-4" />
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+			{/* Brutalist Footer */}
+			<footer className="relative z-10 w-full flex-none border-t border-zinc-800 bg-black text-zinc-600 font-mono text-xs py-8 px-6">
+				<div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+					<div className="flex items-center gap-2">
+						<div className="w-2 h-2 bg-sky-400 animate-pulse" />
+						STATUS: SYSTEM_ONLINE
+					</div>
+					<div className="uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">
+						OpenAuthster Protocol © {new Date().getFullYear()}
+					</div>
+				</div>
+			</footer>
+		</div>
+	);
 }

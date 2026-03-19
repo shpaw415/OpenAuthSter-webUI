@@ -1,4 +1,15 @@
 import Cloudflare from "cloudflare";
+import { a } from "shiki/dist/langs-bundle-full-C-zczmvu.mjs";
+
+
+export class CloudflareClientError extends Error {
+  public data: unknown;
+  constructor(message: string, cause?: unknown, data?: unknown) {
+    super(message, { cause });
+    this.name = "CloudflareClientError";
+    this.data = data;
+  }
+}
 
 /**
  * @returns the custom domain created for the project
@@ -9,7 +20,7 @@ export async function createCustomDomainForProject(
 ): Promise<Cloudflare.Workers.Domains.Domain> {
   const cf = client;
   const issuer_url = new URL(
-    env.CLOUDFLARE_AUTH_ENDPOINT_DOMAIN ?? env.PUBLIC_ISSUER,
+    env.CLOUDFLARE_AUTH_ENDPOINT_DOMAIN,
   );
   const rawName = `${crypto.randomUUID().replaceAll("-", "")}-${
     issuer_url.hostname
@@ -27,8 +38,11 @@ export async function createCustomDomainForProject(
 
     return domaine;
   } catch (error) {
-    throw new Error(`Cloudflare domain creation failed: ${newDomaineName}`, {
-      cause: error,
+    throw new CloudflareClientError(`Cloudflare domain creation failed: ${newDomaineName}`, error, {
+      domaineName: newDomaineName,
+      accountId: env.CLOUDFLARE_ACCOUNT_ID,
+      zoneId: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
+      service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
     });
   }
 }

@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
+    "@kagii/openauth": "^0.5.2",
     "@material/react-snackbar": "^0.15.0",
     "@monaco-editor/react": "^4.7.0",
-    "@openauthjs/openauth": "^0.4.3",
     "@shpaw415/formdata-parser": "^0.1.1",
     "@tailwindcss/cli": "^4.2.1",
     "@tailwindcss/typography": "^0.5.19",

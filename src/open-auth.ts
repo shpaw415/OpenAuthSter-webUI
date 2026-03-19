@@ -9,6 +9,8 @@ export type PrivateSessionData = {
 	 */
 	group_ids?: string[];
 };
+
+export type PublicSessionData = {};
 export type RequestDataContext = {
 	client: ReturnType<typeof createClient>;
 };
@@ -18,16 +20,24 @@ export const createClient = ({
 	clientID,
 	issuerURI,
 	redirectURI,
+	secret,
 }: {
 	token?: string;
 	clientID?: string;
 	issuerURI?: string;
 	redirectURI?: string;
+	secret?: string;
 } = {}) =>
-	createOpenAuthsterClient<{}, PrivateSessionData>({
+	createOpenAuthsterClient<PublicSessionData, PrivateSessionData>({
 		clientID: clientID ?? process.env.PUBLIC_CLIENT_ID,
 		issuerURI: issuerURI ?? process.env.PUBLIC_ISSUER,
 		redirectURI: redirectURI ?? process.env.PUBLIC_REDIRECT_URI,
 		subject,
 		token,
+		authFlowCallbacks: {
+			onLoginRequired: () => {
+				console.log("Login required");
+			},
+		},
+		secret,
 	});

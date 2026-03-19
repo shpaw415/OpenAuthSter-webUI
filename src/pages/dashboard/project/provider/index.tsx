@@ -29,7 +29,7 @@ import type {
 import { getProviderMeta } from "openauth-webui-shared-types";
 import { Icon } from "@iconify/react";
 import { ProviderIcon } from "@components/provider-icons";
-import { navigate } from "../../../utils";
+import { navigate } from "@utils";
 import { useProject } from "@hooks/useProjects";
 import { Snackbar } from "@material/react-snackbar";
 import { Toggle, ToggleBase } from "@components/toggle";
@@ -230,7 +230,7 @@ export default function ProviderForm() {
           <div className="px-6 py-6">
             <div className="flex items-center space-x-4">
               <a
-                href={"/project?project_id=" + projectHook.project?.clientID}
+                href={"/dashboard/project?project_id=" + projectHook.project?.clientID}
                 className="p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
               >
                 ←
@@ -286,7 +286,7 @@ export default function ProviderForm() {
 
               <div className="flex gap-3">
                 <a
-                  href={"/project?project_id=" + projectHook.project?.clientID}
+                  href={"/dashboard/project?project_id=" + projectHook.project?.clientID}
                   className="flex-1 px-5 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-medium rounded-xl transition-colors text-center"
                 >
                   Cancel

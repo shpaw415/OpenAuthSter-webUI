@@ -2,8 +2,8 @@ import { Icon } from "@iconify/react";
 import { Snackbar } from "@material/react-snackbar";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import { useCallback, useEffect, useState } from "react";
-import { useUITheme, useUIThemes } from "../../hooks/useUIThemes";
-import { navigate } from "../../utils";
+import { useUITheme, useUIThemes } from "@hooks/useUIThemes";
+import { navigate } from "@utils";
 
 const importTheme = {
 	SST: () => import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_SST),
@@ -170,7 +170,7 @@ export default function UIThemeManage() {
 				<div className="bg-red-900/50 border border-red-700 rounded-lg p-4">
 					<p className="text-red-300">{error}</p>
 					<a
-						href="/theme"
+						href="/dashboard/theme"
 						className="inline-block mt-4 text-blue-400 hover:text-blue-300 transition-colors"
 					>
 						← Back to Themes
@@ -232,7 +232,7 @@ export default function UIThemeManage() {
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 				<div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
 					<a
-						href="/theme"
+						href="/dashboard/theme"
 						className="text-gray-300 hover:text-white flex items-center gap-2 transition-colors"
 					>
 						<span>←</span>

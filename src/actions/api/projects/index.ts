@@ -7,10 +7,11 @@ import {
 	createUserTable,
 	projectTable,
 } from "openauth-webui-shared-types/database";
-import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
 import { isClientIdValid } from "openauth-webui-shared-types/database";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
+	CloudflareClientError,
 	createClient,
 	createCustomDomainForProject,
 	deleteCustomDomainForProject,
@@ -24,10 +25,30 @@ export async function GET(): Promise<{
 	error?: string;
 	data: Project[];
 }> {
-	const { env } = getContext<Env, any, any>(arguments);
+	const { env, data } = getContext<Env, any, RequestDataContext>(arguments);
+
+	const session = await data.client.getUserSession("private");
+
+	if (session instanceof Error) {
+		return {
+			success: false,
+			error: "Unauthorized",
+			data: [],
+		};
+	}
 
 	const db = drizzle(env.PROJECT_DB);
-	const projects = await db.select().from(projectTable);
+	const projects = await db
+		.select()
+		.from(projectTable)
+		.where(
+			or(
+				eq(projectTable.owner_id, session.user_id),
+				...(session.private.group_ids?.map((gid) =>
+					eq(projectTable.owner_group_id, gid),
+				) ?? []),
+			),
+		);
 
 	return {
 		success: true,
@@ -36,19 +57,19 @@ export async function GET(): Promise<{
 }
 
 export type createProjectParams = {
-	clientID: string;
+	name: string;
 	providers_data?: ProviderConfig[];
 };
 
 // POST /api/projects - Create a new project
 export async function POST(params: {
-	clientID: string;
+	name: string;
 	providers_data?: ProviderConfig[];
 }): Promise<{ success: boolean; error?: string; data?: Project }> {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
-	const { env } = ctx;
+	const { env, data } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const currentUserId = await data.client.getMetaData().then((meta) => meta.id);
 
 	if (!currentUserId) {
 		return {
@@ -58,12 +79,17 @@ export async function POST(params: {
 	}
 
 	try {
-		const { clientID, providers_data = [] } = params;
+		const { name, providers_data = [] } = params;
+		const clientID = [
+			"_",
+			name.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+			crypto.randomUUID().split("-")[0],
+		].join("_");
 
-		if (!clientID || typeof clientID !== "string") {
+		if (!name || typeof name !== "string") {
 			return {
 				success: false,
-				error: "Invalid or missing clientID",
+				error: "missing project name",
 			};
 		}
 
@@ -103,6 +129,7 @@ export async function POST(params: {
 		}
 
 		const newProject: Project = {
+			name,
 			clientID,
 			owner_id: currentUserId,
 			owner_group_id: crypto.randomUUID(),
@@ -168,6 +195,12 @@ export async function POST(params: {
 			message: error instanceof Error ? error.message : String(error),
 			database: env.PROJECT_DB,
 			endpoint: "/api/projects",
+			context: {
+				...(error instanceof CloudflareClientError
+					? { cloudflareErrorData: error.data }
+					: {}),
+				stack: error instanceof Error ? error.stack : undefined,
+			},
 		});
 		console.error("Error in POST /api/projects:", error);
 		return {

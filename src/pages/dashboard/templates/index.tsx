@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import { useEmailTemplates } from "../../hooks/useEmailTemplates";
+import { useEmailTemplates } from "@hooks/useEmailTemplates";
 
 export default function EmailTemplatesList() {
   const { templates, isLoading, error, deleteTemplate } = useEmailTemplates();
@@ -87,7 +87,7 @@ export default function EmailTemplatesList() {
           </p>
         </div>
         <a
-          href="/templates/manage"
+          href="/dashboard/templates/manage"
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
         >
           <span className="text-lg">+</span>
@@ -106,7 +106,7 @@ export default function EmailTemplatesList() {
             Create your first email template to get started
           </p>
           <a
-            href="/templates/manage"
+            href="/dashboard/templates/manage"
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors inline-block"
           >
             Create Template
@@ -161,7 +161,7 @@ export default function EmailTemplatesList() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <a
-                      href={`/templates/manage?edit=${encodeURIComponent(
+                      href={`/dashboard/templates/manage?edit=${encodeURIComponent(
                         template.name,
                       )}`}
                       className="text-blue-400 hover:text-blue-300 mr-4"

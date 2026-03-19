@@ -5,7 +5,9 @@ declare namespace Cloudflare {
 	interface Env {
 		BUN_VERSION: "1.3.4";
 		SKIP_DEPENDENCY_INSTALL: "true";
+        SELF_HOSTED: "true";
 		CLOUDFLARE_AUTH_ENDPOINT_DOMAIN: "<YOUR_AUTH_ENDPOINT_DOMAIN>";
+        WEBUI_SECRET: string;
 		PUBLIC_ISSUER: string;
 		PUBLIC_CLIENT_ID: string;
 		PUBLIC_REDIRECT_URI: string;

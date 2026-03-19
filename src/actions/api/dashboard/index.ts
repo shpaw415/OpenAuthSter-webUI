@@ -18,6 +18,7 @@ import {
 } from "openauth-webui-shared-types/database";
 import type { Project } from "openauth-webui-shared-types";
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 
 export type DashboardKPIs = {
 	totalProjects: number;
@@ -106,12 +107,12 @@ export async function GET(): Promise<{
 			.select()
 			.from(projectTable)
 			.where(
-				or(
-					eq(projectTable.owner_id, session.user_id),
-					...(session.private.group_ids?.map((gid) =>
-						eq(projectTable.owner_group_id, gid),
-					) ?? []),
-				),
+				ownerGroupConditions({
+					user_group_ids: session.private.group_ids ?? [],
+					ownerGroupIdColumn: projectTable.owner_group_id,
+					otherEq: [eq(projectTable.owner_id, session.user_id)],
+					self_host: env.SELF_HOSTED,
+				}),
 			);
 		const parsedProjects = projects.map(parseDBProject) as Project[];
 

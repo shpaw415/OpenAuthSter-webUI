@@ -1,4 +1,5 @@
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
 	type CopyDataSelection,
@@ -20,9 +21,9 @@ export async function GET(): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const session = (await ctx.data.client.getUserSession("private"));
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -33,7 +34,14 @@ export async function GET(): Promise<{
 	const templates = await db
 		.select()
 		.from(WebUiCopyTemplateTable)
-		.where(eq(WebUiCopyTemplateTable.owner_id, currentUserId));
+		.where(
+			ownerGroupConditions({
+				user_group_ids: session?.private?.group_ids ?? [],
+				ownerGroupIdColumn: WebUiCopyTemplateTable.owner_group_id,
+				otherEq: [eq(WebUiCopyTemplateTable.owner_id, session.user_id)],
+				self_host: env.SELF_HOSTED,
+			}),
+		);
 
 	return {
 		success: true,

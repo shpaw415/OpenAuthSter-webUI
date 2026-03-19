@@ -3,6 +3,7 @@ import { uiStyleTable } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 
 export type UITheme = {
 	id: number;
@@ -16,12 +17,12 @@ export async function GET(): Promise<{
 	error?: string;
 	data: UITheme[];
 }> {
-	const ctx = getContext<Env, any, any>(arguments);
+	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const session = await ctx.data.client.getUserSession("private");
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -37,7 +38,14 @@ export async function GET(): Promise<{
 			themeData: uiStyleTable.themeData,
 		})
 		.from(uiStyleTable)
-		.where(eq(uiStyleTable.owner_id, currentUserId))) as UITheme[];
+		.where(
+			ownerGroupConditions({
+				user_group_ids: session?.private?.group_ids ?? [],
+				ownerGroupIdColumn: uiStyleTable.owner_group_id,
+				self_host: env.SELF_HOSTED,
+				otherEq: [eq(uiStyleTable.owner_id, session?.user_id)],
+			}),
+		)) as UITheme[];
 
 	return {
 		success: true,
@@ -85,9 +93,9 @@ export async function POST(params: CreateThemeParams): Promise<{
 
 		const db = drizzle(env.PROJECT_DB);
 
-		const userId = (await ctx.data.client.getMetaData()).id;
+		const session = await ctx.data.client.getUserSession("private");
 
-		if (!userId) {
+		if (session instanceof Error) {
 			return {
 				success: false,
 				error: "Unauthorized",
@@ -101,7 +109,12 @@ export async function POST(params: CreateThemeParams): Promise<{
 			.where(
 				and(
 					eq(uiStyleTable.name, name.trim()),
-					eq(uiStyleTable.owner_id, userId),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: uiStyleTable.owner_group_id,
+						self_host: env.SELF_HOSTED,
+						otherEq: [eq(uiStyleTable.owner_id, session.user_id)],
+					}),
 				),
 			)
 			.limit(1);
@@ -121,7 +134,8 @@ export async function POST(params: CreateThemeParams): Promise<{
 					.values({
 						name: name.trim(),
 						themeData: themeData,
-						owner_id: userId,
+						owner_id: session.user_id,
+						owner_group_id: crypto.randomUUID(),
 					})
 					.returning({
 						id: uiStyleTable.id,

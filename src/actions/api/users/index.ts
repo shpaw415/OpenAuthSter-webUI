@@ -1,4 +1,6 @@
 import type { RequestDataContext } from "@auth";
+import { onSelfHosted,
+ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
 	isClientIdValid,
@@ -8,7 +10,6 @@ import {
 	projectTable,
 	totpTable,
 	webauthnCredentialsTable,
-	ownerGroupConditions,
 } from "openauth-webui-shared-types/database";
 import {
 	and,
@@ -16,7 +17,6 @@ import {
 	drizzle,
 	eq,
 	like,
-	or,
 	sql,
 } from "openauth-webui-shared-types/drizzle";
 
@@ -75,21 +75,25 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
 		return { success: false, error: "Unauthorized" };
 	}
 	// Verify the user has permission to view users for this client by checking project ownership
-	const projectIsOwnedByUser = await drizzle(env.PROJECT_DB)
-		.select({ id: projectTable.clientID })
-		.from(projectTable)
-		.where(
-			and(
-				eq(projectTable.clientID, clientID),
-				ownerGroupConditions(
-					session?.private?.group_ids ?? [],
-					projectTable.owner_group_id,
-					[eq(projectTable.owner_id, session.user_id)],
-				),
+	const projectIsOwnedByUser = await onSelfHosted(
+		env.SELF_HOSTED, 
+		Promise.resolve(true), 
+		() => drizzle(env.PROJECT_DB)
+			.select({ id: projectTable.clientID })
+			.from(projectTable)
+			.where(
+				and(
+					eq(projectTable.clientID, clientID),
+				ownerGroupConditions({
+					user_group_ids: session?.private?.group_ids ?? [],
+					ownerGroupIdColumn: projectTable.owner_group_id,
+					otherEq: [eq(projectTable.owner_id, session.user_id)],
+					self_host: env.SELF_HOSTED,
+				}),
 			),
 		)
 		.get()
-		.then((e) => Boolean(e));
+		.then((e) => Boolean(e)));
 
 	if (!projectIsOwnedByUser) {
 		return { success: false, error: "Unauthorized" };
@@ -177,11 +181,12 @@ export async function DELETE(
 			.select()
 			.from(projectTable)
 			.where(
-				ownerGroupConditions(
-					session?.private?.group_ids ?? [],
-					projectTable.owner_group_id,
-					[eq(projectTable.owner_id, session.user_id)],
-				),
+				ownerGroupConditions({
+					user_group_ids: session?.private?.group_ids ?? [],
+					ownerGroupIdColumn: projectTable.owner_group_id,
+					otherEq: [eq(projectTable.owner_id, session.user_id)],
+					self_host: env.SELF_HOSTED,
+				}),
 			)
 			.get()
 			.then((e) => Boolean(e))

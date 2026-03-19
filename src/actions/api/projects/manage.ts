@@ -19,6 +19,7 @@ import {
 } from "../../../cloudflare";
 import { insertLog } from "openauth-webui-shared-types/database";
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 
 // GET /projects/manage - Get a single project
 export async function GET(params: {
@@ -26,9 +27,9 @@ export async function GET(params: {
 }): Promise<{ success: boolean; data?: Project; error?: string }> {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const session = (await ctx.data.client.getUserSession("private"));
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -42,7 +43,12 @@ export async function GET(params: {
 		.where(
 			and(
 				eq(projectTable.clientID, params.clientID),
-				eq(projectTable.owner_id, currentUserId),
+				ownerGroupConditions({
+					user_group_ids: session?.private?.group_ids ?? [],
+					ownerGroupIdColumn: projectTable.owner_group_id,
+					otherEq: [eq(projectTable.owner_id, session.user_id)],
+					self_host: ctx.env.SELF_HOSTED,
+				}),
 			),
 		)
 		.limit(1);
@@ -80,9 +86,9 @@ export async function PUT(
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const session = (await ctx.data.client.getUserSession("private"));
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -100,7 +106,12 @@ export async function PUT(
 				.where(
 					and(
 						eq(projectTable.clientID, params.clientID),
-						eq(projectTable.owner_id, currentUserId),
+						ownerGroupConditions({
+							user_group_ids: session?.private?.group_ids ?? [],
+							ownerGroupIdColumn: projectTable.owner_group_id,
+							otherEq: [eq(projectTable.owner_id, session.user_id)],
+							self_host: env.SELF_HOSTED,
+						}),
 					),
 				)
 				.limit(1)
@@ -152,7 +163,12 @@ export async function PUT(
 				.where(
 					and(
 						eq(projectTable.clientID, params.clientID),
-						eq(projectTable.owner_id, currentUserId),
+						ownerGroupConditions({
+							user_group_ids: session?.private?.group_ids ?? [],
+							ownerGroupIdColumn: projectTable.owner_group_id,
+							otherEq: [eq(projectTable.owner_id, session.user_id)],
+							self_host: env.SELF_HOSTED,
+						}),
 					),
 				)
 				.returning()
@@ -209,7 +225,12 @@ export async function DELETE(params: {
 			or(
 				and(
 					eq(projectTable.clientID, params.clientID),
-					eq(projectTable.owner_id, session.user_id),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: projectTable.owner_group_id,
+						otherEq: [eq(projectTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
 				),
 				and(
 					eq(projectTable.clientID, params.clientID),

@@ -1,6 +1,8 @@
-import { drizzle, eq, desc } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq, desc,and } from "openauth-webui-shared-types/drizzle";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { LogsTable } from "openauth-webui-shared-types/database";
+import { LogsTable,projectTable } from "openauth-webui-shared-types/database";
+import { ownerGroupConditions } from "@utils/server";
+import type { RequestDataContext } from "@auth";
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -16,7 +18,7 @@ export async function GET(params: {
   data: Array<typeof LogsTable.$inferSelect>;
   pagination?: { page: number; limit: number };
 }> {
-  const ctx = getContext<Env, any, any>(arguments);
+  const ctx = getContext<Env, any, RequestDataContext>(arguments);
   const { env } = ctx;
 
   const { clientID } = params;
@@ -27,6 +29,32 @@ export async function GET(params: {
       error: "Invalid or missing clientID",
       data: [],
     };
+  }
+
+  const session = await ctx.data.client.getUserSession("private");
+  if (session instanceof Error) {
+    return { success: false, error: "Unauthorized", data: [] };
+  }
+
+  const projectIsOwnedByUser = env.SELF_HOSTED === "true" ? true : await drizzle(env.PROJECT_DB)
+    .select({ id: projectTable.clientID })
+    .from(projectTable)
+    .where(
+      and(
+        eq(projectTable.clientID, clientID),
+        ownerGroupConditions({
+          user_group_ids: session?.private?.group_ids ?? [],
+          ownerGroupIdColumn: projectTable.owner_group_id,
+          otherEq: [eq(projectTable.owner_id, session.user_id)],
+          self_host: env.SELF_HOSTED,
+        }),
+      ),
+    )
+    .get()
+    .then((e) => Boolean(e));
+
+  if (!projectIsOwnedByUser) {
+    return { success: false, error: "Unauthorized", data: [] };
   }
 
   const page = Math.max(1, Number(params.page) || 1);

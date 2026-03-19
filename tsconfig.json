@@ -29,7 +29,8 @@
 			"@components/*": ["./src/components/*"],
 			"@auth": ["./src/open-auth.ts"],
 			"@static/*": ["./static/*"],
-			"@utils": ["./src/utils.ts"]
+			"@utils": ["./src/utils.ts"],
+			"@utils/server": ["./src/server-utils.ts"]
 		}
 	},
 	"include": [

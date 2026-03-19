@@ -1,4 +1,5 @@
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import type { CopyDataSelection } from "openauth-webui-shared-types";
 import {
@@ -18,9 +19,9 @@ export async function GET(params: { name: string }): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const session = (await ctx.data.client.getUserSession("private"));
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -34,7 +35,12 @@ export async function GET(params: { name: string }): Promise<{
 		.where(
 			and(
 				eq(WebUiCopyTemplateTable.name, params.name),
-				eq(WebUiCopyTemplateTable.owner_id, currentUserId),
+				ownerGroupConditions({
+					user_group_ids: session?.private?.group_ids ?? [],
+					ownerGroupIdColumn: WebUiCopyTemplateTable.owner_group_id,
+					otherEq: [eq(WebUiCopyTemplateTable.owner_id, session.user_id)],
+					self_host: env.SELF_HOSTED,
+				}),
 			),
 		)
 		.limit(1)
@@ -69,9 +75,9 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
 	const { env } = ctx;
 
 	try {
-		const currentUserId = (await ctx.data.client.getMetaData()).id;
+		const session = (await ctx.data.client.getUserSession("private"));
 
-		if (!currentUserId) {
+		if (session instanceof Error) {
 			return {
 				success: false,
 				error: "Unauthorized",
@@ -81,12 +87,17 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
 		const db = drizzle(env.PROJECT_DB);
 
 		const existing = await db
-			.select()
+			.select({ id: WebUiCopyTemplateTable.id })
 			.from(WebUiCopyTemplateTable)
 			.where(
 				and(
 					eq(WebUiCopyTemplateTable.name, params.name),
-					eq(WebUiCopyTemplateTable.owner_id, currentUserId),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: WebUiCopyTemplateTable.owner_group_id,
+						otherEq: [eq(WebUiCopyTemplateTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
 				),
 			)
 			.limit(1)
@@ -116,7 +127,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
 			.where(
 				and(
 					eq(WebUiCopyTemplateTable.name, params.name),
-					eq(WebUiCopyTemplateTable.owner_id, currentUserId),
+					eq(WebUiCopyTemplateTable.id, existing.id),
 				),
 			);
 
@@ -126,7 +137,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
 			.where(
 				and(
 					eq(WebUiCopyTemplateTable.name, params.name),
-					eq(WebUiCopyTemplateTable.owner_id, currentUserId),
+					eq(WebUiCopyTemplateTable.id, existing.id),
 				),
 			)
 			.limit(1)
@@ -154,9 +165,9 @@ export async function DELETE(params: { name: string }): Promise<{
 	const { env } = ctx;
 
 	try {
-		const currentUserId = (await ctx.data.client.getMetaData()).id;
+		const session = (await ctx.data.client.getUserSession("private"));
 
-		if (!currentUserId) {
+		if (session instanceof Error) {
 			return {
 				success: false,
 				error: "Unauthorized",
@@ -166,12 +177,17 @@ export async function DELETE(params: { name: string }): Promise<{
 		const db = drizzle(env.PROJECT_DB);
 
 		const existing = await db
-			.select()
+			.select({id: WebUiCopyTemplateTable.id})
 			.from(WebUiCopyTemplateTable)
 			.where(
 				and(
 					eq(WebUiCopyTemplateTable.name, params.name),
-					eq(WebUiCopyTemplateTable.owner_id, currentUserId),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: WebUiCopyTemplateTable.owner_group_id,
+						otherEq: [eq(WebUiCopyTemplateTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
 				),
 			)
 			.limit(1)
@@ -189,7 +205,7 @@ export async function DELETE(params: { name: string }): Promise<{
 			.where(
 				and(
 					eq(WebUiCopyTemplateTable.name, params.name),
-					eq(WebUiCopyTemplateTable.owner_id, currentUserId),
+					eq(WebUiCopyTemplateTable.id, existing.id),
 				),
 			);
 

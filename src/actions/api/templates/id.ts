@@ -4,6 +4,7 @@ import type { EmailTemplateProps } from "openauth-webui-shared-types";
 import { emailTemplatesTable } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import type { EmailTemplate } from "./index";
+import { ownerGroupConditions } from "@utils/server";
 
 // GET /api/templates/[name] - Get template by name
 export async function GET(params: { name: string }): Promise<{
@@ -14,9 +15,9 @@ export async function GET(params: { name: string }): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const session = (await ctx.data.client.getUserSession("private"));
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -30,7 +31,12 @@ export async function GET(params: { name: string }): Promise<{
 		.where(
 			and(
 				eq(emailTemplatesTable.name, params.name),
-				eq(emailTemplatesTable.owner_id, currentUserId),
+				ownerGroupConditions({
+					user_group_ids: session?.private?.group_ids ?? [],
+					ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
+					otherEq: [eq(emailTemplatesTable.owner_id, session.user_id)],
+					self_host: env.SELF_HOSTED,
+				}),
 			),
 		)
 		.limit(1)
@@ -63,9 +69,9 @@ export async function PUT(params: UpdateTemplateParams): Promise<{
 	const { env } = ctx;
 
 	try {
-		const currentUserId = (await ctx.data.client.getMetaData()).id;
+		const session = (await ctx.data.client.getUserSession("private"));
 
-		if (!currentUserId) {
+		if (session instanceof Error) {
 			return {
 				success: false,
 				error: "Unauthorized",
@@ -76,12 +82,17 @@ export async function PUT(params: UpdateTemplateParams): Promise<{
 
 		// Check if template exists
 		const existing = await db
-			.select()
+			.select({ id: emailTemplatesTable.id })
 			.from(emailTemplatesTable)
 			.where(
 				and(
 					eq(emailTemplatesTable.name, params.name),
-					eq(emailTemplatesTable.owner_id, currentUserId),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
+						otherEq: [eq(emailTemplatesTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					})
 				),
 			)
 			.limit(1)
@@ -103,22 +114,12 @@ export async function PUT(params: UpdateTemplateParams): Promise<{
 		await db
 			.update(emailTemplatesTable)
 			.set(updateData)
-			.where(
-				and(
-					eq(emailTemplatesTable.name, params.name),
-					eq(emailTemplatesTable.owner_id, currentUserId),
-				),
-			);
+			.where(eq(emailTemplatesTable.id, existing.id));
 
 		const updated = await db
 			.select()
 			.from(emailTemplatesTable)
-			.where(
-				and(
-					eq(emailTemplatesTable.name, params.name),
-					eq(emailTemplatesTable.owner_id, currentUserId),
-				),
-			)
+			.where(eq(emailTemplatesTable.id, existing.id))
 			.limit(1)
 			.get();
 

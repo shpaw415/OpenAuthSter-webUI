@@ -21,7 +21,7 @@ export async function GET(): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {

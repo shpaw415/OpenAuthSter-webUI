@@ -1,5 +1,7 @@
-import { createOpenAuthsterClient } from "openauth-webui-shared-types/client/user";
-import { defaultSubjectSchema } from "openauth-webui-shared-types/client/user";
+import {
+	createOpenAuthsterClient,
+	defaultSubjectSchema,
+} from "openauth-webui-shared-types/client/user";
 
 export const subject = defaultSubjectSchema;
 

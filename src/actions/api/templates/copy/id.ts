@@ -19,7 +19,7 @@ export async function GET(params: { name: string }): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {
@@ -75,7 +75,7 @@ export async function PUT(params: UpdateCopyTemplateParams): Promise<{
 	const { env } = ctx;
 
 	try {
-		const session = (await ctx.data.client.getUserSession("private"));
+		const session = await ctx.data.client.getUserSession("private");
 
 		if (session instanceof Error) {
 			return {
@@ -165,7 +165,7 @@ export async function DELETE(params: { name: string }): Promise<{
 	const { env } = ctx;
 
 	try {
-		const session = (await ctx.data.client.getUserSession("private"));
+		const session = await ctx.data.client.getUserSession("private");
 
 		if (session instanceof Error) {
 			return {
@@ -177,7 +177,7 @@ export async function DELETE(params: { name: string }): Promise<{
 		const db = drizzle(env.PROJECT_DB);
 
 		const existing = await db
-			.select({id: WebUiCopyTemplateTable.id})
+			.select({ id: WebUiCopyTemplateTable.id })
 			.from(WebUiCopyTemplateTable)
 			.where(
 				and(

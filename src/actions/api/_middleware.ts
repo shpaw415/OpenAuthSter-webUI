@@ -1,17 +1,17 @@
 "no action";
-import type { EventContext } from "@cloudflare/workers-types";
 import {
+	createClient,
 	type PrivateSessionData,
 	type PublicSessionData,
 	type RequestDataContext,
-	createClient,
 } from "@auth";
+import type { EventContext } from "@cloudflare/workers-types";
 import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
 
 export async function onRequest(
 	context: EventContext<Env, any, RequestDataContext>,
 ) {
-	//@ts-ignore
+	// @ts-expect-error - This is a custom property we add in development for mocking authentication
 	if (context.env.NODE_ENV === "development") {
 		const host = new URL(context.request.url).hostname;
 		if (host !== "localhost" && host !== "127.0.0.1") {
@@ -26,7 +26,7 @@ export async function onRequest(
 		/**
 		 * In development, we mock the authentication by injecting a fake client into the context.
 		 */
-		//@ts-ignore
+		// @ts-expect-error - This is a custom property we add in development for mocking authentication
 		context.data.client = {
 			getMetaData: async () => ({
 				id: "admin",

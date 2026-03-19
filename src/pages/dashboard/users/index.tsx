@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Icon } from "@iconify/react";
 import { useProject, useProjects } from "@hooks/useProjects";
 import { useProjectUsers } from "@hooks/useProjectUsers";
+import { Icon } from "@iconify/react";
 import { navigate } from "@utils";
+import { useEffect, useMemo, useState } from "react";
 
 export default function UserListPage() {
 	const clientID = useMemo(

@@ -1,6 +1,5 @@
 import type { RequestDataContext } from "@auth";
-import { onSelfHosted,
-ownerGroupConditions } from "@utils/server";
+import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
 	isClientIdValid,
@@ -76,24 +75,26 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
 	}
 	// Verify the user has permission to view users for this client by checking project ownership
 	const projectIsOwnedByUser = await onSelfHosted(
-		env.SELF_HOSTED, 
-		Promise.resolve(true), 
-		() => drizzle(env.PROJECT_DB)
-			.select({ id: projectTable.clientID })
-			.from(projectTable)
-			.where(
-				and(
-					eq(projectTable.clientID, clientID),
-				ownerGroupConditions({
-					user_group_ids: session?.private?.group_ids ?? [],
-					ownerGroupIdColumn: projectTable.owner_group_id,
-					otherEq: [eq(projectTable.owner_id, session.user_id)],
-					self_host: env.SELF_HOSTED,
-				}),
-			),
-		)
-		.get()
-		.then((e) => Boolean(e)));
+		env.SELF_HOSTED,
+		Promise.resolve(true),
+		() =>
+			drizzle(env.PROJECT_DB)
+				.select({ id: projectTable.clientID })
+				.from(projectTable)
+				.where(
+					and(
+						eq(projectTable.clientID, clientID),
+						ownerGroupConditions({
+							user_group_ids: session?.private?.group_ids ?? [],
+							ownerGroupIdColumn: projectTable.owner_group_id,
+							otherEq: [eq(projectTable.owner_id, session.user_id)],
+							self_host: env.SELF_HOSTED,
+						}),
+					),
+				)
+				.get()
+				.then((e) => Boolean(e)),
+	);
 
 	if (!projectIsOwnedByUser) {
 		return { success: false, error: "Unauthorized" };

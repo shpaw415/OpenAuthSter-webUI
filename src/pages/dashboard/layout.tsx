@@ -1,19 +1,19 @@
+import { useAuth } from "@hooks/useAuth";
+import { Icon } from "@iconify/react";
+import OpenAuthsterLogo from "@static/logo.webp";
 import {
+	type MouseEvent,
+	type ReactNode,
 	useCallback,
 	useEffect,
 	useMemo,
-	useState,
-	type ReactNode,
-	type MouseEvent,
 	useRef,
+	useState,
 } from "react";
-import { useAuth } from "@hooks/useAuth";
-import { Icon } from "@iconify/react";
 import {
 	getCurrentIssuerVersion,
 	getCurrentWebUiVersion,
 } from "../../version-check";
-import OpenAuthsterLogo from "@static/logo.webp";
 
 const semver = require("semver");
 
@@ -66,7 +66,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 	const NavLinks = useMemo(
 		() => [
 			{ href: "/dashboard/", icon: "lucide:home", name: "Dashboard" },
-			{ href: "/dashboard/templates", icon: "lucide:layout-template", name: "Templates" },
+			{
+				href: "/dashboard/templates",
+				icon: "lucide:layout-template",
+				name: "Templates",
+			},
 			{ href: "/dashboard/theme", icon: "lucide:palette", name: "UI theme" },
 			{ name: "Copy Text", href: "/dashboard/copy", icon: "lucide:file-text" },
 			{ name: "Users", href: "/dashboard/users", icon: "lucide:users" },

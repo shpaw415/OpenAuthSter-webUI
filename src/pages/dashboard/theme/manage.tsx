@@ -1,9 +1,9 @@
+import { useUITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
 import { Snackbar } from "@material/react-snackbar";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
-import { useCallback, useEffect, useState } from "react";
-import { useUITheme, useUIThemes } from "@hooks/useUIThemes";
 import { navigate } from "@utils";
+import { useCallback, useEffect, useState } from "react";
 
 const importTheme = {
 	SST: () => import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_SST),

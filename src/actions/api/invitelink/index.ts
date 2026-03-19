@@ -1,8 +1,8 @@
 import type { RequestDataContext } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
-	WebUiInviteLinkTable,
 	projectTable,
+	WebUiInviteLinkTable,
 } from "openauth-webui-shared-types/database";
 import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 

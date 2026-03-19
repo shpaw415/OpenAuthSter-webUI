@@ -25,10 +25,18 @@ export function ownerGroupConditions<
 			);
 }
 
-export function onSelfHosted<T extends unknown>(selfHosted: "true" | "false" | boolean, selfHostCallback: T | (() => T), otherWiseCallback: T | (() => T)): T | Promise<T> {
-    const isSelfHosted = selfHosted === "true" || selfHosted === true;
-    if (isSelfHosted) {
-
-        return typeof selfHostCallback === "function" ? (selfHostCallback as () => T)() : selfHostCallback;
-    } else return typeof otherWiseCallback === "function" ? (otherWiseCallback as () => T)() : otherWiseCallback;
+export function onSelfHosted<T>(
+	selfHosted: "true" | "false" | boolean,
+	selfHostCallback: T | (() => T),
+	otherWiseCallback: T | (() => T),
+): T | Promise<T> {
+	const isSelfHosted = selfHosted === "true" || selfHosted === true;
+	if (isSelfHosted) {
+		return typeof selfHostCallback === "function"
+			? (selfHostCallback as () => T)()
+			: selfHostCallback;
+	} else
+		return typeof otherWiseCallback === "function"
+			? (otherWiseCallback as () => T)()
+			: otherWiseCallback;
 }

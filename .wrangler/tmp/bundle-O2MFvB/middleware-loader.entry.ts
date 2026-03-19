@@ -3,9 +3,15 @@
 // export dynamically through wrangler, or we can potentially let users directly
 // add them as a sort of "plugin" system.
 
-import ENTRY, { __INTERNAL_WRANGLER_MIDDLEWARE__ } from "/home/shpaw415/openauth-projects/openauth-webui/.wrangler/tmp/bundle-O2MFvB/middleware-insertion-facade.js";
-import { __facade_invoke__, __facade_register__, Dispatcher } from "/home/shpaw415/openauth-projects/openauth-webui/node_modules/wrangler/templates/middleware/common.ts";
 import type { WorkerEntrypointConstructor } from "/home/shpaw415/openauth-projects/openauth-webui/.wrangler/tmp/bundle-O2MFvB/middleware-insertion-facade.js";
+import ENTRY, {
+	__INTERNAL_WRANGLER_MIDDLEWARE__,
+} from "/home/shpaw415/openauth-projects/openauth-webui/.wrangler/tmp/bundle-O2MFvB/middleware-insertion-facade.js";
+import {
+	__facade_invoke__,
+	__facade_register__,
+	type Dispatcher,
+} from "/home/shpaw415/openauth-projects/openauth-webui/node_modules/wrangler/templates/middleware/common.ts";
 
 // Preserve all the exports from the worker
 export * from "/home/shpaw415/openauth-projects/openauth-webui/.wrangler/tmp/bundle-O2MFvB/middleware-insertion-facade.js";
@@ -16,7 +22,7 @@ class __Facade_ScheduledController__ implements ScheduledController {
 	constructor(
 		readonly scheduledTime: number,
 		readonly cron: string,
-		noRetry: ScheduledController["noRetry"]
+		noRetry: ScheduledController["noRetry"],
 	) {
 		this.#noRetry = noRetry;
 	}
@@ -43,11 +49,7 @@ function wrapExportedHandler(worker: ExportedHandler): ExportedHandler {
 		__facade_register__(middleware);
 	}
 
-	const fetchDispatcher: ExportedHandlerFetchHandler = function (
-		request,
-		env,
-		ctx
-	) {
+	const fetchDispatcher: ExportedHandlerFetchHandler = (request, env, ctx) => {
 		if (worker.fetch === undefined) {
 			throw new Error("Handler does not export a fetch() function.");
 		}
@@ -57,12 +59,12 @@ function wrapExportedHandler(worker: ExportedHandler): ExportedHandler {
 	return {
 		...worker,
 		fetch(request, env, ctx) {
-			const dispatcher: Dispatcher = function (type, init) {
+			const dispatcher: Dispatcher = (type, init) => {
 				if (type === "scheduled" && worker.scheduled !== undefined) {
 					const controller = new __Facade_ScheduledController__(
 						Date.now(),
 						init.cron ?? "",
-						() => {}
+						() => {},
 					);
 					return worker.scheduled(controller, env, ctx);
 				}
@@ -73,7 +75,7 @@ function wrapExportedHandler(worker: ExportedHandler): ExportedHandler {
 }
 
 function wrapWorkerEntrypoint(
-	klass: WorkerEntrypointConstructor
+	klass: WorkerEntrypointConstructor,
 ): WorkerEntrypointConstructor {
 	// If we don't have any middleware defined, just return the handler as is
 	if (
@@ -92,7 +94,7 @@ function wrapWorkerEntrypoint(
 		#fetchDispatcher: ExportedHandlerFetchHandler<Record<string, unknown>> = (
 			request,
 			env,
-			ctx
+			ctx,
 		) => {
 			this.env = env;
 			this.ctx = ctx;
@@ -107,7 +109,7 @@ function wrapWorkerEntrypoint(
 				const controller = new __Facade_ScheduledController__(
 					Date.now(),
 					init.cron ?? "",
-					() => {}
+					() => {},
 				);
 				return super.scheduled(controller);
 			}
@@ -119,7 +121,7 @@ function wrapWorkerEntrypoint(
 				this.env,
 				this.ctx,
 				this.#dispatcher,
-				this.#fetchDispatcher
+				this.#fetchDispatcher,
 			);
 		}
 	};

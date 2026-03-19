@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
-import type { Project, ProviderConfig } from "openauth-webui-shared-types";
+import { POST as createNewProject, GET as getProjects } from "@api/projects";
 import {
+	DELETE as deleteProjectById,
 	GET as getProjectById,
 	PUT as updateProjectById,
-	DELETE as deleteProjectById,
 	type updateProjectParams,
 } from "@api/projects/manage";
-
-import { GET as getProjects, POST as createNewProject } from "@api/projects";
+import type { Project, ProviderConfig } from "openauth-webui-shared-types";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
 
 export function useProjects() {

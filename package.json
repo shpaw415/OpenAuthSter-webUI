@@ -47,6 +47,7 @@
 	},
 	"scripts": {
 		"dev": "NODE_ENV=development bun frame-master start",
+		"start": "NODE_ENV=production bun frame-master start",
 		"build": "NODE_ENV=production bun frame-master build",
 		"build:dev": "NODE_ENV=development bun frame-master build",
 		"init:db": "wrangler d1 migrations apply PROJECT_DB",

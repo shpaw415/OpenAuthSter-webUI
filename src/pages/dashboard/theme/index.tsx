@@ -1,7 +1,7 @@
+import { type UITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
 import type { Theme } from "@openauthjs/openauth/ui/theme";
 import { useState } from "react";
-import { type UITheme, useUIThemes } from "@hooks/useUIThemes";
 
 export default function UIThemeList() {
 	const { themes, isLoading, error, deleteTheme } = useUIThemes();

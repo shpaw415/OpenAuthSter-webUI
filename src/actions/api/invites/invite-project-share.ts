@@ -63,15 +63,17 @@ export const invites = (_db: D1Database) => {
 			if (!owner_group_id)
 				return { success: false, error: "Owner group not found" };
 
-            const currentUserSession = await authClient.getUserSession("private").then((session) => session instanceof Error ? null : session.private);
+			const currentUserSession = await authClient
+				.getUserSession("private")
+				.then((session) => (session instanceof Error ? null : session.private));
 
-            if (currentUserSession === null) {
-                return { success: false, error: "User session not found" };
-            }
+			if (currentUserSession === null) {
+				return { success: false, error: "User session not found" };
+			}
 
-            await authClient.updateUserSession("private", {
-                group_ids: [...(currentUserSession?.group_ids || []), owner_group_id],
-            })
+			await authClient.updateUserSession("private", {
+				group_ids: [...(currentUserSession?.group_ids || []), owner_group_id],
+			});
 
 			await db
 				.delete(projectInviteTable)

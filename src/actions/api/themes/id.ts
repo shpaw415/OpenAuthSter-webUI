@@ -1,10 +1,10 @@
+import type { RequestDataContext } from "@auth";
+import type { Theme } from "@openauthjs/openauth/ui/theme";
+import { ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { uiStyleTable } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import type { Theme } from "@openauthjs/openauth/ui/theme";
 import type { UITheme } from "./index";
-import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
 
 // GET /api/themes/:id - Get a specific theme
 export async function GET(params: { id: number }): Promise<{
@@ -24,7 +24,7 @@ export async function GET(params: { id: number }): Promise<{
 		};
 	}
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {
@@ -39,12 +39,15 @@ export async function GET(params: { id: number }): Promise<{
 			.select()
 			.from(uiStyleTable)
 			.where(
-				and(eq(uiStyleTable.id, id), ownerGroupConditions({
-					user_group_ids: session?.private?.group_ids ?? [],
-					ownerGroupIdColumn: uiStyleTable.owner_group_id,
-					otherEq: [eq(uiStyleTable.owner_id, session.user_id)],
-					self_host: env.SELF_HOSTED,
-				})),
+				and(
+					eq(uiStyleTable.id, id),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: uiStyleTable.owner_group_id,
+						otherEq: [eq(uiStyleTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
+				),
 			)
 			.limit(1)
 	).at(0);

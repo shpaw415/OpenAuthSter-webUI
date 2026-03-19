@@ -1,25 +1,24 @@
-import { eq, drizzle, and, or } from "openauth-webui-shared-types/drizzle";
+import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
+import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { type Project, parseDBProject } from "openauth-webui-shared-types";
 import {
 	DeleteOTFusersTable,
+	insertLog,
 	projectTable,
-	WebHookTable,
 	totpTable,
 	totpTokenTable,
-	webauthnCredentialsTable,
-	webauthnChallengesTable,
-	webAuthnTokenAccessTable,
+	WebHookTable,
 	WebUiInviteLinkTable,
+	webAuthnTokenAccessTable,
+	webauthnChallengesTable,
+	webauthnCredentialsTable,
 } from "openauth-webui-shared-types/database";
-
-import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
+import { and, drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
 import {
 	createClient,
 	deleteCustomDomainForProject,
 } from "../../../cloudflare";
-import { insertLog } from "openauth-webui-shared-types/database";
-import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
 
 // GET /projects/manage - Get a single project
 export async function GET(params: {
@@ -27,7 +26,7 @@ export async function GET(params: {
 }): Promise<{ success: boolean; data?: Project; error?: string }> {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {
@@ -86,7 +85,7 @@ export async function PUT(
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {

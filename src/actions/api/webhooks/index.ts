@@ -1,16 +1,15 @@
-import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import type {
-	WebHookConfig,
-	WebHookEvents,
-	ExtendedWebHookConfig,
-} from "openauth-webui-shared-types/webhook/types";
-import { WebHook } from "openauth-webui-shared-types/webhook";
-import type { ActionResponse } from "../../../api-helper";
 import type { RequestDataContext } from "@auth";
 import { onSelfHosted, ownerGroupConditions } from "@utils/server";
-import { drizzle } from "openauth-webui-shared-types/drizzle";
+import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { projectTable } from "openauth-webui-shared-types";
-import { and, eq } from "openauth-webui-shared-types/drizzle";
+import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import { WebHook } from "openauth-webui-shared-types/webhook";
+import type {
+	ExtendedWebHookConfig,
+	WebHookConfig,
+	WebHookEvents,
+} from "openauth-webui-shared-types/webhook/types";
+import type { ActionResponse } from "../../../api-helper";
 
 export async function GET({
 	clientID,

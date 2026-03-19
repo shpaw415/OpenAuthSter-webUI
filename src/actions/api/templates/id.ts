@@ -1,10 +1,10 @@
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
 import { emailTemplatesTable } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import type { EmailTemplate } from "./index";
-import { ownerGroupConditions } from "@utils/server";
 
 // GET /api/templates/[name] - Get template by name
 export async function GET(params: { name: string }): Promise<{
@@ -15,7 +15,7 @@ export async function GET(params: { name: string }): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {
@@ -69,7 +69,7 @@ export async function PUT(params: UpdateTemplateParams): Promise<{
 	const { env } = ctx;
 
 	try {
-		const session = (await ctx.data.client.getUserSession("private"));
+		const session = await ctx.data.client.getUserSession("private");
 
 		if (session instanceof Error) {
 			return {
@@ -92,7 +92,7 @@ export async function PUT(params: UpdateTemplateParams): Promise<{
 						ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
 						otherEq: [eq(emailTemplatesTable.owner_id, session.user_id)],
 						self_host: env.SELF_HOSTED,
-					})
+					}),
 				),
 			)
 			.limit(1)

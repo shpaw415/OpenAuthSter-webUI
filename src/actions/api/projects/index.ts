@@ -1,24 +1,24 @@
+import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
+import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
-	parseDBProject,
 	type Project,
 	type ProviderConfig,
+	parseDBProject,
 } from "openauth-webui-shared-types";
 import {
 	createUserTable,
+	insertLog,
+	isClientIdValid,
 	projectTable,
 } from "openauth-webui-shared-types/database";
 import { drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
-import { isClientIdValid } from "openauth-webui-shared-types/database";
-import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
 	CloudflareClientError,
 	createClient,
 	createCustomDomainForProject,
 	deleteCustomDomainForProject,
 } from "../../../cloudflare";
-import { insertLog } from "openauth-webui-shared-types/database";
-import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
 
 // GET /api/projects - List all projects
 export async function GET(): Promise<{

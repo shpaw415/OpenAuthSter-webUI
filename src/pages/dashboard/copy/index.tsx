@@ -1,10 +1,10 @@
-import { useState, type JSX } from "react";
-import { Icon } from "@iconify/react";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
+import { Icon } from "@iconify/react";
 import type {
-	parseDBCopyTemplate,
 	CopyDataSelection,
+	parseDBCopyTemplate,
 } from "openauth-webui-shared-types";
+import { type JSX, useState } from "react";
 
 type CopyTemplate = ReturnType<typeof parseDBCopyTemplate>;
 

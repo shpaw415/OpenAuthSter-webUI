@@ -1,36 +1,36 @@
-import {
-	useState,
-	useEffect,
-	useCallback,
-	type SubmitEventHandler,
-} from "react";
+import { POST as createInviteLink } from "@api/invitelink";
+import { POST as CreateInvite } from "@api/invites/manage/project";
+import { ProviderIcon } from "@components/provider-icons";
+import { useCopyTemplates } from "@hooks/useCopyTemplates";
+import { useEmailTemplates } from "@hooks/useEmailTemplates";
+import { useProject } from "@hooks/useProjects";
+import { useUIThemes } from "@hooks/useUIThemes";
+import { useWebHook } from "@hooks/useWebHook";
+import { Icon } from "@iconify/react";
+import { Snackbar } from "@material/react-snackbar";
 import type {
 	Project,
 	ProjectData,
+	ProviderCategory,
 	ProviderConfig,
 	ProviderType,
-	ProviderCategory,
 } from "openauth-webui-shared-types";
 import {
 	getProviderMeta,
 	getProvidersByCategory,
 } from "openauth-webui-shared-types";
-import { Icon } from "@iconify/react";
-import { ProviderIcon } from "@components/provider-icons";
-import { useProject } from "@hooks/useProjects";
-import { useUIThemes } from "@hooks/useUIThemes";
-import { useEmailTemplates } from "@hooks/useEmailTemplates";
-import { Snackbar } from "@material/react-snackbar";
-import { POST as createInviteLink } from "@api/invitelink";
-import { useCopyTemplates } from "@hooks/useCopyTemplates";
-import { useWebHook } from "@hooks/useWebHook";
-import { WebHookEventsDetails } from "openauth-webui-shared-types/webhook/types";
 import type {
+	ExtendedWebHookConfig,
 	WebHookConfig,
 	WebHookEvents,
-	ExtendedWebHookConfig,
 } from "openauth-webui-shared-types/webhook/types";
-import { POST as CreateInvite } from "@api/invites/manage/project";
+import { WebHookEventsDetails } from "openauth-webui-shared-types/webhook/types";
+import {
+	type SubmitEventHandler,
+	useCallback,
+	useEffect,
+	useState,
+} from "react";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
 	{ id: "social", label: "Social", icon: "lucide:users" },

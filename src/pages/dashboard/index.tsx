@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Icon } from "@iconify/react";
-import { useProjects } from "@hooks/useProjects";
+import type { DashboardAlert } from "@api/dashboard";
+import { UsageChart } from "@components/UsageChart";
 import { useDashboard } from "@hooks/useDashboard";
+import { useProjects } from "@hooks/useProjects";
+import { Icon } from "@iconify/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	getCurrentIssuerVersion,
 	getCurrentWebUiVersion,
 	getLatestVersion,
 } from "../../version-check";
-import type { DashboardAlert } from "@api/dashboard";
-import { UsageChart } from "@components/UsageChart";
 
 const typeTone: Record<"info" | "warning" | "error", string> = {
 	info: "bg-blue-500/10 text-blue-200 border border-blue-500/30",

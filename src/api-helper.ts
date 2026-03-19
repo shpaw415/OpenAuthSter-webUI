@@ -1,10 +1,10 @@
 export type ActionResponse<T> =
-  | {
-      success: true;
-      data: T;
-    }
-  | {
-      success: false;
-      error: string;
-      details?: string;
-    };
+	| {
+			success: true;
+			data: T;
+	  }
+	| {
+			success: false;
+			error: string;
+			details?: string;
+	  };

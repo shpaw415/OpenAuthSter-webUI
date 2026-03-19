@@ -8,8 +8,7 @@ import { WebHook } from "openauth-webui-shared-types/webhook";
 import type { ActionResponse } from "../../../api-helper";
 import type { RequestDataContext } from "@auth";
 import { onSelfHosted, ownerGroupConditions } from "@utils/server";
-import { env } from "bun";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle } from "openauth-webui-shared-types/drizzle";
 import { projectTable } from "openauth-webui-shared-types";
 import { and, eq } from "openauth-webui-shared-types/drizzle";
 

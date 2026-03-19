@@ -12,6 +12,7 @@ import {
 
 declare global {
 	var __OPENAUTHSTER_CLIENT__: Context<OpenAuthsterClient>;
+	var __OPENAUTHSTER_CLIENT_INSTANCE__: OpenAuthsterClient;
 }
 
 globalThis.__OPENAUTHSTER_CLIENT__ ??= createContext<OpenAuthsterClient>(
@@ -35,6 +36,8 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
 	const client = useRef(createClient());
 
 	useEffect(() => {
+		globalThis.__OPENAUTHSTER_CLIENT_INSTANCE__ = client.current;
+
 		client.current.addInitializationListener("auth-inited", (c) => {
 			c.setTokenToCookie();
 		});

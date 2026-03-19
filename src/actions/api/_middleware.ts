@@ -51,6 +51,7 @@ export async function onRequest(
 		clientID: context.env.PUBLIC_CLIENT_ID,
 		issuerURI: context.env.PUBLIC_ISSUER,
 		redirectURI: context.env.PUBLIC_REDIRECT_URI,
+		secret: context.env.WEBUI_SECRET,
 	}).setTokenFromRequest(context.request as unknown as Request);
 
 	if (!auth.isAuthenticated) {

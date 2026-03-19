@@ -234,7 +234,7 @@ export async function DELETE(params: {
 				and(
 					eq(projectTable.clientID, params.clientID),
 					or(
-						...(session.private.group_ids?.map((id) =>
+						...(session.private?.group_ids?.map((id) =>
 							eq(projectTable.owner_group_id, id),
 						) || []),
 					),

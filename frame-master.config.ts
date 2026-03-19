@@ -58,12 +58,12 @@ export default {
 				return (
 					(
 						globalThis as {
-							__OPENAUTHSTER_CLIENT__?: OpenAuthsterClient<
+							__OPENAUTHSTER_CLIENT_INSTANCE__?: OpenAuthsterClient<
 								Record<string, unknown>,
 								Record<string, unknown>
 							>;
 						}
-					).__OPENAUTHSTER_CLIENT__ as OpenAuthsterClient<
+					).__OPENAUTHSTER_CLIENT_INSTANCE__ as OpenAuthsterClient<
 						Record<string, unknown>,
 						Record<string, unknown>
 					>

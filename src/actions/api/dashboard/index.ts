@@ -108,7 +108,7 @@ export async function GET(): Promise<{
 			.from(projectTable)
 			.where(
 				ownerGroupConditions({
-					user_group_ids: session.private.group_ids ?? [],
+					user_group_ids: session.private?.group_ids ?? [],
 					ownerGroupIdColumn: projectTable.owner_group_id,
 					otherEq: [eq(projectTable.owner_id, session.user_id)],
 					self_host: env.SELF_HOSTED,

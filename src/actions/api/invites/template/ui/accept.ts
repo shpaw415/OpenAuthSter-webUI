@@ -8,7 +8,7 @@ import { invites } from "../../share";
  * It verifies the invite code, adds the user to the theme group, and then deletes the invite.
  */
 export async function POST({ code }: { code: string }) {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 
 	const userId = (await ctx.data.client.getMetaData()).id;
 

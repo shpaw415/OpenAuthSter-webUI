@@ -16,7 +16,7 @@ export async function POST({
 	theme_id: number;
 	from_name: string;
 }) {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 
 	const current_user_id = (await ctx.data.client.getMetaData()).id;
 
@@ -98,7 +98,7 @@ export async function DELETE({
 	user_id: string;
 	owner_group_id: string;
 }) {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 
 	const current_user_id = (await ctx.data.client.getMetaData()).id;
 

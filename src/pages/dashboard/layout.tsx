@@ -1,8 +1,8 @@
 import { useAuth } from "@hooks/useAuth";
+import { useNotifications } from "@hooks/useNotifications";
 import { Icon } from "@iconify/react";
 import OpenAuthsterLogo from "@static/logo.webp";
 import {
-	type MouseEvent,
 	type ReactNode,
 	useCallback,
 	useEffect,
@@ -19,6 +19,7 @@ const semver = require("semver");
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
 	const auth = useAuth();
+	const { pendingCount } = useNotifications();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
 	const [VersionWarningMessage, setVersionWarningMessage] = useState<
@@ -61,7 +62,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 			}
 		};
 		func().then(() => clearWraningMessageTimeoutRef());
-	}, []);
+	}, [clearWraningMessageTimeoutRef]);
 
 	const NavLinks = useMemo(
 		() => [
@@ -167,15 +168,34 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 						{/* Desktop Actions */}
 						<div className="hidden lg:flex items-center space-x-4">
 							{auth?.isAuthenticated ? (
-								<button
-									type="button"
-									onClick={() =>
-										auth?.logout().then(() => console.log("Logged out"))
-									}
-									className="px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-								>
-									Logout
-								</button>
+								<>
+									<a
+										href="/dashboard/notifications"
+										className="group relative h-10 w-10 flex items-center justify-center rounded-lg text-gray-300 transition-all duration-500 ease-in-out hover:scale-110"
+									>
+										<Icon
+											icon="lucide:bell"
+											className="w-5 h-5 text-gray-300 hover:text-white transition-colors"
+										/>
+										{pendingCount > 0 && (
+											<span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white leading-none ring-2 ring-gray-900">
+												{pendingCount > 9 ? "9+" : pendingCount}
+											</span>
+										)}
+										<span className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out border border-gray-700">
+											Notifications
+										</span>
+									</a>
+									<button
+										type="button"
+										onClick={() =>
+											auth?.logout().then(() => console.log("Logged out"))
+										}
+										className="px-4 py-2 text-sm text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+									>
+										Logout
+									</button>
+								</>
 							) : (
 								<button
 									type="button"

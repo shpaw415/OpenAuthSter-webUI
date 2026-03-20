@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
 		globalThis.__OPENAUTHSTER_CLIENT_INSTANCE__ = client.current;
 
 		client.current.addInitializationListener("auth-inited", (c) => {
-			c.setTokenToCookie();
+			// c.setTokenToCookie();
 		});
 		client.current.init();
 	}, []);

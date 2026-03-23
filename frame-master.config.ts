@@ -86,10 +86,11 @@ export default {
 			input: "static",
 			output: "optimized",
 			formats: ["webp"],
-			quality: 75,
+			quality: 100,
 			sizes: [320],
 			skipExisting: true,
 			enableImports: true,
+			keepOriginal: true,
 		}),
 	],
 } satisfies FrameMasterConfig;

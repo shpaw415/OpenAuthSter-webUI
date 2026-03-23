@@ -1,6 +1,6 @@
+import { type InviteRow, useNotifications } from "@hooks/useNotifications";
 import { Icon } from "@iconify/react";
 import { useState } from "react";
-import { type InviteRow, useNotifications } from "@hooks/useNotifications";
 
 type InviteType = InviteRow["type"];
 

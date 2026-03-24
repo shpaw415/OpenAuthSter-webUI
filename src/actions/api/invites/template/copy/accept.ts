@@ -9,16 +9,12 @@ import { invites } from "../../share";
 export async function POST({ code }: { code: string }) {
 	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 
-	const userId = (await ctx.data.client.getMetaData()).id;
+	const userId = (await ctx.data.client.getMetaData())?.id;
 
 	if (!userId) {
 		return { success: false, error: "Unauthorized" };
 	}
 
-	return await invites(ctx.env.PROJECT_DB).confirmInvite(
-		code,
-		userId,
-		"copy_template",
-		ctx.data.client,
-	);
+	const manager = invites(ctx.env.PROJECT_DB);
+	await manager.confirmInvite(code, userId, "copy_template", ctx.data.client);
 }

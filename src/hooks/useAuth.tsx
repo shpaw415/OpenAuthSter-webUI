@@ -1,4 +1,8 @@
-import { createClient } from "@auth";
+import {
+	createClient,
+	type PrivateSessionData,
+	type PublicSessionData,
+} from "@auth";
 import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
 import {
 	type Context,
@@ -11,13 +15,18 @@ import {
 } from "react";
 
 declare global {
-	var __OPENAUTHSTER_CLIENT__: Context<OpenAuthsterClient>;
-	var __OPENAUTHSTER_CLIENT_INSTANCE__: OpenAuthsterClient;
+	var __OPENAUTHSTER_CLIENT__: Context<
+		OpenAuthsterClient<PublicSessionData, PrivateSessionData>
+	>;
+	var __OPENAUTHSTER_CLIENT_INSTANCE__: OpenAuthsterClient<
+		PublicSessionData,
+		PrivateSessionData
+	>;
 }
 
-globalThis.__OPENAUTHSTER_CLIENT__ ??= createContext<OpenAuthsterClient>(
-	null as unknown as OpenAuthsterClient,
-);
+globalThis.__OPENAUTHSTER_CLIENT__ ??= createContext<
+	OpenAuthsterClient<PublicSessionData, PrivateSessionData>
+>(null as unknown as OpenAuthsterClient<PublicSessionData, PrivateSessionData>);
 
 export function useAuth() {
 	const ctx = useContext(globalThis.__OPENAUTHSTER_CLIENT__);

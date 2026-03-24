@@ -19,7 +19,7 @@ export async function GET(): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const currentUserId = (await ctx.data.client.getMetaData())?.id;
 
 	if (!currentUserId) {
 		return {
@@ -53,7 +53,7 @@ export async function POST(params: CreateTemplateParams): Promise<{
 	const { env } = ctx;
 
 	try {
-		const currentUserId = (await ctx.data.client.getMetaData()).id;
+		const currentUserId = (await ctx.data.client.getMetaData())?.id;
 
 		if (!currentUserId) {
 			return {

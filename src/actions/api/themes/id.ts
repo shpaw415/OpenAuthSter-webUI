@@ -93,7 +93,7 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 
 	const db = drizzle(env.PROJECT_DB);
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const currentUserId = (await ctx.data.client.getMetaData())?.id;
 
 	if (!currentUserId) {
 		return {
@@ -161,7 +161,7 @@ export async function DELETE(params: { id: number }): Promise<{
 
 	const db = drizzle(env.PROJECT_DB);
 
-	const currentUserId = (await ctx.data.client.getMetaData()).id;
+	const currentUserId = (await ctx.data.client.getMetaData())?.id;
 
 	if (!currentUserId) {
 		return {

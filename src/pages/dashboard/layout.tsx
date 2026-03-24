@@ -14,6 +14,8 @@ import {
 	getCurrentIssuerVersion,
 	getCurrentWebUiVersion,
 } from "../../version-check";
+import { ErrorBoundary } from "@components/ErrorBoundary";
+import { client } from "@kagii/openauth/storage/aws";
 
 const semver = require("semver");
 
@@ -84,19 +86,24 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 		],
 		[],
 	);
-
-	const [redirectToLogin, setRedirectToLogin] = useState(false);
-
 	useEffect(() => {
-		if (!auth?.isAuthenticated && auth?.isLoaded) {
-			setTimeout(() => {
-				if (process.env.NODE_ENV !== "development") {
-					//auth?.login();
-				}
-				console.log(auth);
-			}, 1000); // Slight delay to ensure smooth redirect
+		auth.addInitializationListener("AdminLayout", (client) => {
+			if (!client.isAuthenticated && client.isLoaded) {
+				setTimeout(() => {
+					if (process.env.NODE_ENV !== "development") {
+						client.login();
+					}
+					console.log(client);
+				}, 1000);
+			}
+		});
+		if (auth.isAuthenticated && !auth.userMeta.user_id) {
+			auth.getUserSession("public").then((session) => {
+				if (session instanceof Error) return;
+				auth.triggerUpdate();
+			});
 		}
-	}, [auth?.isAuthenticated, auth?.isLoaded]);
+	}, [auth]);
 
 	// Show loading while checking auth
 	if (!auth?.isLoaded && typeof window !== "undefined") {
@@ -108,12 +115,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 				</div>
 			</div>
 		);
-	}
-
-	// Show login form if not authenticated
-
-	if (redirectToLogin) {
-		return <RedirectToLogin />;
 	}
 
 	return (
@@ -267,49 +268,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 			</header>
 
 			{/* Main Content */}
-			<main>{children}</main>
-		</div>
-	);
-}
-
-function RedirectToLogin() {
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-900">
-			<div className="text-center">
-				<div className="mb-6">
-					<div className="relative w-16 h-16 mx-auto">
-						<div className="absolute inset-0 rounded-full border-4 border-gray-700"></div>
-						<div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
-						<div
-							className="absolute inset-2 rounded-full border-4 border-transparent border-t-blue-400 animate-spin"
-							style={{
-								animationDirection: "reverse",
-								animationDuration: "0.8s",
-							}}
-						></div>
-					</div>
-				</div>
-				<h2 className="text-xl font-semibold text-white mb-2">
-					Redirecting to Login
-				</h2>
-				<p className="text-gray-400 text-sm">
-					Please wait while we take you to the login page...
-				</p>
-				<div className="mt-4 flex justify-center gap-1">
-					<span
-						className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-						style={{ animationDelay: "0ms" }}
-					></span>
-					<span
-						className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-						style={{ animationDelay: "150ms" }}
-					></span>
-					<span
-						className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-						style={{ animationDelay: "300ms" }}
-					></span>
-				</div>
-			</div>
+			<main>
+				<ErrorBoundary>{children}</ErrorBoundary>
+			</main>
 		</div>
 	);
 }

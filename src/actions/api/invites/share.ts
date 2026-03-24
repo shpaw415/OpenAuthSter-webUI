@@ -58,7 +58,9 @@ export const invites = (_db: D1Database) => {
 				from_user_id: from.id,
 				user_id: invite_user_id,
 				code: id,
-				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Expires in 7 days
+				expires_at: new Date(
+					Date.now() + 7 * 24 * 60 * 60 * 1000,
+				).toISOString(), // Expires in 7 days
 				created_at: new Date().toISOString(),
 			})
 			.returning()
@@ -70,7 +72,23 @@ export const invites = (_db: D1Database) => {
 		}
 	}
 	function deleteById(id: number) {
-		return db.delete(inviteTable).where(eq(inviteTable.id, id)).run();
+		return db
+			.delete(inviteTable)
+			.where(eq(inviteTable.id, id))
+			.run()
+			.then((res) => res.success);
+	}
+	function updateStatus(
+		id: number,
+		status: "accepted" | "declined" | "pending",
+	) {
+		return db
+			.update(inviteTable)
+			.set({ status })
+			.where(eq(inviteTable.id, id))
+			.returning({ status: inviteTable.status })
+			.get()
+			.then((res) => res.status === status);
 	}
 
 	return {
@@ -95,28 +113,83 @@ export const invites = (_db: D1Database) => {
 				.get();
 			if (!res) return { success: false, error: "Invite not found" };
 
-			if (new Date(res.expiresAt) < new Date()) {
+			if (new Date(res.expires_at) < new Date()) {
 				await deleteById(res.id);
 				return { success: false, error: "Invite has expired" };
 			}
 
-			const currentUserSession = await authClient
-				.getUserSession("private")
-				.then((session) => (session instanceof Error ? null : session.private));
+			const currentUserSession = await authClient.getUserSession("private");
 
-			if (currentUserSession === null) {
-				return { success: false, error: "User session not found" };
+			if (currentUserSession instanceof Error) {
+				console.error("Failed to get user session:", currentUserSession);
+				return { success: false, error: currentUserSession.message };
 			}
 
 			await authClient.updateUserSession("private", {
 				group_ids: [
-					...(currentUserSession?.group_ids || []),
+					...(currentUserSession.private?.group_ids || []),
 					res.owner_group_id,
 				],
 			});
 
-			await deleteById(res.id);
-			return { success: true };
+			return { success: await updateStatus(res.id, "accepted") };
+		},
+		declineInvite: async (code: string, user_id: string) => {
+			const res = await db
+				.select()
+				.from(inviteTable)
+				.where(
+					and(eq(inviteTable.code, code), eq(inviteTable.user_id, user_id)),
+				)
+				.get();
+			if (!res) return { success: false, error: "Invite not found" };
+
+			return { success: await deleteById(res.id) };
+		},
+		revoke: async (
+			user_id: string,
+			owner_group_id: string,
+			client: ReturnType<typeof createClient>,
+		) => {
+			const userInfo = await client.getUserById(user_id);
+			if (userInfo instanceof Error) {
+				console.error("Failed to get user:", userInfo);
+				return { success: false, error: userInfo.message };
+			}
+			const user = userInfo.data.users.at(0);
+			const currentUser = await client.getMetaData();
+
+			if (!user) {
+				return { success: false, error: "User not found" };
+			} else if (!currentUser) {
+				return { success: false, error: "Current user not found" };
+			}
+
+			const res = await db
+				.select({ owner_id: inviteTable.owner_group_id, id: inviteTable.id })
+				.from(inviteTable)
+				.where(
+					and(
+						eq(inviteTable.user_id, user_id),
+						eq(inviteTable.owner_group_id, owner_group_id),
+						eq(inviteTable.from_user_id, currentUser.id),
+					),
+				)
+				.get();
+			if (!res) return { success: false, error: "Invite not found" };
+
+			if (!user?.session_private.group_ids?.includes(res.owner_id)) {
+				return { success: false, error: "Unauthorized" };
+			}
+			await client.updateUserById(user_id, {
+				session_private: {
+					group_ids: user.session_private.group_ids.filter(
+						(id) => id !== res.owner_id,
+					),
+				},
+			});
+
+			return { success: await deleteById(res.id) };
 		},
 		exists: ({
 			type,

@@ -1,6 +1,5 @@
 import { POST as createInviteLink } from "@api/invitelink";
 import { ProviderIcon } from "@components/provider-icons";
-import { InviteCollaboratorSectionProject } from "@components/vary";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
 import { useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useProject } from "@hooks/useProjects";
@@ -214,6 +213,37 @@ export default function ProjectDetail() {
 		);
 	}
 
+	if (projectHook.error) {
+		return (
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+				<div className="flex flex-col items-center justify-center py-20">
+					<div className="relative mb-6">
+						<div className="absolute inset-0 rounded-full bg-red-500/20 blur-xl scale-150" />
+						<div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-red-900/40 border border-red-700/50">
+							<Icon
+								icon="lucide:alert-circle"
+								className="w-10 h-10 text-red-400"
+							/>
+						</div>
+					</div>
+					<h2 className="text-xl font-semibold text-white mb-2">
+						Something went wrong
+					</h2>
+					<p className="text-red-300 text-sm text-center max-w-md mb-8">
+						{projectHook.error}
+					</p>
+					<a
+						href="/dashboard"
+						className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
+					>
+						<Icon icon="lucide:arrow-left" className="w-4 h-4" />
+						<span>Back to Dashboard</span>
+					</a>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-10">
 			{/* Notification */}
@@ -257,6 +287,13 @@ export default function ProjectDetail() {
 				</div>
 
 				<div className="flex items-center space-x-4">
+					<a
+						href={`/dashboard/project/collaborator?project_id=${projectHook.project?.clientID}`}
+						className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
+					>
+						<Icon icon="lucide:users" className="w-4 h-4" />
+						<span>Collaborators</span>
+					</a>
 					<label className="flex items-center space-x-3 cursor-pointer">
 						<span className="text-gray-300">Project Active</span>
 						<button
@@ -284,7 +321,7 @@ export default function ProjectDetail() {
 
 			{/* Project Client Info */}
 			<ProjectClientInfo
-				project={projectHook.project!}
+				project={projectHook.project}
 				setNotification={setNotification}
 			/>
 
@@ -874,12 +911,6 @@ export default function ProjectDetail() {
 				)}
 			</div>
 
-			{/* Invite Collaborator */}
-			<InviteCollaboratorSectionProject
-				project={projectHook.project as Project}
-				setNotification={setNotification}
-			/>
-
 			{/* Authentication Providers */}
 			<div>
 				<h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
@@ -1051,10 +1082,12 @@ function ProjectClientInfo({
 	project,
 	setNotification,
 }: {
-	project: Project;
+	project: Project | null;
 	setNotification: (notif: { message: string } | null) => void;
 }) {
 	const [showSecret, setShowSecret] = useState(false);
+
+	if (!project) throw new Error("Project is not provided");
 
 	return (
 		<div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -1133,7 +1166,7 @@ function ProjectClientInfo({
 							<code className="flex-1 min-w-0 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
 								{showSecret
 									? project?.secret
-									: "*".repeat(project.secret.length)}
+									: "*".repeat(project?.secret?.length || 0)}
 							</code>
 							<button
 								type="button"

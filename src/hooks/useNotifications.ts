@@ -25,7 +25,7 @@ async function loadInvites(force = false): Promise<InviteRow[]> {
 	if (inflightPromise) return inflightPromise;
 
 	inflightPromise = (async () => {
-		const res = await getInvites({ type: "received" });
+		const res = await getInvites({ type: "received", status: "pending" });
 		if (!res?.success)
 			throw new Error(res?.error ?? "Failed to load notifications");
 		const data = (res.data ?? []) as InviteRow[];
@@ -86,7 +86,7 @@ export function useNotifications() {
 	}, [auth?.isAuthenticated, refetch]);
 
 	const pendingCount = invites.filter(
-		(i) => new Date(i.expiresAt) > new Date(),
+		(i) => new Date(i.expires_at) > new Date(),
 	).length;
 
 	// ─── Actions ───────────────────────────────────────────────────────────────

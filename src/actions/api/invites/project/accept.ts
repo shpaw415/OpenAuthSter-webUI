@@ -10,7 +10,7 @@ import { invites } from "../share";
 export async function POST({ code }: { code: string }) {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 
-	const userId = (await ctx.data.client.getMetaData()).id;
+	const userId = (await ctx.data.client.getMetaData())?.id;
 
 	if (!userId) {
 		return { success: false, error: "Unauthorized" };

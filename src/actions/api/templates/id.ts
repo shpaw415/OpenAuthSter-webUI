@@ -144,7 +144,7 @@ export async function DELETE(params: { name: string }): Promise<{
 	const { env } = ctx;
 
 	try {
-		const currentUserId = (await ctx.data.client.getMetaData()).id;
+		const currentUserId = (await ctx.data.client.getMetaData())?.id;
 
 		if (!currentUserId) {
 			return {

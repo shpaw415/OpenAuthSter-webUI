@@ -70,7 +70,7 @@ export async function POST(params: {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 	const { env, data } = ctx;
 
-	const currentUserId = await data.client.getMetaData().then((meta) => meta.id);
+	const currentUserId = (await data.client.getMetaData())?.id;
 
 	if (!currentUserId) {
 		return {

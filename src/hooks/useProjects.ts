@@ -70,6 +70,14 @@ export function useProject(clientID: string = "") {
 	const [project, setProject] = useState<Project | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isProjectOwner, setIsProjectOwner] = useState(false);
+	const auth = useAuth();
+
+	useEffect(() => {
+		if (auth.userMeta.user_id) {
+			setIsProjectOwner(project?.owner_id === auth.userMeta.user_id);
+		}
+	}, [auth?.userMeta?.user_id, project]);
 
 	const fetchProject = useCallback(async () => {
 		if (!clientID) return;
@@ -135,5 +143,6 @@ export function useProject(clientID: string = "") {
 		updateProject,
 		updateProviders,
 		updateProvider,
+		isProjectOwner,
 	};
 }

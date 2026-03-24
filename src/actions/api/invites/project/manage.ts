@@ -18,12 +18,17 @@ export async function POST({
 }) {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 
-	const current_user_id = (await ctx.data.client.getMetaData()).id;
+	const current_user_id = (await ctx.data.client.getMetaData())?.id;
 
 	if (!current_user_id) {
 		return {
 			success: false,
 			error: "Unauthorized",
+		};
+	} else if (current_user_id === user_id) {
+		return {
+			success: false,
+			error: "You cannot invite yourself",
 		};
 	}
 
@@ -100,12 +105,17 @@ export async function DELETE({
 }) {
 	const ctx = getContext<Env, any, RequestDataContext>(arguments);
 
-	const current_user_id = (await ctx.data.client.getMetaData()).id;
+	const current_user_id = (await ctx.data.client.getMetaData())?.id;
 
 	if (!current_user_id) {
 		return {
 			success: false,
 			error: "Unauthorized",
+		};
+	} else if (current_user_id === user_id) {
+		return {
+			success: false,
+			error: "You cannot revoke your own invite",
 		};
 	}
 

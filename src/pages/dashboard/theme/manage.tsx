@@ -105,7 +105,7 @@ export default function UIThemeManage() {
 					message: "Theme created successfully",
 				});
 				setTimeout(() => {
-					navigate("/theme");
+					navigate("/dashboard/theme");
 				}, 1500);
 			}
 		} catch (err) {

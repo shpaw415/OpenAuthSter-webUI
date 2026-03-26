@@ -8,6 +8,7 @@ export type EmailTemplate = EmailTemplateProps & {
 	owner_id: string;
 	created_at: string;
 	updated_at: string;
+	id: number;
 };
 
 // GET /api/templates - List all email templates
@@ -98,11 +99,11 @@ export async function POST(params: CreateTemplateParams): Promise<{
 			updated_at: now,
 		};
 
-		await db.insert(emailTemplatesTable).values(newTemplate);
-
 		return {
 			success: true,
-			data: newTemplate,
+			data: (
+				await db.insert(emailTemplatesTable).values(newTemplate).returning()
+			).at(0) as EmailTemplate,
 		};
 	} catch (err) {
 		return {

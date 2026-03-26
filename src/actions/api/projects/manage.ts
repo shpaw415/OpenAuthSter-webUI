@@ -1,7 +1,11 @@
 import type { RequestDataContext } from "@auth";
 import { ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { type Project, parseDBProject } from "openauth-webui-shared-types";
+import {
+	type Project,
+	emailTemplatesTable,
+	parseDBProject,
+} from "openauth-webui-shared-types";
 import {
 	DeleteOTFusersTable,
 	insertLog,
@@ -12,6 +16,7 @@ import {
 	WebUiInviteLinkTable,
 	webAuthnTokenAccessTable,
 	webauthnChallengesTable,
+	uiStyleTable,
 	webauthnCredentialsTable,
 } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
@@ -93,10 +98,57 @@ export async function PUT(
 			error: "Unauthorized",
 		};
 	}
+	const db = drizzle(env.PROJECT_DB);
+
+	// Check if the theme_id can be used if present
+	if (
+		params.data.theme_id &&
+		!(await db
+			.select()
+			.from(uiStyleTable)
+			.where(
+				and(
+					eq(uiStyleTable.id, params.data.theme_id),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: uiStyleTable.owner_group_id,
+						otherEq: [eq(uiStyleTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
+				),
+			)
+			.get()
+			.then((e) => Boolean(e)))
+	)
+		return {
+			success: false,
+			error: "Invalid theme_id",
+		};
+	if (
+		params.data.emailTemplateId &&
+		!(await db
+			.select()
+			.from(emailTemplatesTable)
+			.where(
+				and(
+					eq(emailTemplatesTable.id, params.data.emailTemplateId),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
+						otherEq: [eq(emailTemplatesTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
+				),
+			)
+			.get()
+			.then((e) => Boolean(e)))
+	)
+		return {
+			success: false,
+			error: "Invalid emailTemplateId",
+		};
 
 	try {
-		const db = drizzle(env.PROJECT_DB);
-
 		// Check if project exists
 		const existing = (
 			await db

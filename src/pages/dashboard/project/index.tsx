@@ -1,4 +1,5 @@
 import { POST as createInviteLink } from "@api/invitelink";
+import { FunctionEditorModal } from "@components/FunctionEditorModal";
 import { ProviderIcon } from "@components/provider-icons";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
 import { useEmailTemplates } from "@hooks/useEmailTemplates";
@@ -69,6 +70,10 @@ export default function ProjectDetail() {
 	const [isProjectDataExpanded, setIsProjectDataExpanded] = useState(false);
 	const [projectData, setProjectData] = useState<ProjectData>({});
 	const [customFieldKey, setCustomFieldKey] = useState("");
+	const [fnEditorModal, setFnEditorModal] = useState<{
+		key: string;
+		draft: string;
+	} | null>(null);
 
 	// Sync projectData when project loads
 	useEffect(() => {
@@ -202,6 +207,14 @@ export default function ProjectDetail() {
 			setIsWebHookSaving(false);
 		}
 	};
+
+	const getTemplateNameFromId = useCallback(
+		(id: number) => {
+			const template = templates.find((t) => t.id === id);
+			return template ? (template.name as string) : "Unknown Template";
+		},
+		[templates],
+	);
 
 	if (projectHook.isLoading) {
 		return (
@@ -353,7 +366,7 @@ export default function ProjectDetail() {
 								setIsSaving(true);
 								try {
 									await projectHook.updateProject({
-										theme_id: parseInt(e.target.value, 10) || null,
+										theme_id: parseInt(e.target.value) || null,
 									});
 									setNotification({ message: "Theme updated" });
 								} catch (err) {
@@ -379,7 +392,11 @@ export default function ProjectDetail() {
 						</select>
 						{projectHook.project?.theme_id && (
 							<p className="text-gray-500 text-xs mt-2">
-								Using theme: {projectHook.project.theme_id}
+								Using theme:{" "}
+								{
+									themes.find((t) => t.id === projectHook.project?.theme_id)
+										?.name
+								}
 							</p>
 						)}
 					</SelectWrapper>
@@ -402,7 +419,7 @@ export default function ProjectDetail() {
 								setIsSaving(true);
 								try {
 									await projectHook.updateProject({
-										emailTemplateId: e.target.value || null,
+										emailTemplateId: parseInt(e.target.value) || null,
 									});
 									setNotification({ message: "Email template updated" });
 								} catch (err) {
@@ -421,7 +438,7 @@ export default function ProjectDetail() {
 						>
 							<option value="">No template selected</option>
 							{templates.map((template) => (
-								<option key={template.name} value={template.name}>
+								<option key={template.id} value={template.id}>
 									{template.name} - {template.subject}
 								</option>
 							))}
@@ -429,11 +446,12 @@ export default function ProjectDetail() {
 						{projectHook.project?.emailTemplateId && (
 							<div className="flex items-center justify-between mt-2">
 								<p className="text-gray-500 text-xs">
-									Using template: {projectHook.project.emailTemplateId}
+									Using template:{" "}
+									{getTemplateNameFromId(projectHook.project?.emailTemplateId)}
 								</p>
 								<a
 									href={`/dashboard/templates/manage?edit=${encodeURIComponent(
-										projectHook.project.emailTemplateId,
+										getTemplateNameFromId(projectHook.project?.emailTemplateId),
 									)}&project_id=${encodeURIComponent(
 										projectHook.project.clientID,
 									)}`}
@@ -730,17 +748,41 @@ export default function ProjectDetail() {
 											<span className="text-gray-400 text-sm w-32 truncate">
 												{key}:
 											</span>
-											<input
-												type="text"
-												value={value || ""}
-												onChange={(e) =>
-													setProjectData({
-														...projectData,
-														[key]: e.target.value,
-													})
-												}
-												className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-											/>
+											{value?.startsWith("function::") ? (
+												<div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-purple-950/40 border border-purple-700/50 rounded">
+													<Icon
+														icon="lucide:code-2"
+														className="w-4 h-4 text-purple-400 shrink-0"
+													/>
+													<span className="text-purple-300 text-xs font-mono truncate flex-1">
+														function
+													</span>
+													<button
+														type="button"
+														onClick={() =>
+															setFnEditorModal({
+																key,
+																draft: value.slice("function::".length),
+															})
+														}
+														className="text-purple-400 hover:text-purple-200 text-xs underline"
+													>
+														Edit
+													</button>
+												</div>
+											) : (
+												<input
+													type="text"
+													value={value || ""}
+													onChange={(e) =>
+														setProjectData({
+															...projectData,
+															[key]: e.target.value,
+														})
+													}
+													className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+												/>
+											)}
 											<button
 												type="button"
 												onClick={() => {
@@ -1074,6 +1116,30 @@ export default function ProjectDetail() {
 					onSave={handleSaveWebhook}
 				/>
 			)}
+			<FunctionEditorModal
+				variableKey={fnEditorModal?.key ?? ""}
+				value={fnEditorModal !== null ? fnEditorModal.draft : null}
+				props={projectData as Record<string, string>}
+				onAccept={(body) => {
+					if (fnEditorModal) {
+						setProjectData({
+							...projectData,
+							[fnEditorModal.key]: `function::${body}`,
+						});
+					}
+					setFnEditorModal(null);
+				}}
+				onClose={() => setFnEditorModal(null)}
+				onRemove={() => {
+					if (fnEditorModal) {
+						setProjectData({
+							...projectData,
+							[fnEditorModal.key]: "",
+						});
+					}
+					setFnEditorModal(null);
+				}}
+			/>
 		</div>
 	);
 }

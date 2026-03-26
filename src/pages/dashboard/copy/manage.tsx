@@ -165,7 +165,7 @@ export default function CopyManagePage() {
 				await createTemplate({ name: name.trim(), copyData });
 				showNotification("success", "Copy template created successfully");
 				setTimeout(() => {
-					navigate("/copy");
+					navigate("/dashboard/copy");
 				}, 1000);
 			}
 		} catch (err) {
@@ -230,6 +230,7 @@ export default function CopyManagePage() {
 						stroke="currentColor"
 						viewBox="0 0 24 24"
 					>
+						<title>Back</title>
 						<path
 							strokeLinecap="round"
 							strokeLinejoin="round"
@@ -259,11 +260,15 @@ export default function CopyManagePage() {
 
 							{/* Name */}
 							<div className="mb-4">
-								<label className="block text-sm font-medium text-gray-300 mb-2">
+								<label
+									className="block text-sm font-medium text-gray-300 mb-2"
+									htmlFor="template-name"
+								>
 									Template Name
 								</label>
 								<input
 									type="text"
+									id="template-name"
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									disabled={isEditing}
@@ -414,7 +419,7 @@ function CopyFieldInput({
 	return (
 		<div className="p-3 bg-gray-900 rounded-lg border border-gray-700">
 			<div className="flex items-center justify-between mb-2">
-				<label className="text-sm font-medium text-gray-300">
+				<label className="text-sm font-medium text-gray-300" htmlFor={fieldKey}>
 					{displayKey}
 				</label>
 				{isCustomized && (
@@ -425,6 +430,7 @@ function CopyFieldInput({
 			</div>
 			<input
 				type="text"
+				id={fieldKey}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				placeholder={defaultValue}

@@ -137,6 +137,7 @@ export default function AdminPanel() {
 	const [createError, setCreateError] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [versionOutdated, setVersionOutdated] = useState(false);
 
 	const projectHook = useProjects();
@@ -204,12 +205,15 @@ export default function AdminPanel() {
 	};
 
 	const handleDelete = async (clientID: string) => {
+		setIsDeleting(true);
 		try {
 			await projectHook.deleteProject(clientID);
 			setDeleteConfirm(null);
 			await dashboard.refetch();
 		} catch (err) {
 			alert(err instanceof Error ? err.message : "Failed to delete project");
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
@@ -389,7 +393,11 @@ export default function AdminPanel() {
 										{log.message}
 									</p>
 									<span className="text-xs text-gray-500 shrink-0">
-										{log.clientID}
+										{
+											projectHook.projects.find(
+												(p) => p.clientID === log.clientID,
+											)?.name
+										}
 									</span>
 									<span className="text-xs text-gray-500 shrink-0">
 										{formatDate(log.timestamp)}
@@ -678,10 +686,14 @@ export default function AdminPanel() {
 							<button
 								type="button"
 								onClick={() => handleDelete(deleteConfirm)}
-								className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
+								disabled={isDeleting}
+								className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
 							>
-								<Icon icon="lucide:trash-2" className="w-4 h-4" />
-								Delete
+								<Icon
+									icon={isDeleting ? "lucide:loader-circle" : "lucide:trash-2"}
+									className={`w-4 h-4 ${isDeleting ? "animate-spin" : ""}`}
+								/>
+								{isDeleting ? "Deleting..." : "Delete"}
 							</button>
 						</div>
 					</div>

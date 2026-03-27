@@ -12,6 +12,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
+import framemasterpluginserverobject from "frame-master-plugin-server-object";
 
 export default {
 	HTTPServer: {
@@ -91,6 +92,10 @@ export default {
 			skipExisting: true,
 			enableImports: true,
 			keepOriginal: true,
+		}),
+		framemasterpluginserverobject({
+			prefix: "OBJECT_",
+			src: "src",
 		}),
 	],
 } satisfies FrameMasterConfig;

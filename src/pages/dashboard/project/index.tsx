@@ -1,8 +1,10 @@
 import { POST as createInviteLink } from "@api/invitelink";
 import { FunctionEditorModal } from "@components/FunctionEditorModal";
+import { SelectWrapper, TemplateSelection } from "@components/InputFields";
 import { ProviderIcon } from "@components/provider-icons";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
 import { useEmailTemplates } from "@hooks/useEmailTemplates";
+import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { useUIThemes } from "@hooks/useUIThemes";
 import { useWebHook } from "@hooks/useWebHook";
@@ -54,13 +56,9 @@ const getWebHookEventLabel = (event: WebHookEvents) => {
 };
 
 export default function ProjectDetail() {
-	const projectHook = useProject(
-		typeof window === "undefined"
-			? undefined
-			: new URLSearchParams(window.location.search).get("project_id") || "",
-	);
+	const params = useParams<{ project_id: string }>();
+	const projectHook = useProject(params.project_id);
 	const { themes, isLoading: themesLoading } = useUIThemes();
-	const { templates, isLoading: templatesLoading } = useEmailTemplates();
 	const [activeCategory, setActiveCategory] =
 		useState<ProviderCategory>("social");
 	const [isSaving, setIsSaving] = useState(false);
@@ -208,14 +206,6 @@ export default function ProjectDetail() {
 		}
 	};
 
-	const getTemplateNameFromId = useCallback(
-		(id: number) => {
-			const template = templates.find((t) => t.id === id);
-			return template ? (template.name as string) : "Unknown Template";
-		},
-		[templates],
-	);
-
 	if (projectHook.isLoading) {
 		return (
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
@@ -269,22 +259,22 @@ export default function ProjectDetail() {
 			)}
 
 			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center space-x-4">
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-start">
 					<a
 						href="/dashboard"
-						className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
+						className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white sm:w-auto"
 					>
 						<Icon icon="lucide:arrow-left" className="w-5 h-5" />
 						<span>Back</span>
 					</a>
-					<div>
-						<div className="flex items-center space-x-3">
-							<h2 className="text-2xl font-bold text-white">
+					<div className="min-w-0 flex-1">
+						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+							<h2 className="text-2xl font-bold text-white wrap-break-word">
 								{projectHook.project?.name}
 							</h2>
 							<span
-								className={`px-2 py-1 text-xs rounded ${
+								className={`inline-flex w-fit rounded px-2 py-1 text-xs ${
 									projectHook.project?.active
 										? "bg-green-500/10 text-green-400"
 										: "bg-gray-500/10 text-gray-400"
@@ -293,22 +283,24 @@ export default function ProjectDetail() {
 								{projectHook.project?.active ? "Active" : "Inactive"}
 							</span>
 						</div>
-						<p className="text-gray-400 mt-1">
+						<p className="mt-1 text-sm text-gray-400 sm:text-base">
 							{enabledCount} provider{enabledCount !== 1 ? "s" : ""} enabled
 						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center space-x-4">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
 					<a
 						href={`/dashboard/project/collaborator?project_id=${projectHook.project?.clientID}`}
-						className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
+						className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white sm:w-auto"
 					>
 						<Icon icon="lucide:users" className="w-4 h-4" />
 						<span>Collaborators</span>
 					</a>
-					<label className="flex items-center space-x-3 cursor-pointer">
-						<span className="text-gray-300">Project Active</span>
+					<label className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-700 bg-gray-800/70 px-4 py-3 sm:w-auto sm:justify-start sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+						<span className="text-sm text-gray-300 sm:text-base">
+							Project Active
+						</span>
 						<button
 							type="button"
 							onClick={() =>
@@ -366,7 +358,7 @@ export default function ProjectDetail() {
 								setIsSaving(true);
 								try {
 									await projectHook.updateProject({
-										theme_id: parseInt(e.target.value) || null,
+										theme_id: Number(e.target.value) || null,
 									});
 									setNotification({ message: "Theme updated" });
 								} catch (err) {
@@ -399,108 +391,6 @@ export default function ProjectDetail() {
 								}
 							</p>
 						)}
-					</SelectWrapper>
-					{/* Email Template Selection */}
-					<SelectWrapper
-						name="Email/SMS Template"
-						icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />}
-						action={
-							<a
-								href="/dashboard/templates"
-								className="text-xs text-blue-400 hover:text-blue-300"
-							>
-								Manage Templates
-							</a>
-						}
-					>
-						<select
-							value={projectHook.project?.emailTemplateId || ""}
-							onChange={async (e) => {
-								setIsSaving(true);
-								try {
-									await projectHook.updateProject({
-										emailTemplateId: parseInt(e.target.value) || null,
-									});
-									setNotification({ message: "Email template updated" });
-								} catch (err) {
-									setNotification({
-										message:
-											err instanceof Error
-												? err.message
-												: "Failed to update email template",
-									});
-								} finally {
-									setIsSaving(false);
-								}
-							}}
-							disabled={isSaving || templatesLoading}
-							className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-						>
-							<option value="">No template selected</option>
-							{templates.map((template) => (
-								<option key={template.id} value={template.id}>
-									{template.name} - {template.subject}
-								</option>
-							))}
-						</select>
-						{projectHook.project?.emailTemplateId && (
-							<div className="flex items-center justify-between mt-2">
-								<p className="text-gray-500 text-xs">
-									Using template:{" "}
-									{getTemplateNameFromId(projectHook.project?.emailTemplateId)}
-								</p>
-								<a
-									href={`/dashboard/templates/manage?edit=${encodeURIComponent(
-										getTemplateNameFromId(projectHook.project?.emailTemplateId),
-									)}&project_id=${encodeURIComponent(
-										projectHook.project.clientID,
-									)}`}
-									className="text-xs text-blue-400 hover:text-blue-300"
-								>
-									Edit Template
-								</a>
-							</div>
-						)}
-					</SelectWrapper>
-					{/* codeMode Section */}
-					<SelectWrapper
-						name="Code Mode"
-						icon={
-							<Icon icon="lucide:monitor" className="w-5 h-5 text-gray-300" />
-						}
-						helpText="Select the mode for registration code sending"
-					>
-						<select
-							defaultValue={projectHook.project?.codeMode || "email"}
-							disabled={isSaving}
-							className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-							onChange={(e) => {
-								const value = e.currentTarget.value as "email" | "phone";
-
-								setIsSaving(true);
-								projectHook
-									.updateProject({
-										codeMode: value,
-									})
-									.then(() => {
-										setNotification({ message: "Code mode updated" });
-									})
-									.catch((err) => {
-										setNotification({
-											message:
-												err instanceof Error
-													? err.message
-													: "Failed to update code mode",
-										});
-									})
-									.finally(() => {
-										setIsSaving(false);
-									});
-							}}
-						>
-							<option value="email">Email Code Mode</option>
-							<option value="phone">Phone Code Mode</option>
-						</select>
 					</SelectWrapper>
 					<AllowOriginForm
 						isSaving={isSaving}
@@ -838,6 +728,8 @@ export default function ProjectDetail() {
 								</div>
 							</div>
 						</div>
+
+						<TemplateSelection project_id={params.project_id} />
 
 						{/* Save Button */}
 						<div className="flex justify-end pt-2">
@@ -1671,39 +1563,6 @@ function AllowOriginForm({
 	);
 }
 
-function SelectWrapper({
-	children,
-	name,
-	icon,
-	action,
-	helpText,
-}: {
-	children: React.ReactNode;
-	name: string;
-	icon: React.ReactNode;
-	action?: React.ReactNode;
-	helpText?: string | React.ReactNode;
-}) {
-	return (
-		<div className="bg-gray-800 rounded-lg p-5 border border-gray-700">
-			<div className="flex items-center justify-between mb-4">
-				<div className="flex items-center space-x-2">
-					{icon}
-					<h3 className="text-base font-medium text-white">{name}</h3>
-				</div>
-				{action}
-			</div>
-			{children}
-			{helpText && (
-				<div className="flex items-center justify-between mt-2">
-					<p className="text-gray-500 text-xs">{helpText}</p>
-					<span></span>
-				</div>
-			)}
-		</div>
-	);
-}
-
 function WebHookModal({
 	data,
 	onClose,
@@ -1731,7 +1590,7 @@ function WebHookModal({
 				data.headers
 					? Object.entries(data.headers).map(([key, value]) => ({
 							key,
-							value,
+							value: value as string,
 						}))
 					: [],
 			);

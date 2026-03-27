@@ -1,5 +1,4 @@
 import Cloudflare from "cloudflare";
-import { a } from "shiki/dist/langs-bundle-full-C-zczmvu.mjs";
 
 export class CloudflareClientError extends Error {
 	public data: unknown;
@@ -19,10 +18,14 @@ export async function createCustomDomainForProject(
 ): Promise<Cloudflare.Workers.Domains.Domain> {
 	const cf = client;
 	const issuer_url = new URL(env.CLOUDFLARE_AUTH_ENDPOINT_DOMAIN);
-	const rawName = `${crypto.randomUUID().replaceAll("-", "")}-${
-		issuer_url.hostname
-	}`;
-	const newDomaineName = rawName.slice(0, 63);
+	const subdomainLabel = crypto.randomUUID().replaceAll("-", "").slice(0, 63);
+
+	const dotCount = issuer_url.hostname.split(".").length - 1;
+
+	const newDomaineName =
+		dotCount > 1
+			? `${subdomainLabel}-${issuer_url.hostname}`
+			: `${subdomainLabel}.${issuer_url.hostname}`;
 
 	try {
 		const domaine = await cf.workers.domains.update({

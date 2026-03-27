@@ -1,9 +1,10 @@
 import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
+import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
 	type Project,
 	type ProviderConfig,
+	createWebUiProject,
 	parseDBProject,
 } from "openauth-webui-shared-types";
 import {
@@ -50,6 +51,18 @@ export async function GET(): Promise<{
 				self_host: env.SELF_HOSTED,
 			}),
 		);
+
+	onSelfHosted(
+		env.SELF_HOSTED,
+		() =>
+			projects.push(
+				createWebUiProject({
+					secret: env.WEBUI_SECRET,
+					originURL: env.PUBLIC_REDIRECT_URI,
+				}),
+			),
+		null,
+	);
 
 	return {
 		success: true,
@@ -137,7 +150,6 @@ export async function POST(params: {
 			created_at: new Date().toISOString(),
 			active: true,
 			providers_data,
-			codeMode: "email",
 			originURL: "",
 			authEndpointURL: cfDomaineCreate.hostname,
 			cloudflareDomaineID: cfDomaineCreate.id,
@@ -148,7 +160,6 @@ export async function POST(params: {
 				crypto.randomUUID(),
 			].join("-"),
 			theme_id: null,
-			emailTemplateId: null,
 			projectData: {},
 		};
 

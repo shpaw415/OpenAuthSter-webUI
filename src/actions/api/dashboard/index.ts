@@ -1,8 +1,9 @@
 import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
+import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import type { Project } from "openauth-webui-shared-types";
 import {
+	createWebUiProject,
 	isClientIdValid,
 	LogsTable,
 	OTFusersTable,
@@ -66,7 +67,7 @@ const USAGE_COLOR_PALETTE = [
 ];
 
 export type UsageSeries = {
-	clientID: string;
+	name: string;
 	color: string;
 	counts: number[];
 };
@@ -114,6 +115,17 @@ export async function GET(): Promise<{
 					self_host: env.SELF_HOSTED,
 				}),
 			);
+		onSelfHosted(
+			env.SELF_HOSTED,
+			() =>
+				projects.push(
+					createWebUiProject({
+						secret: env.WEBUI_SECRET,
+						originURL: env.PUBLIC_REDIRECT_URI,
+					}),
+				),
+			null,
+		);
 		const parsedProjects = projects.map(parseDBProject) as Project[];
 
 		const projectStatsMap = new Map<
@@ -344,8 +356,8 @@ export async function GET(): Promise<{
 		}
 
 		const usageSeries: UsageSeries[] = parsedProjects.map((p, i) => ({
-			clientID: p.clientID,
-			color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length]!,
+			name: p.name,
+			color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length] as string,
 			counts:
 				countByProjectAndBucket.get(p.clientID) ??
 				Array(buckets.length).fill(0),

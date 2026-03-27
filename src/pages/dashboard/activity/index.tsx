@@ -3,22 +3,27 @@ import { useProjects } from "@hooks/useProjects";
 import type { LogsTable } from "openauth-webui-shared-types/database";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-function ParseLogs(logs: any[]): LogRow[] {
-	return logs.map((log) => ({
-		...log,
-		type: log.type as "info" | "warning" | "error",
-		context: log.context ? JSON.parse(log.context) : undefined,
-	}));
+function ParseLogs(logs: Array<typeof LogsTable.$inferSelect>): LogRow[] {
+	return logs.map(
+		(log) =>
+			({
+				...log,
+				context:
+					typeof log.context === "string"
+						? JSON.parse(log.context)
+						: log.context,
+			}) as LogRow,
+	); // Assuming the API returns the correct types, we can directly cast it here.
 }
 
 type LogRow = typeof LogsTable.$inferSelect & {
 	type: "info" | "warning" | "error";
-	context?: Record<string, any>;
+	context?: Record<string, unknown>;
 };
 
 interface ContextModalState {
 	isOpen: boolean;
-	context?: Record<string, any>;
+	context?: Record<string, unknown>;
 }
 
 const typeTone: Record<LogRow["type"], string> = {
@@ -84,12 +89,6 @@ export default function LogsPage() {
 	}, []);
 
 	useEffect(() => {
-		if (!currentProject) {
-			setCurrentProject(process.env.PUBLIC_CLIENT_ID);
-		}
-	}, [projects, currentProject]);
-
-	useEffect(() => {
 		if (!currentProject) return;
 		fetchLogs(currentProject);
 	}, [currentProject, fetchLogs]);
@@ -127,6 +126,7 @@ export default function LogsPage() {
 
 				<div className="flex items-center gap-3">
 					<button
+						type="button"
 						onClick={() => currentProject && fetchLogs(currentProject)}
 						disabled={!currentProject || isFetchingLogs}
 						className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 hover:border-gray-600 hover:text-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
@@ -155,20 +155,21 @@ export default function LogsPage() {
 			<div className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow-lg shadow-black/20">
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex items-center gap-3">
-						<label className="text-sm text-gray-300">Project</label>
+						<label className="text-sm text-gray-300" htmlFor="project-select">
+							Project
+						</label>
 						<div className="relative">
 							<select
+								id="project-select"
 								value={currentProject}
 								onChange={(e) => setCurrentProject(e.target.value)}
 								disabled={projectsLoading}
 								className="appearance-none w-52 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
 							>
-								{[
-									...projects.map((p) => p.clientID),
-									process.env.PUBLIC_CLIENT_ID,
-								].map((id) => (
-									<option key={id} value={id}>
-										{id}
+								<option value="">Select a project</option>
+								{projects.map(({ clientID, name }) => (
+									<option key={clientID} value={clientID}>
+										{name}
 									</option>
 								))}
 							</select>
@@ -256,6 +257,7 @@ export default function LogsPage() {
 											<td className="px-4 py-3 text-sm whitespace-nowrap">
 												{log.context ? (
 													<button
+														type="button"
 														onClick={() =>
 															setContextModal({
 																isOpen: true,
@@ -355,17 +357,20 @@ function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 	if (!isOpen) return null;
 
 	return (
-		<div
+		<button
+			type="button"
 			className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-			onClick={onClose}
+			onMouseUp={onClose}
 		>
-			<div
+			<button
+				type="button"
 				className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
 					<h2 className="text-lg font-semibold text-white">Error Context</h2>
 					<button
+						type="button"
 						onClick={onClose}
 						className="text-gray-400 hover:text-gray-200 transition-colors p-1"
 						aria-label="Close modal"
@@ -376,6 +381,7 @@ function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 							stroke="currentColor"
 							viewBox="0 0 24 24"
 						>
+							<title>Close</title>
 							<path
 								strokeLinecap="round"
 								strokeLinejoin="round"
@@ -394,12 +400,14 @@ function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 
 				<div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
 					<button
+						type="button"
 						onClick={onClose}
 						className="px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 hover:border-gray-600 hover:text-white transition-colors"
 					>
 						Close
 					</button>
 					<button
+						type="button"
 						onClick={() => {
 							navigator.clipboard.writeText(JSON.stringify(context, null, 2));
 						}}
@@ -408,7 +416,7 @@ function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 						Copy JSON
 					</button>
 				</div>
-			</div>
-		</div>
+			</button>
+		</button>
 	);
 }

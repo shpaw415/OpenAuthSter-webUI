@@ -1,111 +1,46 @@
 import { FunctionEditorModal } from "@components/FunctionEditorModal";
 import { useEmailTemplate, useEmailTemplates } from "@hooks/useEmailTemplates";
+import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { Icon } from "@iconify/react";
 import Editor from "@monaco-editor/react";
 import { navigate } from "@utils";
 import Mustache from "mustache";
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
-import {
-	type ComponentType,
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-} from "react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { transform } from "sucrase";
+
+export const OBJECT_DEFAULT_HTML_TEMPLATE = await Bun.file(
+	"src/assets/email-template.html",
+).text();
 
 const DEFAULT_MOCK_DATA = {
 	code: "123456",
-	email: "user@example.com",
+	to: "user@example.com",
 	appName: "Your Company",
-	function: "function::return 'Hello from a function!';",
+	AcceptLanguage: "en-US,en;q=0.9",
+	htmlToLang: `function::return props.AcceptLanguage ? props.AcceptLanguage.split(",")[0].split(";")[0] : "en"`,
 };
 
-const DEFAULT_HTML_TEMPLATE = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{appName}}</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+const extractMustacheVariables = (template: string) => {
+	const regex = /\{\{([^{}]+)\}\}/g;
+	const matches = template.matchAll(regex);
+	const variables = new Set<string>();
 
-          <!-- Brand -->
-          <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <span style="font-size:22px;font-weight:700;color:#4F46E5;letter-spacing:-0.5px;">{{appName}}</span>
-            </td>
-          </tr>
+	for (const match of matches) {
+		const varName = match[1]?.trim();
+		if (
+			varName &&
+			!varName.startsWith("#") &&
+			!varName.startsWith("/") &&
+			!varName.startsWith("^")
+		) {
+			variables.add(varName);
+		}
+	}
 
-          <!-- Card -->
-          <tr>
-            <td style="background:#ffffff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.08);overflow:hidden;">
-
-              <!-- Accent bar -->
-              <div style="height:4px;background:linear-gradient(90deg,#4F46E5,#7C3AED);"></div>
-
-              <!-- Body -->
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:40px 40px 32px;">
-                    <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#4F46E5;text-transform:uppercase;letter-spacing:1px;">Verification Code</p>
-                    <h1 style="margin:0 0 20px;font-size:24px;font-weight:700;color:#111827;line-height:1.3;">Confirm your identity</h1>
-                    <p style="margin:0 0 28px;font-size:15px;color:#6b7280;line-height:1.6;">
-                      Hi <strong style="color:#111827;">{{email}}</strong>, use the code below to complete your sign-in.
-                      It expires in <strong style="color:#111827;">10 minutes</strong>.
-                    </p>
-
-                    <!-- Code box -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-                      <tr>
-                        <td align="center" style="background:#f5f3ff;border:2px dashed #c4b5fd;border-radius:10px;padding:24px 16px;">
-                          <span style="font-size:40px;font-weight:800;letter-spacing:12px;color:#4F46E5;font-variant-numeric:tabular-nums;">{{code}}</span>
-                        </td>
-                      </tr>
-                    </table>
-
-                    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                      If you didn't request this, you can safely ignore this email. Someone may have entered your address by mistake.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Divider -->
-              <div style="height:1px;background:#f3f4f6;margin:0 40px;"></div>
-
-              <!-- Security note -->
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:20px 40px;">
-                    <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-                      🔒 <strong style="color:#6b7280;">Security tip:</strong> {{appName}} will never ask you to share this code with anyone.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding-top:28px;">
-              <p style="margin:0 0 6px;font-size:12px;color:#9ca3af;">&copy; 2026 {{appName}} &middot; All rights reserved</p>
-              <p style="margin:0;font-size:12px;color:#9ca3af;">You received this because a sign-in was attempted with your account.</p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+	return Array.from(variables);
+};
 
 export default function EmailTemplatesManage() {
 	const [isEditMode, setIsEditMode] = useState(false);
@@ -114,7 +49,7 @@ export default function EmailTemplatesManage() {
 	const [emailTemplateProps, setEmailTemplateProps] =
 		useState<EmailTemplateProps>({
 			subject: "",
-			body: DEFAULT_HTML_TEMPLATE,
+			body: OBJECT_DEFAULT_HTML_TEMPLATE,
 			name: "",
 		});
 	const [isSaving, setIsSaving] = useState(false);
@@ -129,7 +64,10 @@ export default function EmailTemplatesManage() {
 	const [mockDataError, setMockDataError] = useState<string | null>(null);
 	const [mockDataInitialized, setMockDataInitialized] = useState(false);
 	const [showHelp, setShowHelp] = useState(false);
-	const [HelpDoc, setHelpDoc] = useState<ComponentType | null>(null);
+	const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor");
+	const [showFormFields, setShowFormFields] = useState(true);
+	const [HelpDoc, setHelpDoc] = useState<FC | null>(null);
+	const [isExportingProjectData, setIsExportingProjectData] = useState(false);
 	const [createSandboxedFunction, setCreateSandboxedFunction] = useState<
 		((fn: string) => (props: Record<string, unknown>) => unknown) | null
 	>(null);
@@ -145,7 +83,8 @@ export default function EmailTemplatesManage() {
 	}, []);
 
 	// Fetch project data if project_id is provided
-	const { project: linkedProject } = useProject(projectId);
+	const { project: linkedProject, updateProject: updateLinkedProject } =
+		useProject(projectId);
 
 	const parseEmailTemplateProps = useCallback(
 		(props: Record<string, string>) => {
@@ -154,10 +93,11 @@ export default function EmailTemplatesManage() {
 					if (value.startsWith("function::") && createSandboxedFunction) {
 						return [
 							key,
-							createSandboxedFunction(value.replace("function::", "")).bind(
-								null,
-								props,
-							),
+							createSandboxedFunction(
+								transform(value.replace("function::", ""), {
+									transforms: ["typescript"],
+								}).code,
+							).bind(null, props),
 						];
 					}
 					return [key, value];
@@ -192,22 +132,18 @@ export default function EmailTemplatesManage() {
 	}, [emailTemplateProps.body, mockData, parseEmailTemplateProps]);
 
 	// Extract mustache variables from template
+	const templateBodyVariables = useMemo(
+		() => extractMustacheVariables(emailTemplateProps.body),
+		[emailTemplateProps.body],
+	);
+
+	const templateBodyVariableSet = useMemo(
+		() => new Set(templateBodyVariables),
+		[templateBodyVariables],
+	);
+
 	const templateVariables = useMemo(() => {
-		const regex = /\{\{([^{}]+)\}\}/g;
-		const matches = emailTemplateProps.body.matchAll(regex);
-		const variables = new Set<string>();
-		for (const match of matches) {
-			const varName = match[1]?.trim();
-			// Skip section tags like #, /, ^
-			if (
-				varName &&
-				!varName.startsWith("#") &&
-				!varName.startsWith("/") &&
-				!varName.startsWith("^")
-			) {
-				variables.add(varName);
-			}
-		}
+		const variables = new Set<string>(templateBodyVariables);
 		// Also include project data keys so users can see available variables
 		if (linkedProject?.projectData) {
 			Object.keys(linkedProject.projectData).forEach((key) => {
@@ -217,22 +153,36 @@ export default function EmailTemplatesManage() {
 			});
 		}
 		return Array.from(variables);
-	}, [emailTemplateProps.body, linkedProject?.projectData]);
+	}, [linkedProject?.projectData, templateBodyVariables]);
+
+	const exportableProjectData = useMemo(() => {
+		return templateBodyVariables.reduce<Record<string, string>>(
+			(exportData, variable) => {
+				const value = mockData[variable];
+				if (typeof value === "string" && value.trim()) {
+					exportData[variable] = value;
+				}
+				return exportData;
+			},
+			{},
+		);
+	}, [mockData, templateBodyVariables]);
+
+	const { edit, project_id } = useParams<{
+		edit?: string;
+		project_id?: string;
+	}>();
 
 	// Get template name and project_id from URL
 	useEffect(() => {
-		if (typeof window === "undefined") return;
-		const url = new URL(window.location.href);
-		const editName = url.searchParams.get("edit");
-		const projectIdParam = url.searchParams.get("project_id");
-		if (editName) {
+		if (edit) {
 			setIsEditMode(true);
-			setTemplateName(editName);
+			setTemplateName(edit);
 		}
-		if (projectIdParam) {
-			setProjectId(projectIdParam);
+		if (project_id) {
+			setProjectId(project_id);
 		}
-	}, []);
+	}, [edit, project_id]);
 
 	// Initialize and sync mock data with project data when available
 	useEffect(() => {
@@ -286,6 +236,46 @@ export default function EmailTemplatesManage() {
 	const showNotification = (type: "success" | "error", message: string) => {
 		setNotification({ type, message });
 		setTimeout(() => setNotification(null), 3000);
+	};
+
+	const handleExportProjectData = async () => {
+		if (!linkedProject) {
+			showNotification(
+				"error",
+				"Link a project before exporting template data",
+			);
+			return;
+		}
+
+		if (Object.keys(exportableProjectData).length === 0) {
+			showNotification("error", "No populated template variables to export");
+			return;
+		}
+
+		setIsExportingProjectData(true);
+		try {
+			await updateLinkedProject({
+				projectData: {
+					...(linkedProject.projectData ?? {}),
+					...exportableProjectData,
+				},
+			});
+			showNotification(
+				"success",
+				`Exported ${Object.keys(exportableProjectData).length} template variable${
+					Object.keys(exportableProjectData).length === 1 ? "" : "s"
+				} to project data`,
+			);
+		} catch (err) {
+			showNotification(
+				"error",
+				err instanceof Error
+					? err.message
+					: "Failed to export template variables",
+			);
+		} finally {
+			setIsExportingProjectData(false);
+		}
 	};
 
 	const handleSave = async () => {
@@ -428,56 +418,93 @@ export default function EmailTemplatesManage() {
 			</header>
 
 			{/* Form fields */}
-			<div className="shrink-0 grid grid-cols-2 gap-3 px-4 py-2 border-b border-gray-700">
-				<div>
-					<label
-						className="block text-xs font-medium text-gray-400 mb-1"
-						htmlFor="templateName"
-					>
-						Template Name
-					</label>
-					<input
-						type="text"
-						id="templateName"
-						value={emailTemplateProps.name}
-						onChange={(e) =>
-							setEmailTemplateProps((prev) => ({
-								...prev,
-								name: e.target.value,
-							}))
-						}
-						disabled={isEditMode}
-						placeholder="e.g., password-reset, welcome-email"
-						className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 text-white placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+			<div className="shrink-0 border-b border-gray-700">
+				<button
+					type="button"
+					onClick={() => setShowFormFields((v) => !v)}
+					className="w-full flex items-center justify-between px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 transition-colors"
+				>
+					<span className="flex items-center gap-1.5 min-w-0">
+						<Icon icon="lucide:settings-2" className="w-3.5 h-3.5 shrink-0" />
+						{showFormFields ? (
+							"Template Settings"
+						) : (
+							<span className="flex items-center gap-1.5 min-w-0">
+								<span>Template Settings</span>
+								{emailTemplateProps.name && (
+									<span className="text-gray-500 font-normal truncate">
+										— {emailTemplateProps.name}
+									</span>
+								)}
+								{emailTemplateProps.subject && (
+									<span className="text-gray-500 font-normal hidden sm:inline truncate">
+										{" "}
+										· {emailTemplateProps.subject}
+									</span>
+								)}
+							</span>
+						)}
+					</span>
+					<Icon
+						icon="lucide:chevron-down"
+						className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${showFormFields ? "rotate-180" : ""}`}
 					/>
-				</div>
-				<div>
-					<label
-						className="block text-xs font-medium text-gray-400 mb-1"
-						htmlFor="emailSubject"
-					>
-						Email Subject
-					</label>
-					<input
-						type="text"
-						id="emailSubject"
-						value={emailTemplateProps.subject}
-						onChange={(e) =>
-							setEmailTemplateProps((prev) => ({
-								...prev,
-								subject: e.target.value,
-							}))
-						}
-						placeholder="e.g., Reset your password"
-						className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 text-white placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-					/>
-				</div>
+				</button>
+				{showFormFields && (
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-4 pb-3">
+						<div>
+							<label
+								className="block text-xs font-medium text-gray-400 mb-1"
+								htmlFor="templateName"
+							>
+								Template Name
+							</label>
+							<input
+								type="text"
+								id="templateName"
+								value={emailTemplateProps.name}
+								onChange={(e) =>
+									setEmailTemplateProps((prev) => ({
+										...prev,
+										name: e.target.value,
+									}))
+								}
+								disabled={isEditMode}
+								placeholder="e.g., password-reset, welcome-email"
+								className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 text-white placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+							/>
+						</div>
+						<div>
+							<label
+								className="block text-xs font-medium text-gray-400 mb-1"
+								htmlFor="emailSubject"
+							>
+								Email Subject
+							</label>
+							<input
+								type="text"
+								id="emailSubject"
+								value={emailTemplateProps.subject}
+								onChange={(e) =>
+									setEmailTemplateProps((prev) => ({
+										...prev,
+										subject: e.target.value,
+									}))
+								}
+								placeholder="e.g., Reset your password"
+								className="w-full px-2.5 py-1.5 bg-gray-800 border border-gray-600 text-white placeholder-gray-500 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+							/>
+						</div>
+					</div>
+				)}
 			</div>
 
 			{/* Main panels */}
 			<div className="flex-1 flex min-h-0">
 				{/* Left: Monaco Editor */}
-				<div className="flex flex-col flex-1 min-w-0 min-h-0">
+				<div
+					className={`flex-col flex-1 min-w-0 min-h-0 ${mobileTab === "editor" ? "flex" : "hidden sm:flex"}`}
+				>
 					<div className="shrink-0 flex items-center px-3 py-1.5 bg-gray-800 border-b border-gray-700">
 						<span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
 							HTML
@@ -507,7 +534,9 @@ export default function EmailTemplatesManage() {
 
 				{/* Right: Preview panel */}
 				{showPreview ? (
-					<div className="flex flex-col w-[42%] shrink-0 min-h-0 border-l border-gray-700">
+					<div
+						className={`flex-col min-h-0 border-l border-gray-700 ${mobileTab === "preview" ? "flex w-full sm:w-[42%] sm:shrink-0" : "hidden sm:flex sm:w-[42%] sm:shrink-0"}`}
+					>
 						{/* Preview header */}
 						<div className="shrink-0 flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
 							<div className="flex items-center gap-2">
@@ -560,16 +589,39 @@ export default function EmailTemplatesManage() {
 									) : (
 										<span className="text-xs text-gray-500">Mock data</span>
 									)}
-									<button
-										type="button"
-										onClick={() => {
-											setMockData(DEFAULT_MOCK_DATA);
-											setMockDataInitialized(false);
-										}}
-										className="text-xs text-gray-500 hover:text-blue-400 transition-colors"
-									>
-										Reset
-									</button>
+									<div className="flex items-center gap-2">
+										{linkedProject && (
+											<button
+												type="button"
+												onClick={handleExportProjectData}
+												disabled={isExportingProjectData}
+												className="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+												title="Export the current template variable values to the linked project's project data"
+											>
+												{isExportingProjectData ? (
+													<>
+														<div className="animate-spin rounded-full h-3 w-3 border border-emerald-200/30 border-t-emerald-200" />
+														Exporting...
+													</>
+												) : (
+													<>
+														<Icon icon="lucide:upload" className="w-3 h-3" />
+														Export to project data
+													</>
+												)}
+											</button>
+										)}
+										<button
+											type="button"
+											onClick={() => {
+												setMockData(DEFAULT_MOCK_DATA);
+												setMockDataInitialized(false);
+											}}
+											className="text-xs text-gray-500 hover:text-blue-400 transition-colors"
+										>
+											Reset
+										</button>
+									</div>
 								</div>
 								<div className="p-3 bg-gray-900">
 									{mockDataError && (
@@ -585,9 +637,8 @@ export default function EmailTemplatesManage() {
 									) : (
 										<div className="grid grid-cols-1 gap-2">
 											{templateVariables.map((variable) => {
-												const isInTemplate = emailTemplateProps.body.includes(
-													`{{${variable}}}`,
-												);
+												const isInTemplate =
+													templateBodyVariableSet.has(variable);
 												const isFromProject =
 													linkedProject?.projectData?.[variable] !== undefined;
 												return (
@@ -670,7 +721,7 @@ export default function EmailTemplatesManage() {
 																}`}
 															/>
 														)}
-														{!isInTemplate && (
+														{!templateBodyVariableSet.has(variable) && (
 															<span className="text-xs text-yellow-500 shrink-0">
 																unused
 															</span>
@@ -695,7 +746,7 @@ export default function EmailTemplatesManage() {
 						</div>
 					</div>
 				) : (
-					<div className="shrink-0 w-9 border-l border-gray-700 flex flex-col items-center pt-2">
+					<div className="hidden sm:flex shrink-0 w-9 flex-col items-center pt-2 border-l border-gray-700">
 						<button
 							type="button"
 							onClick={() => setShowPreview(true)}
@@ -707,6 +758,29 @@ export default function EmailTemplatesManage() {
 					</div>
 				)}
 			</div>
+
+			{/* Mobile bottom tab bar */}
+			<nav className="sm:hidden shrink-0 flex border-t border-gray-700 bg-gray-900 h-12">
+				<button
+					type="button"
+					onClick={() => setMobileTab("editor")}
+					className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors ${mobileTab === "editor" ? "text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
+				>
+					<Icon icon="lucide:code-2" className="w-4 h-4" />
+					Editor
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						setMobileTab("preview");
+						setShowPreview(true);
+					}}
+					className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs transition-colors ${mobileTab === "preview" ? "text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
+				>
+					<Icon icon="lucide:eye" className="w-4 h-4" />
+					Preview
+				</button>
+			</nav>
 
 			{/* Help Side Panel */}
 			{showHelp && (
@@ -720,7 +794,7 @@ export default function EmailTemplatesManage() {
 						onKeyDown={(e) => e.key === "Escape" && setShowHelp(false)}
 					/>
 					{/* Panel */}
-					<div className="fixed inset-y-0 right-0 z-50 w-full sm:w-120 bg-gray-900 border-l border-gray-700 flex flex-col overflow-hidden">
+					<div className="fixed inset-y-0 right-0 z-50 w-full sm:w-180 bg-gray-900 border-l border-gray-700 flex flex-col overflow-hidden">
 						<div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 bg-gray-800 shrink-0">
 							<div className="flex items-center gap-2">
 								<Icon

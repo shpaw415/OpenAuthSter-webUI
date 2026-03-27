@@ -1,5 +1,7 @@
 import { ProviderIcon } from "@components/provider-icons";
 import { Toggle, ToggleBase } from "@components/toggle";
+import { useEmailTemplates } from "@hooks/useEmailTemplates";
+import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { Icon } from "@iconify/react";
 import { Snackbar } from "@material/react-snackbar";
@@ -24,7 +26,7 @@ import type {
 	WebAuthnProviderConfig,
 } from "openauth-webui-shared-types";
 import { getProviderMeta } from "openauth-webui-shared-types";
-import {
+import React, {
 	type ComponentType,
 	createContext,
 	useCallback,
@@ -70,31 +72,23 @@ type ProviderFormState<T extends ProviderConfig> = {
 	data: Partial<T["data"]> | null;
 };
 
-const providerFormStateContext = createContext<ProviderFormState<any> | null>(
-	null,
-);
+const providerFormStateContext =
+	createContext<ProviderFormState<ProviderConfig> | null>(null);
 
 function useProviderFormState<T extends ProviderConfig>() {
-	return useContext(providerFormStateContext)! as ProviderFormState<T>;
+	return useContext(providerFormStateContext) as ProviderFormState<T>;
 }
 
 export default function ProviderForm() {
-	const project_id = useMemo(
-		() =>
-			typeof window === "undefined"
-				? undefined
-				: new URLSearchParams(window.location.search).get("project_id"),
-		[typeof window !== "undefined" && window.location.href],
-	);
-	const provider_type = useMemo(
-		() =>
-			typeof window === "undefined"
-				? undefined
-				: (new URLSearchParams(window.location.search).get(
-						"provider_type",
-					) as Exclude<ProviderType, "apple">),
-		[typeof window !== "undefined" && window.location.href],
-	);
+	const { project_id, provider_type } = useParams<{
+		project_id: string;
+		provider_type: ProviderType;
+	}>();
+
+	if (typeof window !== "undefined" && (!project_id || !provider_type)) {
+		throw new Error("Missing project_id or provider_type in URL parameters");
+	}
+
 	const projectHook = useProject(
 		typeof window === "undefined"
 			? undefined
@@ -145,8 +139,8 @@ export default function ProviderForm() {
 		e.preventDefault();
 
 		const res = parseFormToProviderConfig({
-			formData: new FormData(formRef.current!),
-			providerType: provider_type!,
+			formData: new FormData(formRef.current as HTMLFormElement),
+			providerType: provider_type as ProviderConfig["type"],
 			providerEnabled: config.enabled ?? false,
 		});
 		console.log(res);
@@ -161,8 +155,8 @@ export default function ProviderForm() {
 
 		let initialConfig: Partial<ProviderConfig> | null = {
 			enabled: false,
-			type: providerType!,
-			data: {} as any,
+			type: providerType,
+			data: {} as never,
 		};
 
 		if (providerType) {
@@ -181,27 +175,27 @@ export default function ProviderForm() {
 			// Invalid state, navigate back to providers list
 			navigate(`/project?project_id=${projectHook.project?.clientID}`);
 		}
-	}, [projectHook.project]);
+	}, [projectHook.project, provider_type]);
 
 	// Load MDX documentation based on provider type
 	useEffect(() => {
 		const loadDocs = async () => {
 			const providerType = config.type || "default";
-			const loader = providerDocs[providerType] ?? providerDocs["default"];
+			const loader = providerDocs[providerType] ?? providerDocs.default;
 			try {
-				const module = await loader!();
-				setDocComponent(() => module.default);
+				const module = await loader?.();
+				setDocComponent(() => module?.default || null);
 			} catch {
-				const defaultModule = await providerDocs["default"]!();
-				setDocComponent(() => defaultModule.default);
+				const defaultModule = await providerDocs.default?.();
+				setDocComponent(() => defaultModule?.default || null);
 			}
 		};
 		loadDocs();
 	}, [config?.type]);
 
-	const formState: ProviderFormState<any> = {
-		clientID: project_id!,
-		provider_type: config?.type!,
+	const formState: ProviderFormState<ProviderConfig> = {
+		clientID: project_id as string,
+		provider_type: config?.type as ProviderType,
 		showSecret,
 		setShowSecret,
 		meta,
@@ -239,7 +233,7 @@ export default function ProviderForm() {
 								←
 							</a>
 							<ProviderIcon
-								type={provider_type!}
+								type={provider_type as ProviderType}
 								className="w-10 h-10 text-gray-300"
 							/>
 							<div>
@@ -301,6 +295,7 @@ export default function ProviderForm() {
 									Cancel
 								</a>
 								<button
+									type="button"
 									onClick={() => formRef.current?.requestSubmit()}
 									disabled={isSaving}
 									className="flex-1 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -419,7 +414,7 @@ function KeyValueEditor({
 
 	useEffect(() => {
 		const checkedKeys: string[] = [];
-		keyList.forEach((k, i) => {
+		keyList.forEach((k, _i) => {
 			if (k !== "") {
 				checkedKeys.push(k);
 			}
@@ -430,36 +425,33 @@ function KeyValueEditor({
 		if (hasDuplicates) {
 			setError("Duplicate keys are not allowed");
 		} else setError(null);
-	}, [keyList, new_value]);
+	}, [keyList]);
 
-	const handleChange = useCallback(
-		(type: "key" | "value", index: number) => {
-			return (e: React.ChangeEvent<HTMLInputElement>) => {
-				const content = e.target.value || "";
-				if (type === "key") {
-					setNewValue((current) =>
-						current.map((item, i) =>
-							i === index ? { ...item, key: content } : item,
-						),
-					);
-				} else if (type === "value") {
-					setNewValue((current) =>
-						current.map((item, i) =>
-							i === index ? { ...item, val: content } : item,
-						),
-					);
-				}
-			};
-		},
-		[new_value],
-	);
+	const handleChange = useCallback((type: "key" | "value", index: number) => {
+		return (e: React.ChangeEvent<HTMLInputElement>) => {
+			const content = e.target.value || "";
+			if (type === "key") {
+				setNewValue((current) =>
+					current.map((item, i) =>
+						i === index ? { ...item, key: content } : item,
+					),
+				);
+			} else if (type === "value") {
+				setNewValue((current) =>
+					current.map((item, i) =>
+						i === index ? { ...item, val: content } : item,
+					),
+				);
+			}
+		};
+	}, []);
 
 	const handleAdd = useCallback(() => {
 		setNewValue((current) => [
 			...current,
 			{ key: "", val: "", hash: crypto.randomUUID() },
 		]);
-	}, [setNewValue]);
+	}, []);
 
 	const handleRemove = useCallback((index: number) => {
 		setNewValue((current) => current.filter((_, i) => i !== index));
@@ -518,21 +510,29 @@ function InputFieldForm({
 	label,
 	children,
 	help,
+	action,
 }: {
 	children: React.ReactNode;
 	required?: boolean;
 	label: string;
 	help?: string;
+	action?: React.ReactNode;
 }) {
 	return (
 		<div>
-			<label className="block text-sm font-medium text-gray-300 mb-2">
+			<label
+				className="block text-sm font-medium text-gray-300 mb-2"
+				htmlFor=""
+			>
 				{label} {required && <span className="text-red-400">*</span>}
 			</label>
 			<RequiredContext.Provider value={Boolean(required)}>
 				{children}
 			</RequiredContext.Provider>
-			{help && <p className="text-gray-500 text-sm mt-1">{help}</p>}
+			<div className="flex-row flex justify-between">
+				{help && <p className="text-gray-500 text-sm mt-1">{help}</p>}
+				{action && <div>{action}</div>}
+			</div>
 		</div>
 	);
 }
@@ -665,23 +665,89 @@ function SelectField(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 	);
 }
 
+function TemplateSelection(
+	props: React.SelectHTMLAttributes<HTMLSelectElement> & {
+		defaultValue: number | undefined;
+		label: string;
+		help?: string;
+		name: string;
+	},
+) {
+	const templates = useEmailTemplates();
+	const [currentSelect, setCurrentSelect] = useState<number | undefined>(
+		props.defaultValue,
+	);
+	const params = useParams<{ project_id: string }>();
+	const onChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
+		(e) => {
+			setCurrentSelect(Number(e.target.value));
+		},
+		[],
+	);
+
+	const opt = useMemo(() => {
+		const { defaultValue, label, help, name, onChange, ...rest } = props;
+		return rest;
+	}, [props]);
+
+	if (templates.isLoading) {
+		return (
+			<div className="flex items-center gap-2 text-gray-400">
+				<Icon icon="lucide:loader" className="w-4 h-4 animate-spin" />
+				Loading templates...
+			</div>
+		);
+	}
+	console.log(currentSelect);
+
+	return (
+		<InputFieldForm
+			label={props.label}
+			help={props.help}
+			required
+			action={
+				currentSelect && (
+					<a
+						href={`/dashboard/templates/manage?project_id=${params.project_id}&edit=${templates.templates.find((t) => t.id === currentSelect)?.name}`}
+						className="text-sm text-blue-400 hover:text-blue-300"
+					>
+						Manage templates
+					</a>
+				)
+			}
+		>
+			<SelectField
+				{...opt}
+				name={`number::${props.name}`}
+				defaultValue={props.defaultValue}
+				onChange={onChange}
+			>
+				<option value="">Chose a template</option>
+				{templates.templates.map((template) => (
+					<option key={template.id} value={template.id}>
+						{template.name}
+					</option>
+				))}
+			</SelectField>
+		</InputFieldForm>
+	);
+}
+
 // Provider setups /////////////////////////////////////////
 
 function QrCodeFields() {
 	const data = useProviderFormState<QRProviderConfig>();
 	return (
-		<>
-			<InputFieldForm
-				label="Require MFA"
-				help="If the user has MFA set up, the MFA token will be required"
-				required
-			>
-				<ToggleBase
-					defaultChecked={data.data?.requireMFA || false}
-					name="boolean::requireMFA"
-				/>
-			</InputFieldForm>
-		</>
+		<InputFieldForm
+			label="Require MFA"
+			help="If the user has MFA set up, the MFA token will be required"
+			required
+		>
+			<ToggleBase
+				defaultChecked={data.data?.requireMFA || false}
+				name="boolean::requireMFA"
+			/>
+		</InputFieldForm>
 	);
 }
 
@@ -842,7 +908,6 @@ function KeycloakFields() {
 
 function CodeFields() {
 	const data = useProviderFormState<CodeProviderConfig>();
-
 	return (
 		<>
 			<InputFieldForm label="Code Length">
@@ -857,6 +922,12 @@ function CodeFields() {
 					Number of digits in the verification code (4-8)
 				</p>
 			</InputFieldForm>
+			<TemplateSelection
+				label="Email Template for Login Code Sending"
+				help="the template used while sending a OTP code for login"
+				defaultValue={data.data?.registerTemplateId ?? undefined}
+				name="registerTemplateId"
+			/>
 		</>
 	);
 }
@@ -931,6 +1002,18 @@ function PasswordFields() {
 					placeholder="Your custom message for missing special characters"
 				/>
 			</InputFieldForm>
+			<TemplateSelection
+				label="Email Template for Registration Code Sending"
+				help="the template used while sending a OTP code for registration"
+				name="registerTemplateId"
+				defaultValue={data.data?.registerTemplateId || undefined}
+			/>
+			<TemplateSelection
+				label="Email Template for Password Code Sending"
+				help="the template used while sending a OTP code for password reset"
+				name="resetPasswordTemplateId"
+				defaultValue={data.data?.resetPasswordTemplateId || undefined}
+			/>
 		</>
 	);
 }
@@ -1097,13 +1180,9 @@ function AppleOIDCFields() {
 }
 
 function PasskeyFields() {
-	const data = useProviderFormState<WebAuthnProviderConfig>();
-
 	return (
-		<>
-			<p className="text-sm text-white mb-4">
-				There is no specific configuration required for Passkeys.
-			</p>
-		</>
+		<p className="text-sm text-white mb-4">
+			There is no specific configuration required for Passkeys.
+		</p>
 	);
 }

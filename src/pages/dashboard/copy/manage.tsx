@@ -1,6 +1,8 @@
 import { useCopyTemplate, useCopyTemplates } from "@hooks/useCopyTemplates";
 import { navigate } from "@utils";
 import { useEffect, useState } from "react";
+import type { CodeUICopy } from "@kagii/openauth/ui/code";
+import type { PasswordUICopy } from "openauth-webui-shared-types";
 
 // ──────────────────────────────────────────────
 // Default values (from @openauthjs/openauth source)
@@ -43,6 +45,11 @@ const PROVIDER_DEFAULTS = {
 		input_code: "Code",
 		input_repeat: "Repeat password",
 		button_continue: "Continue",
+		shortPasswordMsg: "Password is too short (minimum {min} characters)",
+		requireUppercaseMsg: "Password must contain at least one uppercase letter",
+		requireNumberMsg: "Password must contain at least one number",
+		requireSpecialCharMsg:
+			"Password must contain at least one special character",
 	},
 	qr: {
 		title: "Sign in with QR Code",
@@ -51,7 +58,12 @@ const PROVIDER_DEFAULTS = {
 	passkey: {
 		title: "Sign in with Passkey",
 	},
-} as const;
+} as {
+	code: CodeUICopy;
+	password: PasswordUICopy;
+	qr: Record<string, string>;
+	passkey: Record<string, string>;
+};
 
 type ProviderKey = keyof typeof PROVIDER_DEFAULTS;
 

@@ -41,6 +41,9 @@ export default function UIThemeManage() {
 	} | null>(null);
 	const [activeTab, setActiveTab] = useState<"basic" | "advanced">("basic");
 	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
+	const [mobilePanel, setMobilePanel] = useState<"settings" | "preview">(
+		"settings",
+	);
 	const [showModal, setShowModal] = useState(false);
 
 	// Get theme ID from URL for edit mode
@@ -218,7 +221,7 @@ export default function UIThemeManage() {
 		);
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+		<div className="max-w-7xl mx-auto px-4 pb-24 pt-4 sm:px-6 sm:py-6 md:pb-6 lg:px-8 lg:py-8">
 			{/* Notification */}
 			{notification && (
 				<Snackbar
@@ -233,7 +236,7 @@ export default function UIThemeManage() {
 				<div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
 					<a
 						href="/dashboard/theme"
-						className="text-gray-300 hover:text-white flex items-center gap-2 transition-colors"
+						className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white sm:w-auto sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:py-0"
 					>
 						<span>←</span>
 						Back
@@ -253,7 +256,7 @@ export default function UIThemeManage() {
 					onClick={handleSave}
 					disabled={isSaving}
 					type="submit"
-					className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+					className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
 				>
 					{isSaving ? (
 						<>
@@ -270,7 +273,9 @@ export default function UIThemeManage() {
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				{/* Form */}
-				<div className="lg:col-span-2 space-y-6">
+				<div
+					className={`${mobilePanel === "preview" ? "hidden" : "block"} space-y-6 lg:col-span-2 lg:block`}
+				>
 					{/* Theme ID */}
 					{!isEditMode && (
 						<div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
@@ -295,11 +300,11 @@ export default function UIThemeManage() {
 					)}
 
 					{/* Tabs */}
-					<div className="flex border-b border-gray-700">
+					<div className="flex overflow-x-auto border-b border-gray-700">
 						<button
 							type="button"
 							onClick={() => setActiveTab("basic")}
-							className={`px-4 py-2 text-sm font-medium transition-colors ${
+							className={`shrink-0 px-4 py-2 text-sm font-medium transition-colors ${
 								activeTab === "basic"
 									? "text-blue-400 border-b-2 border-blue-400"
 									: "text-gray-400 hover:text-gray-300"
@@ -310,7 +315,7 @@ export default function UIThemeManage() {
 						<button
 							type="button"
 							onClick={() => setActiveTab("advanced")}
-							className={`px-4 py-2 text-sm font-medium transition-colors ${
+							className={`shrink-0 px-4 py-2 text-sm font-medium transition-colors ${
 								activeTab === "advanced"
 									? "text-blue-400 border-b-2 border-blue-400"
 									: "text-gray-400 hover:text-gray-300"
@@ -362,7 +367,7 @@ export default function UIThemeManage() {
 									</button>
 								</div>
 								{typeof themeData.primary === "object" ? (
-									<div className="grid grid-cols-2 gap-4">
+									<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 										<div>
 											<label
 												className="text-xs text-gray-400 mb-1 block"
@@ -370,7 +375,7 @@ export default function UIThemeManage() {
 											>
 												Light
 											</label>
-											<div className="flex gap-2">
+											<div className="flex flex-col gap-2 sm:flex-row">
 												<input
 													type="color"
 													value={themeData.primary.light}
@@ -463,7 +468,7 @@ export default function UIThemeManage() {
 								>
 									Border Radius
 								</label>
-								<div className="grid grid-cols-5 gap-2">
+								<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
 									{(["none", "sm", "md", "lg", "full"] as const).map(
 										(radius) => (
 											<button
@@ -623,7 +628,7 @@ export default function UIThemeManage() {
 									</button>
 								</div>
 								{typeof themeData.background === "object" ? (
-									<div className="grid grid-cols-2 gap-4">
+									<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 										<div>
 											<label
 												className="text-xs text-gray-400 mb-1 block"
@@ -631,7 +636,7 @@ export default function UIThemeManage() {
 											>
 												Light
 											</label>
-											<div className="flex gap-2">
+											<div className="flex flex-col gap-2 sm:flex-row">
 												<input
 													type="color"
 													value={themeData.background?.light || "#ffffff"}
@@ -806,136 +811,179 @@ export default function UIThemeManage() {
 				</div>
 
 				{/* Preview */}
-				<div className="lg:col-span-1">
-					<div className="bg-gray-800 border border-gray-700 rounded-lg p-4 sticky top-4">
-						<div className="flex items-center justify-between mb-4">
-							<h3 className="text-base font-medium text-gray-300">Preview</h3>
-							<div className="flex items-center gap-1 bg-gray-900 rounded-lg p-1">
-								<button
-									type="button"
-									onClick={() => setPreviewMode("light")}
-									className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-										previewMode === "light"
-											? "bg-gray-700 text-white"
-											: "text-gray-400 hover:text-gray-300"
-									}`}
-								>
-									<Icon icon="lucide:sun" className="w-3.5 h-3.5 mr-1 inline" />{" "}
-									Light
-								</button>
-								<button
-									type="button"
-									onClick={() => setPreviewMode("dark")}
-									className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-										previewMode === "dark"
-											? "bg-gray-700 text-white"
-											: "text-gray-400 hover:text-gray-300"
-									}`}
-								>
-									<Icon
-										icon="lucide:moon"
-										className="w-3.5 h-3.5 mr-1 inline"
-									/>{" "}
-									Dark
-								</button>
-							</div>
-						</div>
-						<div
-							className="rounded-lg p-6 min-h-75 flex flex-col items-center justify-center transition-colors"
-							style={{
-								backgroundColor:
-									typeof themeData.background === "object"
-										? previewMode === "dark"
-											? themeData.background.dark || "#111827"
-											: themeData.background.light || "#f9fafb"
-										: themeData.background ||
-											(previewMode === "dark" ? "#111827" : "#f9fafb"),
-							}}
-						>
-							{/* Logo */}
-							{themeData.logo && (
-								<img
-									src={
-										typeof themeData.logo === "object"
-											? previewMode === "dark"
-												? themeData.logo.dark || themeData.logo.light
-												: themeData.logo.light || themeData.logo.dark
-											: themeData.logo
-									}
-									alt="Logo"
-									className="w-16 h-16 object-contain mb-4"
-									onError={(e) => {
-										(e.target as HTMLImageElement).style.display = "none";
-									}}
-								/>
-							)}
+				<div
+					className={`${mobilePanel === "settings" ? "hidden" : "block"} lg:col-span-1 lg:block`}
+				>
+					<ThemePreviewPanel
+						previewMode={previewMode}
+						setPreviewMode={setPreviewMode}
+						themeData={themeData}
+					/>
+				</div>
+			</div>
 
-							{/* Title */}
-							<h2
-								className="text-xl font-semibold mb-4 transition-colors"
-								style={{
-									fontFamily: themeData.font?.family || "system-ui",
-									color: previewMode === "dark" ? "#f9fafb" : "#111827",
-								}}
-							>
-								{themeData.title || "Your App"}
-							</h2>
+			<nav className="fixed inset-x-0 bottom-0 z-40 flex h-12 shrink-0 border-t border-gray-700 bg-gray-900 md:hidden">
+				<button
+					type="button"
+					onClick={() => setMobilePanel("settings")}
+					className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs transition-colors ${
+						mobilePanel === "settings"
+							? "text-blue-400"
+							: "text-gray-500 hover:text-gray-300"
+					}`}
+				>
+					<Icon icon="lucide:sliders-horizontal" className="h-4 w-4" />
+					Settings
+				</button>
+				<button
+					type="button"
+					onClick={() => setMobilePanel("preview")}
+					className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-xs transition-colors ${
+						mobilePanel === "preview"
+							? "text-blue-400"
+							: "text-gray-500 hover:text-gray-300"
+					}`}
+				>
+					<Icon icon="lucide:eye" className="h-4 w-4" />
+					Preview
+				</button>
+			</nav>
+		</div>
+	);
+}
 
-							{/* Mock Input */}
-							<div className="w-full max-w-50 space-y-3">
-								<input
-									type="text"
-									placeholder="Email"
-									disabled
-									className="w-full px-3 py-2 text-sm transition-colors"
-									style={{
-										backgroundColor:
-											previewMode === "dark" ? "#1f2937" : "#ffffff",
-										borderColor: previewMode === "dark" ? "#374151" : "#d1d5db",
-										borderWidth: "1px",
-										borderStyle: "solid",
-										color: previewMode === "dark" ? "#9ca3af" : "#6b7280",
-										borderRadius:
-											themeData.radius === "none"
-												? "0"
-												: themeData.radius === "sm"
-													? "0.25rem"
-													: themeData.radius === "lg"
-														? "0.75rem"
-														: themeData.radius === "full"
-															? "9999px"
-															: "0.375rem",
-									}}
-								/>
-								<button
-									type="button"
-									disabled
-									className="w-full px-3 py-2 text-white text-sm font-medium transition-colors"
-									style={{
-										backgroundColor:
-											typeof themeData.primary === "object"
-												? previewMode === "dark"
-													? themeData.primary.dark || themeData.primary.light
-													: themeData.primary.light || themeData.primary.dark
-												: themeData.primary || "#4F46E5",
-										borderRadius:
-											themeData.radius === "none"
-												? "0"
-												: themeData.radius === "sm"
-													? "0.25rem"
-													: themeData.radius === "lg"
-														? "0.75rem"
-														: themeData.radius === "full"
-															? "9999px"
-															: "0.375rem",
-										color: previewMode === "dark" ? "#000000" : "#ffffff",
-									}}
-								>
-									Continue
-								</button>
-							</div>
-						</div>
-					</div>
+function ThemePreviewPanel({
+	previewMode,
+	setPreviewMode,
+	themeData,
+}: {
+	previewMode: "light" | "dark";
+	setPreviewMode: (mode: "light" | "dark") => void;
+	themeData: Theme;
+}) {
+	const previewBackground =
+		typeof themeData.background === "object"
+			? previewMode === "dark"
+				? themeData.background.dark || "#111827"
+				: themeData.background.light || "#f9fafb"
+			: themeData.background ||
+				(previewMode === "dark" ? "#111827" : "#f9fafb");
+
+	const previewLogo =
+		typeof themeData.logo === "object"
+			? previewMode === "dark"
+				? themeData.logo.dark || themeData.logo.light
+				: themeData.logo.light || themeData.logo.dark
+			: themeData.logo;
+
+	const previewPrimary =
+		typeof themeData.primary === "object"
+			? previewMode === "dark"
+				? themeData.primary.dark || themeData.primary.light
+				: themeData.primary.light || themeData.primary.dark
+			: themeData.primary || "#4F46E5";
+
+	const previewRadius =
+		themeData.radius === "none"
+			? "0"
+			: themeData.radius === "sm"
+				? "0.25rem"
+				: themeData.radius === "lg"
+					? "0.75rem"
+					: themeData.radius === "full"
+						? "9999px"
+						: "0.375rem";
+
+	return (
+		<div className="rounded-lg border border-gray-700 bg-gray-800 p-4 lg:sticky lg:top-4">
+			<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<h3 className="text-base font-medium text-gray-300">Preview</h3>
+					<p className="mt-1 text-xs text-gray-500 md:hidden">
+						Switch between light and dark to inspect the theme output.
+					</p>
+				</div>
+				<div className="flex items-center gap-1 rounded-lg bg-gray-900 p-1">
+					<button
+						type="button"
+						onClick={() => setPreviewMode("light")}
+						className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+							previewMode === "light"
+								? "bg-gray-700 text-white"
+								: "text-gray-400 hover:text-gray-300"
+						}`}
+					>
+						<Icon icon="lucide:sun" className="mr-1 inline h-3.5 w-3.5" />
+						Light
+					</button>
+					<button
+						type="button"
+						onClick={() => setPreviewMode("dark")}
+						className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+							previewMode === "dark"
+								? "bg-gray-700 text-white"
+								: "text-gray-400 hover:text-gray-300"
+						}`}
+					>
+						<Icon icon="lucide:moon" className="mr-1 inline h-3.5 w-3.5" />
+						Dark
+					</button>
+				</div>
+			</div>
+			<div
+				className="flex min-h-75 flex-col items-center justify-center rounded-lg p-5 transition-colors sm:p-6"
+				style={{
+					backgroundColor: previewBackground,
+				}}
+			>
+				{themeData.logo && (
+					<img
+						src={previewLogo}
+						alt="Logo"
+						className="mb-4 h-16 w-16 object-contain"
+						onError={(e) => {
+							(e.target as HTMLImageElement).style.display = "none";
+						}}
+					/>
+				)}
+
+				<h2
+					className="mb-4 text-center text-xl font-semibold transition-colors wrap-break-word"
+					style={{
+						fontFamily: themeData.font?.family || "system-ui",
+						color: previewMode === "dark" ? "#f9fafb" : "#111827",
+					}}
+				>
+					{themeData.title || "Your App"}
+				</h2>
+
+				<div className="w-full max-w-50 space-y-3">
+					<input
+						type="text"
+						placeholder="Email"
+						disabled
+						className="w-full px-3 py-2 text-sm transition-colors"
+						style={{
+							backgroundColor: previewMode === "dark" ? "#1f2937" : "#ffffff",
+							borderColor: previewMode === "dark" ? "#374151" : "#d1d5db",
+							borderWidth: "1px",
+							borderStyle: "solid",
+							color: previewMode === "dark" ? "#9ca3af" : "#6b7280",
+							borderRadius: previewRadius,
+						}}
+					/>
+					<button
+						type="button"
+						disabled
+						className="w-full px-3 py-2 text-sm font-medium text-white transition-colors"
+						style={{
+							backgroundColor: previewPrimary,
+							borderRadius: previewRadius,
+							color: previewMode === "dark" ? "#000000" : "#ffffff",
+						}}
+					>
+						Continue
+					</button>
 				</div>
 			</div>
 		</div>

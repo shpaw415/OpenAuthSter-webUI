@@ -26,7 +26,7 @@ export function useProjectUsers(
 	useEffect(() => {
 		setPage(1);
 		setSearch(options.initialSearch || "");
-	}, [clientID, options.initialSearch]);
+	}, [options.initialSearch]);
 
 	const fetchUsers = useCallback(
 		async (params?: { page?: number; search?: string }) => {
@@ -60,7 +60,7 @@ export function useProjectUsers(
 	useEffect(() => {
 		if (!clientID) return;
 		fetchUsers();
-	}, [fetchUsers]);
+	}, [fetchUsers, clientID]);
 
 	const updateSearch = (value: string) => {
 		setPage(1);

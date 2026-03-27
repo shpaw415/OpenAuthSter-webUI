@@ -18,6 +18,9 @@
 			"recommended": true,
 			"complexity": {
 				"noArguments": "off"
+			},
+			"suspicious": {
+				"noArrayIndexKey": "off"
 			}
 		}
 	},

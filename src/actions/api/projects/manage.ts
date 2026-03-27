@@ -1,9 +1,10 @@
 import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
+import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
+	PUBLIC_CLIENT_ID,
 	type Project,
-	emailTemplatesTable,
+	createWebUiProject,
 	parseDBProject,
 } from "openauth-webui-shared-types";
 import {
@@ -29,7 +30,7 @@ import {
 export async function GET(params: {
 	clientID: string;
 }): Promise<{ success: boolean; data?: Project; error?: string }> {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, "", RequestDataContext>(arguments);
 
 	const session = await ctx.data.client.getUserSession("private");
 
@@ -38,6 +39,27 @@ export async function GET(params: {
 			success: false,
 			error: "Unauthorized",
 		};
+	}
+
+	if (params.clientID === PUBLIC_CLIENT_ID) {
+		return onSelfHosted<{
+			success: boolean;
+			data?: Project;
+			error?: string;
+		}>(
+			ctx.env.SELF_HOSTED,
+			() => ({
+				success: true,
+				data: createWebUiProject({
+					secret: ctx.env.WEBUI_SECRET,
+					originURL: ctx.env.PUBLIC_REDIRECT_URI,
+				}),
+			}),
+			{
+				success: false,
+				error: "Project not found",
+			},
+		);
 	}
 
 	const db = drizzle(ctx.env.PROJECT_DB);
@@ -87,7 +109,7 @@ export type updateProjectParams = {
 export async function PUT(
 	params: updateProjectParams,
 ): Promise<UpdateResponse> {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, "", RequestDataContext>(arguments);
 	const { env } = ctx;
 
 	const session = await ctx.data.client.getUserSession("private");
@@ -124,29 +146,6 @@ export async function PUT(
 			success: false,
 			error: "Invalid theme_id",
 		};
-	if (
-		params.data.emailTemplateId &&
-		!(await db
-			.select()
-			.from(emailTemplatesTable)
-			.where(
-				and(
-					eq(emailTemplatesTable.id, params.data.emailTemplateId),
-					ownerGroupConditions({
-						user_group_ids: session?.private?.group_ids ?? [],
-						ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
-						otherEq: [eq(emailTemplatesTable.owner_id, session.user_id)],
-						self_host: env.SELF_HOSTED,
-					}),
-				),
-			)
-			.get()
-			.then((e) => Boolean(e)))
-	)
-		return {
-			success: false,
-			error: "Invalid emailTemplateId",
-		};
 
 	try {
 		// Check if project exists
@@ -175,7 +174,7 @@ export async function PUT(
 			};
 		}
 
-		const updates: Record<string, any> = {};
+		const updates: Record<string, unknown> = {};
 		if (typeof params.data.active === "boolean") {
 			updates.active = params.data.active;
 		}
@@ -185,14 +184,8 @@ export async function PUT(
 		if (params.data.theme_id !== undefined) {
 			updates.theme_id = params.data.theme_id;
 		}
-		if (params.data.emailTemplateId !== undefined) {
-			updates.emailTemplateId = params.data.emailTemplateId;
-		}
 		if (params.data.projectData !== undefined) {
 			updates.projectData = JSON.stringify(params.data.projectData);
-		}
-		if (params.data.codeMode !== undefined) {
-			updates.codeMode = params.data.codeMode;
 		}
 		if (params.data.originURL !== undefined) {
 			updates.originURL = params.data.originURL;
@@ -254,7 +247,7 @@ export async function PUT(
 export async function DELETE(params: {
 	clientID: string;
 }): Promise<{ success: boolean; error?: string }> {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, "", RequestDataContext>(arguments);
 	const { env } = ctx;
 
 	const session = await ctx.data.client.getUserSession("private");
@@ -344,7 +337,7 @@ export async function DELETE(params: {
 	try {
 		await DeleteOTFusersTable(params.clientID, env.PROJECT_DB);
 		return { success: true };
-	} catch (error) {
+	} catch (_error) {
 		return {
 			success: false,
 			error: "Failed to delete associated user table",

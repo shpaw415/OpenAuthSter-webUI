@@ -1,4 +1,5 @@
 import { FunctionEditorModal } from "@components/FunctionEditorModal";
+import { HeaderIconButton } from "@components/HeaderIconButton";
 import { useEmailTemplate, useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
@@ -388,14 +389,19 @@ export default function EmailTemplatesManage() {
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5 shrink-0">
-					<button
-						type="button"
+					{projectId && (
+						<HeaderIconButton
+							as="a"
+							href={`/dashboard/templates/collaborator?project_id=${projectId}${templateName ? `&template_name=${templateName}` : ""}`}
+							icon="lucide:users"
+							title="Email Template Collaborators"
+						/>
+					)}
+					<HeaderIconButton
 						onClick={() => setShowHelp(true)}
-						className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+						icon="lucide:book-open"
 						title="Mustache template guide"
-					>
-						<Icon icon="lucide:book-open" className="w-4 h-4" />
-					</button>
+					/>
 					<button
 						type="button"
 						onClick={handleSave}

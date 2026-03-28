@@ -141,7 +141,7 @@ export default function AdminPanel() {
 	const [versionOutdated, setVersionOutdated] = useState(false);
 
 	const projectHook = useProjects();
-	const dashboard = useDashboard({ pollInterval: 60000 });
+	const dashboard = useDashboard({ pollInterval: 60000 * 5 }); // Refresh every 5 minutes
 
 	const checkVersions = useCallback(async () => {
 		if (process.env.NODE_ENV === "development") return;

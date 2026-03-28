@@ -68,6 +68,13 @@ export async function POST({
 			invite_user_id: user_id,
 		});
 
+	if (existingInvite && inviteManager.alreadyCollaborator(existingInvite)) {
+		return {
+			success: false,
+			error: "User is already a collaborator",
+		};
+	}
+
 	if (existingInvite) {
 		await inviteManager.deleteById(existingInvite.id);
 		const newInvite = await create();

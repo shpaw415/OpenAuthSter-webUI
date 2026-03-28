@@ -1,4 +1,7 @@
-import { DELETE as cancelInvite, POST as createInvite } from "@api/invites/project/manage";
+import {
+	DELETE as cancelEmailTemplateInvite,
+	POST as createEmailTemplateInvite,
+} from "@api/invites/template/email/manage";
 import {
 	CollaboratorManagementSection,
 	type InviteItem,
@@ -7,9 +10,17 @@ import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { Icon } from "@iconify/react";
 
-export default function ProjectCollaborators() {
-	const { project_id: clientID } = useParams<{ project_id: string }>();
+export default function EmailTemplateCollaborators() {
+	const { project_id: clientID, template_name: templateName } = useParams<{
+		project_id: string;
+		template_name?: string;
+	}>();
+
 	const projectHook = useProject(clientID);
+
+	const backHref = templateName
+		? `/dashboard/templates/manage?edit=${templateName}&project_id=${clientID}`
+		: "/dashboard/templates";
 
 	if (projectHook.isLoading) {
 		return (
@@ -41,14 +52,14 @@ export default function ProjectCollaborators() {
 						Something went wrong
 					</h2>
 					<p className="text-red-300 text-sm text-center max-w-md mb-8">
-						{projectHook.error}
+						{projectHook.error ?? "Project not found"}
 					</p>
 					<a
-						href={`/dashboard/project?project_id=${clientID}`}
+						href={backHref}
 						className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
 					>
 						<Icon icon="lucide:arrow-left" className="w-4 h-4" />
-						<span>Back to Project</span>
+						<span>Back</span>
 					</a>
 				</div>
 			</div>
@@ -62,15 +73,20 @@ export default function ProjectCollaborators() {
 			{/* Header */}
 			<div className="flex items-center space-x-4">
 				<a
-					href={`/dashboard/project?project_id=${clientID}`}
+					href={backHref}
 					className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
 				>
 					<Icon icon="lucide:arrow-left" className="w-5 h-5" />
 					<span>Back</span>
 				</a>
 				<div>
-					<h2 className="text-2xl font-bold text-white">Collaborators</h2>
-					<p className="text-gray-400 mt-1">{project.name}</p>
+					<h2 className="text-2xl font-bold text-white">
+						Email Template Collaborators
+					</h2>
+					<p className="text-gray-400 mt-1">
+						{templateName ? `${templateName} · ` : ""}
+						{project.name}
+					</p>
 				</div>
 			</div>
 
@@ -78,12 +94,12 @@ export default function ProjectCollaborators() {
 				ownerGroupId={project.owner_group_id}
 				ownerId={project.owner_id}
 				isOwner={isProjectOwner}
-				inviteType="project"
-				inviteDescription="Invite another user to co-manage this project by their user ID."
+				inviteType="email_template"
+				inviteDescription="Invite another user to access email templates for this project by their user ID."
 				onInvite={
 					isProjectOwner
 						? (userId, fromName) =>
-								createInvite({
+								createEmailTemplateInvite({
 									user_id: userId,
 									client_id: project.clientID,
 									from_name: fromName,
@@ -91,7 +107,7 @@ export default function ProjectCollaborators() {
 						: undefined
 				}
 				onCancelInvite={(invite: InviteItem) =>
-					cancelInvite({
+					cancelEmailTemplateInvite({
 						user_id: invite.user_id,
 						owner_group_id: invite.owner_group_id,
 					})

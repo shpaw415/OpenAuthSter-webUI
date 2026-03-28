@@ -10,6 +10,8 @@ export type InviteType =
 	| "email_template"
 	| "copy_template";
 
+export type InviteStatus = "pending" | "accepted" | "declined";
+
 export const invites = (_db: D1Database) => {
 	const db = drizzle(_db);
 
@@ -78,10 +80,7 @@ export const invites = (_db: D1Database) => {
 			.run()
 			.then((res) => res.success);
 	}
-	function updateStatus(
-		id: number,
-		status: "accepted" | "declined" | "pending",
-	) {
+	function updateStatus(id: number, status: InviteStatus) {
 		return db
 			.update(inviteTable)
 			.set({ status })
@@ -126,10 +125,12 @@ export const invites = (_db: D1Database) => {
 			}
 
 			await authClient.updateUserSession("private", {
-				group_ids: [
+				group_ids: new Set([
 					...(currentUserSession.private?.group_ids || []),
 					res.owner_group_id,
-				],
+				])
+					.values()
+					.toArray(),
 			});
 
 			return { success: await updateStatus(res.id, "accepted") };
@@ -214,6 +215,9 @@ export const invites = (_db: D1Database) => {
 					),
 				)
 				.get();
+		},
+		alreadyCollaborator(entry: typeof inviteTable.$inferSelect) {
+			return entry.status === "accepted";
 		},
 	};
 };

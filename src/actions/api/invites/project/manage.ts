@@ -2,7 +2,7 @@ import type { RequestDataContext } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { projectTable } from "openauth-webui-shared-types";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import { invites } from "../share";
+import { invites, type InviteStatus, type InviteType } from "../share";
 
 /**
  * POST /api/projects/invite - Invite a user to a project
@@ -61,6 +61,13 @@ export async function POST({
 		owner_group_id: project.owner_group_id,
 		from_id: current_user_id,
 	});
+
+	if (existingInvite && inviteManager.alreadyCollaborator(existingInvite)) {
+		return {
+			success: false,
+			error: "User is already a collaborator",
+		};
+	}
 
 	const create = () => {
 		return inviteManager.create({

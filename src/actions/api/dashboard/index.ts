@@ -4,7 +4,6 @@ import { getContext } from "frame-master-plugin-cloudflare-pages-functions-actio
 import type { Project } from "openauth-webui-shared-types";
 import {
 	createWebUiProject,
-	isClientIdValid,
 	LogsTable,
 	OTFusersTable,
 	parseDBProject,
@@ -91,7 +90,7 @@ export async function GET(): Promise<{
 	error?: string;
 	data?: DashboardData;
 }> {
-	const { env, data } = getContext<Env, any, RequestDataContext>(arguments);
+	const { env, data } = getContext<Env, "", RequestDataContext>(arguments);
 	const db = drizzle(env.PROJECT_DB);
 
 	const session = await data.client.getUserSession("private");
@@ -126,7 +125,29 @@ export async function GET(): Promise<{
 				),
 			null,
 		);
+
 		const parsedProjects = projects.map(parseDBProject) as Project[];
+
+		if (parsedProjects.length === 0) {
+			return {
+				success: true,
+				data: {
+					kpis: {
+						totalProjects: 0,
+						totalUsers: 0,
+						totalErrors24h: 0,
+						totalWebhooks: 0,
+					},
+					projectStats: [],
+					recentLogs: [],
+					alerts: [],
+					usageOverTime: {
+						buckets: [],
+						series: [],
+					},
+				},
+			};
+		}
 
 		const projectStatsMap = new Map<
 			string,
@@ -146,7 +167,6 @@ export async function GET(): Promise<{
 
 		// 2. User count per project
 		for (const p of parsedProjects) {
-			if (!isClientIdValid(p.clientID)) continue;
 			try {
 				const usersTable = OTFusersTable(p.clientID);
 				const countRow = await db
@@ -181,7 +201,13 @@ export async function GET(): Promise<{
 
 		// 4. Recent logs (all projects, limit 15)
 		const recentLogsRows = await db
-			.select()
+			.select({
+				id: LogsTable.id,
+				clientID: LogsTable.clientID,
+				type: LogsTable.type,
+				message: LogsTable.message,
+				timestamp: LogsTable.timestamp,
+			})
 			.from(LogsTable)
 			.where(
 				or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
@@ -346,7 +372,7 @@ export async function GET(): Promise<{
 			const idx = bucketToIndex.get(bucketKey);
 			if (idx !== undefined) {
 				const arr = countByProjectAndBucket.get(row.clientID);
-				if (arr) arr[idx]!++;
+				if (arr?.[idx] !== undefined) arr[idx]++;
 				else {
 					const newArr = Array(buckets.length).fill(0);
 					newArr[idx] = 1;

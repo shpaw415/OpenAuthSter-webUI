@@ -16,7 +16,7 @@ export async function POST({
 	client_id: string;
 	from_name: string;
 }) {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, "", RequestDataContext>(arguments);
 
 	const current_user_id = (await ctx.data.client.getMetaData())?.id;
 
@@ -74,6 +74,13 @@ export async function POST({
 			invite_user_id: user_id,
 		});
 	};
+
+	if (existingInvite && inviteManager.alreadyCollaborator(existingInvite)) {
+		return {
+			success: false,
+			error: "User is already a collaborator",
+		};
+	}
 
 	if (existingInvite) {
 		await inviteManager.deleteById(existingInvite.id);

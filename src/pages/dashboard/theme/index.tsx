@@ -1,6 +1,6 @@
 import { type UITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
-import type { Theme } from "@openauthjs/openauth/ui/theme";
+import type { Theme } from "@kagii/openauth/ui/theme";
 import { useState } from "react";
 
 export default function UIThemeList() {

@@ -1,18 +1,17 @@
 import { useUITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
 import { Snackbar } from "@material/react-snackbar";
-import type { Theme } from "@openauthjs/openauth/ui/theme";
+import type { Theme } from "@kagii/openauth/ui/theme";
 import { navigate } from "@utils";
 import { useCallback, useEffect, useState } from "react";
 
 const importTheme = {
-	SST: () => import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_SST),
+	SST: () => import("@kagii/openauth/ui/theme").then((m) => m.THEME_SST),
 	supabase: () =>
-		import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_SUPABASE),
+		import("@kagii/openauth/ui/theme").then((m) => m.THEME_SUPABASE),
 	terminal: () =>
-		import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_TERMINAL),
-	vercel: () =>
-		import("@openauthjs/openauth/ui/theme").then((m) => m.THEME_VERCEL),
+		import("@kagii/openauth/ui/theme").then((m) => m.THEME_TERMINAL),
+	vercel: () => import("@kagii/openauth/ui/theme").then((m) => m.THEME_VERCEL),
 };
 
 const DEFAULT_THEME: Theme = {

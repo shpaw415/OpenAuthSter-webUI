@@ -11,7 +11,7 @@ declare namespace Cloudflare {
 		PUBLIC_ISSUER: string;
 		PUBLIC_CLIENT_ID: string;
 		PUBLIC_REDIRECT_URI: string;
-		CLOUDFLARE_ACCOUNT_ID: string;
+		CF_ACCOUNT_ID: string;
 		CLOUDFLARE_TOKEN: string;
 		CLOUDFLARE_D1_ID: string;
 		CLOUDFLARE_API_TOKEN: string;

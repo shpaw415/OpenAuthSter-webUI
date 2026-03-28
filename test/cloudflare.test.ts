@@ -15,7 +15,7 @@ const env: Env = {
 
 if (
 	!env.CLOUDFLARE_API_TOKEN ||
-	!env.CLOUDFLARE_ACCOUNT_ID ||
+	!env.CF_ACCOUNT_ID ||
 	!env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID ||
 	!env.CLOUDFLARE_WORKER_SERVICE_NAME ||
 	!env.PUBLIC_ISSUER
@@ -35,7 +35,7 @@ afterAll(async () => {
 	if (newCreatedDomaineID) {
 		// Clean up the created custom domain
 		await client.workers.domains.delete(newCreatedDomaineID, {
-			account_id: env.CLOUDFLARE_ACCOUNT_ID,
+			account_id: env.CF_ACCOUNT_ID,
 		});
 		console.log("Deleted custom domain:", newCreatedDomaineID);
 	}

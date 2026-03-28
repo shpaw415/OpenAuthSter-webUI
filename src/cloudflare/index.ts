@@ -29,7 +29,7 @@ export async function createCustomDomainForProject(
 
 	try {
 		const domaine = await cf.workers.domains.update({
-			account_id: env.CLOUDFLARE_ACCOUNT_ID,
+			account_id: env.CF_ACCOUNT_ID,
 			zone_id: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
 			hostname: newDomaineName,
 			service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
@@ -43,7 +43,7 @@ export async function createCustomDomainForProject(
 			error,
 			{
 				domaineName: newDomaineName,
-				accountId: env.CLOUDFLARE_ACCOUNT_ID,
+				accountId: env.CF_ACCOUNT_ID,
 				zoneId: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
 				service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
 			},
@@ -57,7 +57,7 @@ export async function deleteCustomDomainForProject(
 	domaineID: string,
 ): Promise<void> {
 	return client.workers.domains.delete(domaineID, {
-		account_id: env.CLOUDFLARE_ACCOUNT_ID,
+		account_id: env.CF_ACCOUNT_ID,
 	});
 }
 

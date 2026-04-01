@@ -5,7 +5,6 @@ import {
 	type Project,
 	type ProviderConfig,
 	createWebUiProject,
-	parseDBProject,
 } from "openauth-webui-shared-types";
 import {
 	createUserTable,
@@ -13,7 +12,7 @@ import {
 	isClientIdValid,
 	projectTable,
 } from "openauth-webui-shared-types/database";
-import { drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import {
 	CloudflareClientError,
 	createClient,
@@ -27,7 +26,7 @@ export async function GET(): Promise<{
 	error?: string;
 	data: Project[];
 }> {
-	const { env, data } = getContext<Env, any, RequestDataContext>(arguments);
+	const { env, data } = getContext<Env, never, RequestDataContext>(arguments);
 
 	const session = await data.client.getUserSession("private");
 
@@ -66,7 +65,7 @@ export async function GET(): Promise<{
 
 	return {
 		success: true,
-		data: projects.map(parseDBProject),
+		data: projects,
 	};
 }
 
@@ -80,7 +79,7 @@ export async function POST(params: {
 	name: string;
 	providers_data?: ProviderConfig[];
 }): Promise<{ success: boolean; error?: string; data?: Project }> {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 	const { env, data } = ctx;
 
 	const currentUserId = (await data.client.getMetaData())?.id;
@@ -181,7 +180,7 @@ export async function POST(params: {
 		}
 
 		return await createUserTable(clientID, env.PROJECT_DB)
-			.then(() => ({ success: true, data: parseDBProject(insertedProject) }))
+			.then(() => ({ success: true, data: insertedProject }))
 			.catch(async (err) => {
 				console.error(
 					`Failed to create user table for project ${clientID}: ${err}`,

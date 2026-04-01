@@ -97,7 +97,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 				}, 1000);
 			}
 		});
-		if (auth.isAuthenticated && !auth.userMeta.user_id) {
+		if (auth.isAuthenticated && !auth.userMeta.id) {
 			auth.getUserSession("public").then((session) => {
 				if (session instanceof Error) return;
 				auth.triggerUpdate();

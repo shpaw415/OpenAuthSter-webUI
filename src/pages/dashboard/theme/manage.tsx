@@ -1,6 +1,6 @@
 import { useUITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
+import { AppSnackbar } from "@components/AppSnackbar";
 import type { Theme } from "@kagii/openauth/ui/theme";
 import { navigate } from "@utils";
 import { useCallback, useEffect, useState } from "react";
@@ -32,7 +32,7 @@ export default function UIThemeManage() {
 	const [isEditMode, setIsEditMode] = useState(false);
 	const [themeName, setThemeName] = useState("");
 	const [themeId, setThemeId] = useState<number | null>(null);
-	const [themeData, setThemeData] = useState<Theme>(DEFAULT_THEME);
+	const [themeData, setThemeData] = useState<Partial<Theme>>(DEFAULT_THEME);
 	const [isSaving, setIsSaving] = useState(false);
 	const [notification, setNotification] = useState<{
 		type: "success" | "error";
@@ -222,13 +222,7 @@ export default function UIThemeManage() {
 	return (
 		<div className="max-w-7xl mx-auto px-4 pb-24 pt-4 sm:px-6 sm:py-6 md:pb-6 lg:px-8 lg:py-8">
 			{/* Notification */}
-			{notification && (
-				<Snackbar
-					message={notification.message}
-					timeoutMs={4000}
-					actionText="OK"
-				/>
-			)}
+			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
 
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -251,23 +245,34 @@ export default function UIThemeManage() {
 						</p>
 					</div>
 				</div>
-				<button
-					onClick={handleSave}
-					disabled={isSaving}
-					type="submit"
-					className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-				>
-					{isSaving ? (
-						<>
-							<div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-							<span className="hidden sm:inline">Saving...</span>
-						</>
-					) : (
-						<>
-							Save<span className="hidden sm:inline"> Theme</span>
-						</>
+				<div className="flex w-full items-center gap-2 sm:w-auto">
+					{isEditMode && themeId && (
+						<a
+							href={`/dashboard/theme/collaborator?theme_id=${themeId}`}
+							className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white sm:flex-none"
+						>
+							<Icon icon="lucide:users" className="h-4 w-4" />
+							<span className="hidden sm:inline">Collaborators</span>
+						</a>
 					)}
-				</button>
+					<button
+						onClick={handleSave}
+						disabled={isSaving}
+						type="submit"
+						className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+					>
+						{isSaving ? (
+							<>
+								<div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+								<span className="hidden sm:inline">Saving...</span>
+							</>
+						) : (
+							<>
+								Save<span className="hidden sm:inline"> Theme</span>
+							</>
+						)}
+					</button>
+				</div>
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -858,7 +863,7 @@ function ThemePreviewPanel({
 }: {
 	previewMode: "light" | "dark";
 	setPreviewMode: (mode: "light" | "dark") => void;
-	themeData: Theme;
+	themeData: Partial<Theme>;
 }) {
 	const previewBackground =
 		typeof themeData.background === "object"

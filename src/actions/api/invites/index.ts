@@ -21,7 +21,7 @@ export async function GET({
 	const db = drizzle(ctx.env.PROJECT_DB);
 	const userInfo = await ctx.data.client.getMetaData();
 
-	if (!userInfo) {
+	if (!userInfo?.id) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -123,7 +123,7 @@ export async function GET({
 export async function DELETE({ code }: { code: string }) {
 	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 	const userInfo = await ctx.data.client.getMetaData();
-	if (!userInfo) {
+	if (!userInfo?.id) {
 		return { success: false, error: "Unauthorized" };
 	}
 

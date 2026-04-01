@@ -3,7 +3,7 @@ import { DELETE as revokeCollaborator } from "@api/invites/revoke";
 import { GET as getUserInfo } from "@api/users/info";
 import { InviteCollaboratorForm } from "@components/vary";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
+import { AppSnackbar } from "@components/AppSnackbar";
 import {
 	type ReactNode,
 	useCallback,
@@ -152,13 +152,7 @@ export function CollaboratorManagementSection({
 
 	return (
 		<>
-			{notification && (
-				<Snackbar
-					message={notification.message}
-					actionText="OK"
-					onClose={() => setNotification(null)}
-				/>
-			)}
+			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
 
 			{isOwner && onInvite && (
 				<InviteCollaboratorForm

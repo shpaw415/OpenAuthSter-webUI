@@ -4,6 +4,27 @@ import {
 	type ProjectUser,
 } from "@api/users";
 import { useCallback, useEffect, useState } from "react";
+import { createServerCache, useServerCacheValue } from "./serverCache";
+
+type CachedProjectUsersPage = {
+	users: ProjectUser[];
+	total: number;
+};
+
+const projectUsersCache = createServerCache<CachedProjectUsersPage>();
+
+function getProjectUsersCacheKey(
+	clientID: string,
+	page: number,
+	pageSize: number,
+	search: string,
+) {
+	return `${clientID}:${pageSize}:${page}:${search}`;
+}
+
+function clearProjectUsersCache(clientID: string) {
+	projectUsersCache.clearMatching((key) => key.startsWith(`${clientID}:`));
+}
 
 export type UseProjectUsersOptions = {
 	pageSize?: number;
@@ -14,14 +35,18 @@ export function useProjectUsers(
 	clientID: string,
 	options: UseProjectUsersOptions = {},
 ) {
-	const [users, setUsers] = useState<ProjectUser[]>([]);
-	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState(options.initialSearch || "");
-	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const pageSize = options.pageSize ?? 20;
+	const cacheKey = getProjectUsersCacheKey(clientID, page, pageSize, search);
+	const cachedPage = useServerCacheValue(projectUsersCache, cacheKey);
+	const users = cachedPage?.users ?? [];
+	const total = cachedPage?.total ?? 0;
+	const [isLoading, setIsLoading] = useState(
+		() => Boolean(clientID) && projectUsersCache.getSnapshot(cacheKey) === undefined,
+	);
 
 	useEffect(() => {
 		setPage(1);
@@ -29,25 +54,48 @@ export function useProjectUsers(
 	}, [options.initialSearch]);
 
 	const fetchUsers = useCallback(
-		async (params?: { page?: number; search?: string }) => {
+		async (
+			params?: { page?: number; search?: string },
+			force = true,
+		) => {
 			if (!clientID) return;
-			setIsLoading(true);
+
+			const nextPage = params?.page ?? page;
+			const nextSearch = params?.search ?? search;
+			const nextKey = getProjectUsersCacheKey(
+				clientID,
+				nextPage,
+				pageSize,
+				nextSearch,
+			);
+
+			if (force || projectUsersCache.getSnapshot(nextKey) === undefined) {
+				setIsLoading(true);
+			}
 			setError(null);
 
 			try {
-				const response = await getProjectUsers({
-					clientID,
-					page: params?.page ?? page,
-					pageSize,
-					search: params?.search ?? search,
-				});
+				await projectUsersCache.fetch(
+					nextKey,
+					async () => {
+						const response = await getProjectUsers({
+							clientID,
+							page: nextPage,
+							pageSize,
+							search: nextSearch,
+						});
 
-				if (!response.success || !response.data) {
-					throw new Error(response.error || "Failed to fetch users");
-				}
+						if (!response.success || !response.data) {
+							throw new Error(response.error || "Failed to fetch users");
+						}
 
-				setUsers(response.data.users);
-				setTotal(response.data.total);
+						return {
+							users: response.data.users,
+							total: response.data.total,
+						};
+					},
+					{ force },
+				);
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Unknown error");
 			} finally {
@@ -59,7 +107,7 @@ export function useProjectUsers(
 
 	useEffect(() => {
 		if (!clientID) return;
-		fetchUsers();
+		void fetchUsers(undefined, false);
 	}, [fetchUsers, clientID]);
 
 	const updateSearch = (value: string) => {
@@ -77,7 +125,7 @@ export function useProjectUsers(
 		error,
 		setPage,
 		setSearch: updateSearch,
-		refetch: () => fetchUsers({ page, search }),
+		refetch: (force = true) => fetchUsers({ page, search }, force),
 		deleteUser: async (userID: string) => {
 			if (!clientID) {
 				throw new Error("Missing client ID");
@@ -91,7 +139,8 @@ export function useProjectUsers(
 				throw new Error(res.error || "Failed to delete user");
 			}
 
-			await fetchUsers({ page, search });
+			clearProjectUsersCache(clientID);
+			await fetchUsers({ page, search }, true);
 		},
 	};
 }

@@ -3,13 +3,12 @@ import { FunctionEditorModal } from "@components/FunctionEditorModal";
 import { SelectWrapper, TemplateSelection } from "@components/InputFields";
 import { ProviderIcon } from "@components/provider-icons";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
-import { useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { useUIThemes } from "@hooks/useUIThemes";
 import { useWebHook } from "@hooks/useWebHook";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
+import { AppSnackbar } from "@components/AppSnackbar";
 import type {
 	Project,
 	ProjectData,
@@ -44,6 +43,7 @@ const STANDARD_PROJECT_DATA_FIELDS = [
 	"logoUrl",
 	"primaryColor",
 	"emailFrom",
+	"roles",
 ] as const;
 
 const WEBHOOK_EVENT_OPTIONS = WebHookEventsDetails;
@@ -250,13 +250,7 @@ export default function ProjectDetail() {
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-10">
 			{/* Notification */}
-			{notification && (
-				<Snackbar
-					message={notification.message}
-					actionText="OK"
-					onClose={() => setNotification(null)}
-				/>
-			)}
+			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
 
 			{/* Header */}
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -583,6 +577,17 @@ export default function ProjectDetail() {
 									Use in templates: {"{{logoUrl}}"}
 								</p>
 							</div>
+							<RolesField
+								roles={
+									(projectData.roles as unknown as string[] | undefined) || []
+								}
+								onChange={(roles) =>
+									setProjectData({
+										...projectData,
+										roles,
+									})
+								}
+							/>
 							<div>
 								<label
 									className="block text-gray-300 text-sm mb-1"
@@ -633,6 +638,10 @@ export default function ProjectDetail() {
 												key as (typeof STANDARD_PROJECT_DATA_FIELDS)[number],
 											),
 									)
+									.map(([key, value]) => [
+										key,
+										Array.isArray(value) ? value.join(",") : value,
+									])
 									.map(([key, value]) => (
 										<div key={key} className="flex gap-2 items-center">
 											<span className="text-gray-400 text-sm w-32 truncate">
@@ -651,8 +660,10 @@ export default function ProjectDetail() {
 														type="button"
 														onClick={() =>
 															setFnEditorModal({
-																key,
-																draft: value.slice("function::".length),
+																key: key as string,
+																draft: value.slice(
+																	"function::".length,
+																) as string,
 															})
 														}
 														className="text-purple-400 hover:text-purple-200 text-xs underline"
@@ -667,7 +678,7 @@ export default function ProjectDetail() {
 													onChange={(e) =>
 														setProjectData({
 															...projectData,
-															[key]: e.target.value,
+															[key as string]: e.target.value,
 														})
 													}
 													className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
@@ -677,7 +688,7 @@ export default function ProjectDetail() {
 												type="button"
 												onClick={() => {
 													const newData = { ...projectData };
-													delete newData[key];
+													delete newData[key as string];
 													setProjectData(newData);
 												}}
 												className="px-2 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
@@ -1045,7 +1056,31 @@ function ProjectClientInfo({
 }) {
 	const [showSecret, setShowSecret] = useState(false);
 
-	if (!project) throw new Error("Project is not provided");
+	if (!project) {
+		return (
+			<div className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-pulse">
+				<div className="flex items-center space-x-2 mb-5">
+					<div className="w-5 h-5 rounded bg-gray-700" />
+					<div className="h-6 w-44 rounded bg-gray-700" />
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+					<div className="space-y-2">
+						<div className="h-4 w-20 rounded bg-gray-700" />
+						<div className="h-9 rounded-lg bg-gray-700" />
+					</div>
+					<div className="space-y-2">
+						<div className="h-4 w-24 rounded bg-gray-700" />
+						<div className="h-9 rounded-lg bg-gray-700" />
+					</div>
+					<div className="space-y-2 md:col-span-2">
+						<div className="h-4 w-28 rounded bg-gray-700" />
+						<div className="h-9 rounded-lg bg-gray-700" />
+						<div className="h-3 w-3/4 rounded bg-gray-700 mt-2" />
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -1385,7 +1420,7 @@ function InviteLinkModal({
 								type="number"
 								value={expiresIn}
 								onChange={(e) =>
-									setExpiresIn(Math.max(1, parseInt(e.target.value) || 60))
+									setExpiresIn(Math.max(1, parseInt(e.target.value, 10) || 60))
 								}
 								disabled={isLoading}
 								min="1"
@@ -1492,6 +1527,82 @@ function InviteLinkModal({
 					</button>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+function RolesField({
+	roles,
+	onChange,
+}: {
+	roles: string[];
+	onChange: (roles: string[]) => void;
+}) {
+	const [newRole, setNewRole] = useState("");
+
+	const handleAdd = () => {
+		const trimmed = newRole.trim();
+		if (trimmed && !roles.includes(trimmed)) {
+			onChange([...roles, trimmed]);
+			setNewRole("");
+		}
+	};
+
+	return (
+		<div className="md:col-span-2">
+			<label className="block text-gray-300 text-sm mb-1" htmlFor="roles-input">
+				Roles
+			</label>
+			<div className="flex flex-wrap gap-2 mb-2 min-h-8">
+				{roles.map((role) => (
+					<span
+						key={role}
+						className="inline-flex items-center gap-1 px-2 py-1 bg-blue-900/40 border border-blue-700/50 rounded text-blue-300 text-sm"
+					>
+						{role}
+						<button
+							type="button"
+							onClick={() => onChange(roles.filter((r) => r !== role))}
+							className="text-blue-400 hover:text-blue-200 ml-1"
+							title={`Remove ${role}`}
+						>
+							<Icon icon="lucide:x" className="w-3 h-3" />
+						</button>
+					</span>
+				))}
+				{roles.length === 0 && (
+					<span className="text-gray-500 text-sm">No roles defined</span>
+				)}
+			</div>
+			<div className="flex gap-2">
+				<input
+					id="roles-input"
+					type="text"
+					value={newRole}
+					onChange={(e) =>
+						setNewRole(e.target.value.replace(/[^a-zA-Z0-9_\-:.]/g, ""))
+					}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							handleAdd();
+						}
+					}}
+					placeholder="e.g. admin"
+					className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+				/>
+				<button
+					type="button"
+					onClick={handleAdd}
+					disabled={!newRole.trim() || roles.includes(newRole.trim())}
+					className="px-3 py-1.5 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+				>
+					+ Add Role
+				</button>
+			</div>
+			<p className="text-gray-500 text-xs mt-1">
+				Use in templates: {"{{roles}}"}
+			</p>
 		</div>
 	);
 }

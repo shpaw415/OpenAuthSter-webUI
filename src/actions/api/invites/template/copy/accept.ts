@@ -16,5 +16,5 @@ export async function POST({ code }: { code: string }) {
 	}
 
 	const manager = invites(ctx.env.PROJECT_DB);
-	await manager.confirmInvite(code, userId, "copy_template", ctx.data.client);
+	return await manager.confirmInvite(code, userId, "copy_template", ctx.data.client);
 }

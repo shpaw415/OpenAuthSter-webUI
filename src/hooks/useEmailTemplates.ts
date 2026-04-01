@@ -10,25 +10,82 @@ import {
 	type UpdateTemplateParams,
 	PUT as updateTemplateByName,
 } from "@api/templates/id";
-import type { EmailTemplateProps } from "openauth-webui-shared-types";
 import { useCallback, useEffect, useState } from "react";
+import { createServerCache, useServerCacheValue } from "./serverCache";
 
 export type { EmailTemplate };
 
+const EMAIL_TEMPLATES_CACHE_KEY = "all";
+const emailTemplatesCache = createServerCache<EmailTemplate[]>();
+const emailTemplateCache = createServerCache<EmailTemplate>();
+
+function upsertTemplate(
+	templates: EmailTemplate[],
+	nextTemplate: EmailTemplate,
+) {
+	const existingIndex = templates.findIndex(
+		(template) => template.name === nextTemplate.name,
+	);
+
+	if (existingIndex === -1) {
+		return [...templates, nextTemplate];
+	}
+
+	return templates.map((template) =>
+		template.name === nextTemplate.name ? nextTemplate : template,
+	);
+}
+
+function syncTemplate(template: EmailTemplate) {
+	emailTemplateCache.set(template.name, template);
+	emailTemplatesCache.update(EMAIL_TEMPLATES_CACHE_KEY, (currentTemplates) =>
+		upsertTemplate(currentTemplates ?? [], template),
+	);
+}
+
+function syncTemplates(templates: EmailTemplate[]) {
+	emailTemplatesCache.set(EMAIL_TEMPLATES_CACHE_KEY, templates);
+	for (const template of templates) {
+		emailTemplateCache.set(template.name, template);
+	}
+}
+
+function removeTemplateFromCache(name: string) {
+	emailTemplateCache.clear(name);
+	emailTemplatesCache.update(EMAIL_TEMPLATES_CACHE_KEY, (currentTemplates) =>
+		(currentTemplates ?? []).filter((template) => template.name !== name),
+	);
+}
+
 export function useEmailTemplates() {
-	const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const templates =
+		useServerCacheValue(emailTemplatesCache, EMAIL_TEMPLATES_CACHE_KEY) ?? [];
+	const [isLoading, setIsLoading] = useState(
+		() => emailTemplatesCache.getSnapshot(EMAIL_TEMPLATES_CACHE_KEY) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTemplates = useCallback(async () => {
-		setIsLoading(true);
+	const fetchTemplates = useCallback(async (force = true) => {
+		if (
+			force ||
+			emailTemplatesCache.getSnapshot(EMAIL_TEMPLATES_CACHE_KEY) === undefined
+		) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const result = await getTemplates();
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch templates");
-			}
-			setTemplates(result.data || []);
+			const data = await emailTemplatesCache.fetch(
+				EMAIL_TEMPLATES_CACHE_KEY,
+				async () => {
+					const result = await getTemplates();
+					if (!result.success) {
+						throw new Error(result.error || "Failed to fetch templates");
+					}
+					return result.data || [];
+				},
+				{ force },
+			);
+			syncTemplates(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unknown error");
 		} finally {
@@ -37,7 +94,7 @@ export function useEmailTemplates() {
 	}, []);
 
 	useEffect(() => {
-		fetchTemplates();
+		void fetchTemplates(false);
 	}, [fetchTemplates]);
 
 	const createTemplate = useCallback(async (params: CreateTemplateParams) => {
@@ -46,7 +103,7 @@ export function useEmailTemplates() {
 		if (!res.success) {
 			throw new Error(res.error || "Failed to create template");
 		}
-		setTemplates((prev) => [...prev, res.data!]);
+		syncTemplate(res.data!);
 		return res.data!;
 	}, []);
 
@@ -57,7 +114,7 @@ export function useEmailTemplates() {
 			throw new Error(res.error || "Failed to delete template");
 		}
 
-		setTemplates((prev) => prev.filter((t) => t.name !== name));
+		removeTemplateFromCache(name);
 	}, []);
 
 	return {
@@ -71,25 +128,37 @@ export function useEmailTemplates() {
 }
 
 export function useEmailTemplate(name: string = "") {
-	const [template, setTemplate] = useState<EmailTemplate | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+	const template = useServerCacheValue(emailTemplateCache, name) ?? null;
+	const [isLoading, setIsLoading] = useState(
+		() => Boolean(name) && emailTemplateCache.getSnapshot(name) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTemplate = useCallback(async () => {
+	const fetchTemplate = useCallback(async (force = true) => {
 		if (!name) {
 			setIsLoading(false);
 			return;
 		}
-		setIsLoading(true);
+		if (force || emailTemplateCache.getSnapshot(name) === undefined) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const result = await getTemplateByName({ name });
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch template");
-			} else if (!result.data) {
-				throw new Error("Template data is undefined");
-			}
-			setTemplate(result.data);
+			const data = await emailTemplateCache.fetch(
+				name,
+				async () => {
+					const result = await getTemplateByName({ name });
+					if (!result.success) {
+						throw new Error(result.error || "Failed to fetch template");
+					}
+					if (!result.data) {
+						throw new Error("Template data is undefined");
+					}
+					return result.data;
+				},
+				{ force },
+			);
+			syncTemplate(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unknown error");
 		} finally {
@@ -98,7 +167,7 @@ export function useEmailTemplate(name: string = "") {
 	}, [name]);
 
 	useEffect(() => {
-		fetchTemplate();
+		void fetchTemplate(false);
 	}, [fetchTemplate]);
 
 	const updateTemplate = async (
@@ -113,7 +182,7 @@ export function useEmailTemplate(name: string = "") {
 			throw new Error(error || "Failed to update template");
 		}
 
-		setTemplate(data!);
+		syncTemplate(data!);
 		return data!;
 	};
 

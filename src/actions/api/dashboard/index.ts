@@ -6,7 +6,6 @@ import {
 	createWebUiProject,
 	LogsTable,
 	OTFusersTable,
-	parseDBProject,
 	projectTable,
 	WebHookTable,
 } from "openauth-webui-shared-types/database";
@@ -126,9 +125,7 @@ export async function GET(): Promise<{
 			null,
 		);
 
-		const parsedProjects = projects.map(parseDBProject) as Project[];
-
-		if (parsedProjects.length === 0) {
+		if (projects.length === 0) {
 			return {
 				success: true,
 				data: {
@@ -155,7 +152,7 @@ export async function GET(): Promise<{
 		>();
 
 		// Initialize project stats
-		for (const p of parsedProjects) {
+		for (const p of projects) {
 			projectStatsMap.set(p.clientID, {
 				clientID: p.clientID,
 				userCount: 0,
@@ -166,7 +163,7 @@ export async function GET(): Promise<{
 		}
 
 		// 2. User count per project
-		for (const p of parsedProjects) {
+		for (const p of projects) {
 			try {
 				const usersTable = OTFusersTable(p.clientID);
 				const countRow = await db
@@ -186,9 +183,7 @@ export async function GET(): Promise<{
 		const webhooks = await db
 			.select()
 			.from(WebHookTable)
-			.where(
-				or(...parsedProjects.map((p) => eq(WebHookTable.clientID, p.clientID))),
-			);
+			.where(or(...projects.map((p) => eq(WebHookTable.clientID, p.clientID))));
 		const webhookCountByProject = new Map<string, number>();
 		for (const wh of webhooks) {
 			const c = webhookCountByProject.get(wh.clientID) ?? 0;
@@ -209,9 +204,7 @@ export async function GET(): Promise<{
 				timestamp: LogsTable.timestamp,
 			})
 			.from(LogsTable)
-			.where(
-				or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
-			)
+			.where(or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))))
 			.orderBy(desc(LogsTable.timestamp))
 			.limit(15);
 
@@ -232,7 +225,7 @@ export async function GET(): Promise<{
 				and(
 					eq(LogsTable.type, "error"),
 					gt(LogsTable.timestamp, oneDayAgo),
-					or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
+					or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))),
 				),
 			);
 
@@ -269,7 +262,7 @@ export async function GET(): Promise<{
 			.where(
 				and(
 					eq(LogsTable.type, "error"),
-					or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
+					or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))),
 				),
 			)
 			.orderBy(desc(LogsTable.timestamp));
@@ -323,7 +316,7 @@ export async function GET(): Promise<{
 		const totalWebhooks = webhooks.length;
 
 		const kpis: DashboardKPIs = {
-			totalProjects: parsedProjects.length,
+			totalProjects: projects.length,
 			totalUsers,
 			totalErrors24h,
 			totalWebhooks,
@@ -336,7 +329,7 @@ export async function GET(): Promise<{
 			.where(
 				and(
 					gt(LogsTable.timestamp, oneDayAgo),
-					or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
+					or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))),
 				),
 			);
 
@@ -357,7 +350,7 @@ export async function GET(): Promise<{
 		const bucketToIndex = new Map(buckets.map((b, i) => [b, i]));
 
 		const countByProjectAndBucket = new Map<string, number[]>();
-		for (const p of parsedProjects) {
+		for (const p of projects) {
 			countByProjectAndBucket.set(p.clientID, Array(buckets.length).fill(0));
 		}
 
@@ -381,7 +374,7 @@ export async function GET(): Promise<{
 			}
 		}
 
-		const usageSeries: UsageSeries[] = parsedProjects.map((p, i) => ({
+		const usageSeries: UsageSeries[] = projects.map((p, i) => ({
 			name: p.name,
 			color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length] as string,
 			counts:

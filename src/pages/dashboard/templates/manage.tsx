@@ -1,5 +1,6 @@
 import { FunctionEditorModal } from "@components/FunctionEditorModal";
 import { HeaderIconButton } from "@components/HeaderIconButton";
+import { useAuth } from "@hooks/useAuth";
 import { useEmailTemplate, useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
@@ -61,7 +62,7 @@ export default function EmailTemplatesManage() {
 	const [showPreview, setShowPreview] = useState(true);
 	const [showVariables, setShowVariables] = useState(true);
 	const [mockData, setMockData] =
-		useState<Record<string, string>>(DEFAULT_MOCK_DATA);
+		useState<Record<string, string | string[]>>(DEFAULT_MOCK_DATA);
 	const [mockDataError, setMockDataError] = useState<string | null>(null);
 	const [mockDataInitialized, setMockDataInitialized] = useState(false);
 	const [showHelp, setShowHelp] = useState(false);
@@ -74,8 +75,10 @@ export default function EmailTemplatesManage() {
 	>(null);
 	const [fnEditorModal, setFnEditorModal] = useState<{
 		key: string;
-		draft: string;
+		draft: string | string[];
 	} | null>(null);
+
+	const auth = useAuth();
 
 	useEffect(() => {
 		import("../../../sandbox").then((mod) =>
@@ -88,10 +91,14 @@ export default function EmailTemplatesManage() {
 		useProject(projectId);
 
 	const parseEmailTemplateProps = useCallback(
-		(props: Record<string, string>) => {
+		(props: Record<string, string | string[]>) => {
 			return Object.fromEntries(
 				Object.entries(props).map(([key, value]) => {
-					if (value.startsWith("function::") && createSandboxedFunction) {
+					if (
+						typeof value === "string" &&
+						value.startsWith("function::") &&
+						createSandboxedFunction
+					) {
 						return [
 							key,
 							createSandboxedFunction(
@@ -190,7 +197,7 @@ export default function EmailTemplatesManage() {
 		const projectData = linkedProject?.projectData;
 		if (projectData) {
 			setMockData((prevMockData) => {
-				const newMockData: Record<string, string> = {
+				const newMockData: Record<string, string | string[]> = {
 					...DEFAULT_MOCK_DATA,
 					...prevMockData,
 				};
@@ -213,15 +220,14 @@ export default function EmailTemplatesManage() {
 	}, [linkedProject?.projectData, mockDataInitialized]);
 
 	// Hook for fetching existing template in edit mode
-	const { template, isLoading, error } = useEmailTemplate(
+	const { template, isLoading, error, updateTemplate } = useEmailTemplate(
 		isEditMode ? templateName : "",
 	);
 
+	const isTemplateOwner = useMemo(() => template?.owner_id === auth.userMeta?.id, [template, auth.userMeta]);
+
 	// Hook for creating new templates
 	const { createTemplate } = useEmailTemplates();
-
-	// Hook for updating templates
-	const { updateTemplate } = useEmailTemplate(isEditMode ? templateName : "");
 
 	// Load template data when editing
 	useEffect(() => {
@@ -389,7 +395,7 @@ export default function EmailTemplatesManage() {
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5 shrink-0">
-					{projectId && (
+					{isTemplateOwner && (
 						<HeaderIconButton
 							as="a"
 							href={`/dashboard/templates/collaborator?project_id=${projectId}${templateName ? `&template_name=${templateName}` : ""}`}
@@ -680,7 +686,8 @@ export default function EmailTemplatesManage() {
 																</span>
 															)}
 														</label>
-														{mockData[variable]?.startsWith("function::") ? (
+														{typeof mockData[variable] === "string" &&
+														mockData[variable].startsWith("function::") ? (
 															<div className="flex-1 flex items-center gap-2 min-w-0">
 																<code className="flex-1 px-2 py-1 bg-gray-800 border border-purple-600/50 text-purple-300 rounded text-xs font-mono truncate min-w-0">
 																	{"fn(props) { "}

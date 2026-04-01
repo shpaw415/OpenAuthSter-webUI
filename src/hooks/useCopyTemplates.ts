@@ -11,23 +11,81 @@ import {
 } from "@api/templates/copy/id";
 import type { parseDBCopyTemplate } from "openauth-webui-shared-types";
 import { useCallback, useEffect, useState } from "react";
+import { createServerCache, useServerCacheValue } from "./serverCache";
 
 type CopyTemplate = ReturnType<typeof parseDBCopyTemplate>;
 
+const COPY_TEMPLATES_CACHE_KEY = "all";
+const copyTemplatesCache = createServerCache<CopyTemplate[]>();
+const copyTemplateCache = createServerCache<CopyTemplate>();
+
+function upsertTemplate(
+	templates: CopyTemplate[],
+	nextTemplate: CopyTemplate,
+) {
+	const existingIndex = templates.findIndex(
+		(template) => template.name === nextTemplate.name,
+	);
+
+	if (existingIndex === -1) {
+		return [...templates, nextTemplate];
+	}
+
+	return templates.map((template) =>
+		template.name === nextTemplate.name ? nextTemplate : template,
+	);
+}
+
+function syncTemplate(template: CopyTemplate) {
+	copyTemplateCache.set(template.name, template);
+	copyTemplatesCache.update(COPY_TEMPLATES_CACHE_KEY, (currentTemplates) =>
+		upsertTemplate(currentTemplates ?? [], template),
+	);
+}
+
+function syncTemplates(templates: CopyTemplate[]) {
+	copyTemplatesCache.set(COPY_TEMPLATES_CACHE_KEY, templates);
+	for (const template of templates) {
+		copyTemplateCache.set(template.name, template);
+	}
+}
+
+function removeTemplateFromCache(name: string) {
+	copyTemplateCache.clear(name);
+	copyTemplatesCache.update(COPY_TEMPLATES_CACHE_KEY, (currentTemplates) =>
+		(currentTemplates ?? []).filter((template) => template.name !== name),
+	);
+}
+
 export function useCopyTemplates() {
-	const [templates, setTemplates] = useState<Array<CopyTemplate>>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const templates =
+		useServerCacheValue(copyTemplatesCache, COPY_TEMPLATES_CACHE_KEY) ?? [];
+	const [isLoading, setIsLoading] = useState(
+		() => copyTemplatesCache.getSnapshot(COPY_TEMPLATES_CACHE_KEY) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTemplates = useCallback(async () => {
-		setIsLoading(true);
+	const fetchTemplates = useCallback(async (force = true) => {
+		if (
+			force ||
+			copyTemplatesCache.getSnapshot(COPY_TEMPLATES_CACHE_KEY) === undefined
+		) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const result = await getCopyTemplates();
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch copy templates");
-			}
-			setTemplates(result.data || []);
+			const data = await copyTemplatesCache.fetch(
+				COPY_TEMPLATES_CACHE_KEY,
+				async () => {
+					const result = await getCopyTemplates();
+					if (!result.success) {
+						throw new Error(result.error || "Failed to fetch copy templates");
+					}
+					return result.data || [];
+				},
+				{ force },
+			);
+			syncTemplates(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unknown error");
 		} finally {
@@ -36,7 +94,7 @@ export function useCopyTemplates() {
 	}, []);
 
 	useEffect(() => {
-		fetchTemplates();
+		void fetchTemplates(false);
 	}, [fetchTemplates]);
 
 	const createTemplate = useCallback(
@@ -47,11 +105,9 @@ export function useCopyTemplates() {
 				throw new Error(res.error || "Failed to create copy template");
 			}
 
-			setTemplates((prev) => [
-				...prev,
-				res.data as ReturnType<typeof parseDBCopyTemplate>,
-			]);
-			return res.data as ReturnType<typeof parseDBCopyTemplate>;
+			const template = res.data as ReturnType<typeof parseDBCopyTemplate>;
+			syncTemplate(template);
+			return template;
 		},
 		[],
 	);
@@ -63,7 +119,7 @@ export function useCopyTemplates() {
 			throw new Error(res.error || "Failed to delete copy template");
 		}
 
-		setTemplates((prev) => prev.filter((t) => t.name !== name));
+		removeTemplateFromCache(name);
 	}, []);
 
 	return {
@@ -77,27 +133,37 @@ export function useCopyTemplates() {
 }
 
 export function useCopyTemplate(name: string = "") {
-	const [template, setTemplate] = useState<ReturnType<
-		typeof parseDBCopyTemplate
-	> | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+	const template = useServerCacheValue(copyTemplateCache, name) ?? null;
+	const [isLoading, setIsLoading] = useState(
+		() => Boolean(name) && copyTemplateCache.getSnapshot(name) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTemplate = useCallback(async () => {
+	const fetchTemplate = useCallback(async (force = true) => {
 		if (!name) {
 			setIsLoading(false);
 			return;
 		}
-		setIsLoading(true);
+		if (force || copyTemplateCache.getSnapshot(name) === undefined) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const result = await getCopyTemplateByName({ name });
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch copy template");
-			} else if (!result.data) {
-				throw new Error("Copy template data is undefined");
-			}
-			setTemplate(result.data);
+			const data = await copyTemplateCache.fetch(
+				name,
+				async () => {
+					const result = await getCopyTemplateByName({ name });
+					if (!result.success) {
+						throw new Error(result.error || "Failed to fetch copy template");
+					}
+					if (!result.data) {
+						throw new Error("Copy template data is undefined");
+					}
+					return result.data;
+				},
+				{ force },
+			);
+			syncTemplate(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unknown error");
 		} finally {
@@ -106,7 +172,7 @@ export function useCopyTemplate(name: string = "") {
 	}, [name]);
 
 	useEffect(() => {
-		fetchTemplate();
+		void fetchTemplate(false);
 	}, [fetchTemplate]);
 
 	const updateTemplate = async (
@@ -121,8 +187,9 @@ export function useCopyTemplate(name: string = "") {
 			throw new Error(error || "Failed to update copy template");
 		}
 
-		setTemplate(data as CopyTemplate);
-		return data as CopyTemplate;
+		const template = data as CopyTemplate;
+		syncTemplate(template);
+		return template;
 	};
 
 	return {

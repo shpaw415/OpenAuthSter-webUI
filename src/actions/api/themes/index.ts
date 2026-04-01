@@ -5,11 +5,7 @@ import { getContext } from "frame-master-plugin-cloudflare-pages-functions-actio
 import { uiStyleTable } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 
-export type UITheme = {
-	id: number;
-	name: string;
-	themeData: Theme;
-};
+export type UITheme = typeof uiStyleTable.$inferSelect;
 
 // GET /api/themes - List all UI themes for current user
 export async function GET(): Promise<{
@@ -36,6 +32,8 @@ export async function GET(): Promise<{
 			id: uiStyleTable.id,
 			name: uiStyleTable.name,
 			themeData: uiStyleTable.themeData,
+			owner_id: uiStyleTable.owner_id,
+			owner_group_id: uiStyleTable.owner_group_id,
 		})
 		.from(uiStyleTable)
 		.where(
@@ -55,7 +53,7 @@ export async function GET(): Promise<{
 
 export type CreateThemeParams = {
 	name: string;
-	themeData: Theme;
+	themeData: Partial<Theme>;
 };
 
 // POST /api/themes - Create a new UI theme
@@ -141,6 +139,8 @@ export async function POST(params: CreateThemeParams): Promise<{
 						id: uiStyleTable.id,
 						name: uiStyleTable.name,
 						themeData: uiStyleTable.themeData,
+						owner_id: uiStyleTable.owner_id,
+						owner_group_id: uiStyleTable.owner_group_id,
 					})
 			).at(0) as UITheme,
 		};

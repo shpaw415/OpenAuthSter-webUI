@@ -5,7 +5,6 @@ import {
 	PUBLIC_CLIENT_ID,
 	type Project,
 	createWebUiProject,
-	parseDBProject,
 } from "openauth-webui-shared-types";
 import {
 	DeleteOTFusersTable,
@@ -90,7 +89,7 @@ export async function GET(params: {
 
 	return {
 		success: true,
-		data: parseDBProject(project),
+		data: project,
 	};
 }
 
@@ -179,13 +178,13 @@ export async function PUT(
 			updates.active = params.data.active;
 		}
 		if (params.data.providers_data !== undefined) {
-			updates.providers_data = JSON.stringify(params.data.providers_data);
+			updates.providers_data = params.data.providers_data;
 		}
 		if (params.data.theme_id !== undefined) {
 			updates.theme_id = params.data.theme_id;
 		}
 		if (params.data.projectData !== undefined) {
-			updates.projectData = JSON.stringify(params.data.projectData);
+			updates.projectData = params.data.projectData;
 		}
 		if (params.data.originURL !== undefined) {
 			updates.originURL = params.data.originURL;
@@ -226,7 +225,7 @@ export async function PUT(
 
 		return {
 			success: true,
-			data: parseDBProject(updatedProjects),
+			data: updatedProjects,
 		};
 	} catch (error) {
 		await insertLog({

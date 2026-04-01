@@ -1,28 +1,27 @@
 import {
-	DELETE as cancelEmailTemplateInvite,
-	POST as createEmailTemplateInvite,
-} from "@api/invites/template/email/manage";
+	DELETE as cancelCopyTemplateInvite,
+	POST as createCopyTemplateInvite,
+} from "@api/invites/template/copy/manage";
 import {
 	CollaboratorManagementSection,
 	type InviteItem,
 } from "@components/CollaboratorManagement";
-import { useParams } from "@hooks/useParams";
-import { useEmailTemplate } from "@hooks/useEmailTemplates";
-import { Icon } from "@iconify/react";
 import { useAuth } from "@hooks/useAuth";
+import { useCopyTemplate } from "@hooks/useCopyTemplates";
+import { useParams } from "@hooks/useParams";
+import { Icon } from "@iconify/react";
 
-export default function EmailTemplateCollaborators() {
+export default function CopyTemplateCollaborators() {
 	const { template_name: templateName } = useParams<{
 		template_name?: string;
 	}>();
 
-	const { template } = useEmailTemplate(templateName);
+	const { template, isLoading } = useCopyTemplate(templateName);
 	const auth = useAuth();
 
 	const backHref = templateName
-		? `/dashboard/templates/manage?edit=${templateName}`
-		: "/dashboard/templates";
-
+		? `/dashboard/copy/manage?edit=${templateName}`
+		: "/dashboard/copy";
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-8">
@@ -37,35 +36,35 @@ export default function EmailTemplateCollaborators() {
 				</a>
 				<div>
 					<h2 className="text-2xl font-bold text-white">
-						Email Template Collaborators
+						Copy Template Collaborators
 					</h2>
 					<p className="text-gray-400 mt-1">
-						{templateName ? `${templateName} · ` : ""}
+						{template ? `${template.name} · ` : ""}
 					</p>
 				</div>
 			</div>
 
-			{template && (
+			{template && !isLoading && (
 				<CollaboratorManagementSection
 					ownerGroupId={template.owner_group_id}
 					ownerId={template.owner_id}
 					isOwner={template.owner_id === auth.userMeta?.id}
-					inviteType="email_template"
-					inviteDescription="Invite another user to access email templates for this project by their user ID."
-				onInvite={(userId, fromName) =>
-								createEmailTemplateInvite({
-									user_id: userId,
-									from_name: fromName,
-									template_name: template.name,
-								})
-				}
-				onCancelInvite={(invite: InviteItem) =>
-					cancelEmailTemplateInvite({
-						user_id: invite.user_id,
-						owner_group_id: invite.owner_group_id,
-					})
-				}
-			/>
+					inviteType="copy_template"
+					inviteDescription="Invite another user to access this copy template by their user ID."
+					onInvite={(userId, fromName) =>
+						createCopyTemplateInvite({
+							user_id: userId,
+							from_name: fromName,
+							template_id: template.id,
+						})
+					}
+					onCancelInvite={(invite: InviteItem) =>
+						cancelCopyTemplateInvite({
+							user_id: invite.user_id,
+							owner_group_id: invite.owner_group_id,
+						})
+					}
+				/>
 			)}
 		</div>
 	);

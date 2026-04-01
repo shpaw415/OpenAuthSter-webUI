@@ -120,7 +120,10 @@ function isValidIdentifier(value: string) {
 	return /^[A-Za-z_$][\w$]*$/.test(value);
 }
 
-function toInlinePreview(value: string) {
+function toInlinePreview(value: string | string[]) {
+	if (Array.isArray(value)) {
+		value = value.join(", ");
+	}
 	const compact = value.replace(/\s+/g, " ").trim();
 	if (!compact) return "(empty string)";
 	return compact.length > 60 ? `${compact.slice(0, 57)}...` : compact;
@@ -130,11 +133,14 @@ function escapeJSDoc(value: string) {
 	return value.replace(/\*\//g, "* /").replace(/\r?\n/g, " ");
 }
 
-function buildEditorPropEntries(sourceProps: Record<string, string>) {
+function buildEditorPropEntries(
+	sourceProps: Record<string, string | string[]>,
+) {
 	const entries = new Map<string, EditorPropEntry>();
 
 	for (const [key, value] of Object.entries(sourceProps)) {
-		const isFunction = value.startsWith("function::");
+		const isFunction =
+			typeof value === "string" && value.startsWith("function::");
 		entries.set(key, {
 			key,
 			detail: isFunction ? "() => unknown" : toInlinePreview(value),
@@ -161,7 +167,9 @@ function buildEditorPropEntries(sourceProps: Record<string, string>) {
 	);
 }
 
-function buildPropsTypeDeclaration(sourceProps: Record<string, string>) {
+function buildPropsTypeDeclaration(
+	sourceProps: Record<string, string | string[]>,
+) {
 	const properties = buildEditorPropEntries(sourceProps).map(
 		({ key, documentation, typeDefinition }) =>
 			`\t/** ${escapeJSDoc(documentation)} */\n\t${JSON.stringify(key)}: ${typeDefinition};`,
@@ -177,10 +185,10 @@ interface Props {
 	 * Function body (without the `function::` prefix).
 	 * Pass `null` to close/hide the modal.
 	 */
-	value: string | null;
+	value: string | string[] | null;
 	/** Mock data whose keys are offered as `props.<key>` completions. */
-	props: Record<string, string>;
-	onAccept: (body: string) => void;
+	props: Record<string, string | string[]>;
+	onAccept: (body: string | string[]) => void;
 	onClose: () => void;
 	onRemove: () => void;
 }
@@ -466,7 +474,7 @@ export function FunctionEditorModal({
 							height="100%"
 							language={editorLanguage}
 							path={`function-editor-${variableKey}.${editorLanguage === "typescript" ? "ts" : "js"}`}
-							value={draft}
+							value={Array.isArray(draft) ? draft.join("\n") : draft}
 							onMount={handleMount}
 							onChange={(val) => setDraft(val ?? "")}
 							theme="vs-dark"

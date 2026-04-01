@@ -220,9 +220,6 @@ export default function AdminPanel() {
 	const getProjectStats = (clientID: string) =>
 		dashboard.data?.projectStats.find((s) => s.clientID === clientID);
 
-	const isInitialLoading =
-		projectHook.isLoading || (dashboard.isLoading && !dashboard.data);
-
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-6">
 			{/* Header */}
@@ -252,50 +249,48 @@ export default function AdminPanel() {
 			</div>
 
 			{/* KPIs */}
-			{isInitialLoading ? (
+			{!dashboard.data ? (
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 					{[1, 2, 3, 4].map((i) => (
 						<StatCardSkeleton key={i} />
 					))}
 				</div>
 			) : (
-				dashboard.data && (
-					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-						<StatCard
-							label="Projects"
-							value={dashboard.data.kpis.totalProjects}
-							tone="text-white"
-							icon="lucide:folder-kanban"
-						/>
-						<StatCard
-							label="Users"
-							value={dashboard.data.kpis.totalUsers}
-							tone="text-blue-200"
-							icon="lucide:users"
-						/>
-						<StatCard
-							label="Errors (24h)"
-							value={dashboard.data.kpis.totalErrors24h}
-							tone="text-red-200"
-							icon="lucide:alert-circle"
-						/>
-						<StatCard
-							label="Webhooks"
-							value={dashboard.data.kpis.totalWebhooks}
-							tone="text-green-200"
-							icon="lucide:webhook"
-						/>
-					</div>
-				)
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+					<StatCard
+						label="Projects"
+						value={dashboard.data.kpis.totalProjects}
+						tone="text-white"
+						icon="lucide:folder-kanban"
+					/>
+					<StatCard
+						label="Users"
+						value={dashboard.data.kpis.totalUsers}
+						tone="text-blue-200"
+						icon="lucide:users"
+					/>
+					<StatCard
+						label="Errors (24h)"
+						value={dashboard.data.kpis.totalErrors24h}
+						tone="text-red-200"
+						icon="lucide:alert-circle"
+					/>
+					<StatCard
+						label="Webhooks"
+						value={dashboard.data.kpis.totalWebhooks}
+						tone="text-green-200"
+						icon="lucide:webhook"
+					/>
+				</div>
 			)}
 
 			{/* Usage chart */}
-			{isInitialLoading ? (
+			{!dashboard.data ? (
 				<ChartSkeleton />
 			) : (
 				<UsageChart
-					usageOverTime={dashboard.data?.usageOverTime}
-					isLoading={dashboard.isLoading && !dashboard.data}
+					usageOverTime={dashboard.data.usageOverTime}
+					isLoading={false}
 				/>
 			)}
 
@@ -353,7 +348,7 @@ export default function AdminPanel() {
 			)}
 
 			{/* Recent activity */}
-			{isInitialLoading ? (
+			{!dashboard.data ? (
 				<RecentActivitySkeleton />
 			) : (
 				dashboard.data &&
@@ -410,7 +405,7 @@ export default function AdminPanel() {
 			)}
 
 			{/* Project Grid */}
-			{isInitialLoading ? (
+			{projectHook.isLoading ? (
 				<div>
 					<div className="h-6 w-24 bg-gray-700 rounded animate-pulse mb-4" />
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -515,7 +510,7 @@ export default function AdminPanel() {
 											/>
 											<span>
 												Providers:{" "}
-												{project.providers_data?.filter((p) => p.enabled)
+												{project?.providers_data?.filter((p) => p.enabled)
 													.length || 0}{" "}
 												enabled
 											</span>

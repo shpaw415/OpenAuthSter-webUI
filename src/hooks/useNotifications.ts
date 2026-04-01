@@ -5,69 +5,39 @@ import { POST as acceptEmailTemplateInvite } from "@api/invites/template/email/a
 import { POST as acceptUITemplateInvite } from "@api/invites/template/ui/accept";
 import type { inviteTable } from "openauth-webui-shared-types/database";
 import { useCallback, useEffect, useState } from "react";
+import { createServerCache, useServerCacheValue } from "./serverCache";
 import { useAuth } from "./useAuth";
 
 export type InviteRow = typeof inviteTable.$inferSelect;
 
-// ─── Module-level shared cache ────────────────────────────────────────────────
-
-const CACHE_TTL = 60_000; // 60 s
-
-let cacheData: InviteRow[] | null = null;
-let cacheTime = 0;
-let inflightPromise: Promise<InviteRow[]> | null = null;
-const subscribers = new Set<(data: InviteRow[]) => void>();
-
-async function loadInvites(force = false): Promise<InviteRow[]> {
-	if (!force && cacheData !== null && Date.now() - cacheTime < CACHE_TTL) {
-		return cacheData;
-	}
-	if (inflightPromise) return inflightPromise;
-
-	inflightPromise = (async () => {
-		const res = await getInvites({ type: "received", status: "pending" });
-		if (!res?.success)
-			throw new Error(res?.error ?? "Failed to load notifications");
-		const data = (res.data ?? []) as InviteRow[];
-		cacheData = data;
-		cacheTime = Date.now();
-		subscribers.forEach((fn) => {
-			fn(data);
-		});
-		return data;
-	})().finally(() => {
-		inflightPromise = null;
-	});
-
-	return inflightPromise;
-}
-
-function clearCache() {
-	cacheData = null;
-	cacheTime = 0;
-}
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+const INVITES_CACHE_KEY = "received:pending";
+const invitesCache = createServerCache<InviteRow[]>();
 
 export function useNotifications() {
 	const auth = useAuth();
-	const [invites, setInvites] = useState<InviteRow[]>(cacheData ?? []);
-	const [isLoading, setIsLoading] = useState(false);
+	const invites = useServerCacheValue(invitesCache, INVITES_CACHE_KEY) ?? [];
+	const [isLoading, setIsLoading] = useState(
+		() => invitesCache.getSnapshot(INVITES_CACHE_KEY) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	useEffect(() => {
-		subscribers.add(setInvites);
-		return () => {
-			subscribers.delete(setInvites);
-		};
-	}, []);
-
 	const refetch = useCallback(async (force = false) => {
-		setIsLoading(true);
+		if (force || invitesCache.getSnapshot(INVITES_CACHE_KEY) === undefined) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const data = await loadInvites(force);
-			setInvites(data);
+			await invitesCache.fetch(
+				INVITES_CACHE_KEY,
+				async () => {
+					const res = await getInvites({ type: "received", status: "pending" });
+					if (!res?.success) {
+						throw new Error(res?.error ?? "Failed to load notifications");
+					}
+					return (res.data ?? []) as InviteRow[];
+				},
+				{ force },
+			);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
@@ -76,13 +46,13 @@ export function useNotifications() {
 	}, []);
 
 	const invalidate = useCallback(async () => {
-		clearCache();
+		invitesCache.invalidate(INVITES_CACHE_KEY);
 		await refetch(true);
 	}, [refetch]);
 
 	useEffect(() => {
 		if (!auth?.isAuthenticated) return;
-		refetch();
+		void refetch(false);
 	}, [auth?.isAuthenticated, refetch]);
 
 	const pendingCount = invites.filter(

@@ -1,15 +1,11 @@
 import type { RequestDataContext } from "@auth";
+import { ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import type { EmailTemplateProps } from "openauth-webui-shared-types";
 import { emailTemplatesTable } from "openauth-webui-shared-types/database";
-import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
 
-export type EmailTemplate = EmailTemplateProps & {
-	owner_id: string;
-	created_at: string;
-	updated_at: string;
-	id: number;
-};
+export type EmailTemplate = typeof emailTemplatesTable.$inferSelect;
 
 // GET /api/templates - List all email templates
 export async function GET(): Promise<{
@@ -20,9 +16,9 @@ export async function GET(): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const currentUserId = (await ctx.data.client.getMetaData())?.id;
+	const session = (await ctx.data.client.getUserSession("private"));
 
-	if (!currentUserId) {
+	if (session instanceof Error) {
 		return {
 			success: false,
 			error: "Unauthorized",
@@ -30,11 +26,20 @@ export async function GET(): Promise<{
 		};
 	}
 
+	const currentUserId = session.user_id;
+
 	const db = drizzle(env.PROJECT_DB);
 	const templates = await db
 		.select()
 		.from(emailTemplatesTable)
-		.where(eq(emailTemplatesTable.owner_id, currentUserId));
+		.where(
+			ownerGroupConditions({
+				user_group_ids: session.private?.group_ids || [],
+				ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
+				otherEq:[eq(emailTemplatesTable.owner_id, currentUserId)],
+				self_host: ctx.env.SELF_HOSTED,
+			})
+		);
 
 	return {
 		success: true,

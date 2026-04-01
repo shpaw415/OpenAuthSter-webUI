@@ -1,6 +1,6 @@
 import type { RequestDataContext } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
-import { projectTable } from "openauth-webui-shared-types";
+import { emailTemplatesTable, projectTable } from "openauth-webui-shared-types";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import { invites } from "../../share";
 
@@ -9,12 +9,12 @@ import { invites } from "../../share";
  */
 export async function POST({
 	user_id,
-	client_id,
 	from_name,
+	template_name,
 }: {
 	user_id: string;
-	client_id: string;
 	from_name: string;
+	template_name: string;
 }) {
 	const ctx = getContext<Env, "", RequestDataContext>(arguments);
 
@@ -32,24 +32,21 @@ export async function POST({
 		};
 	}
 
-	// Only project owner can invite users
 	const db = drizzle(ctx.env.PROJECT_DB);
 
-	const project = await db
+	const template = await db
 		.select()
-		.from(projectTable)
-		.where(
-			and(
-				eq(projectTable.clientID, client_id),
-				eq(projectTable.owner_id, current_user_id),
-			),
-		)
+		.from(emailTemplatesTable)
+		.where(and(
+			eq(emailTemplatesTable.name, template_name),
+			eq(emailTemplatesTable.owner_id, current_user_id)
+		))
 		.get();
 
-	if (!project) {
+	if (!template) {
 		return {
 			success: false,
-			error: "Project not found or you don't have permission to invite users",
+			error: "Email template not found or you do not have permission to manage it",
 		};
 	}
 
@@ -58,15 +55,15 @@ export async function POST({
 	const existingInvite = await inviteManager.exists({
 		type: "email_template",
 		user_id,
-		owner_group_id: project.owner_group_id,
+		owner_group_id: template.owner_group_id,
 		from_id: current_user_id,
 	});
 
 	const create = () => {
 		return inviteManager.create({
 			type: "email_template",
-			owner_group_id: project.owner_group_id,
-			label: `Invite to Project ${project.name}`,
+			owner_group_id: template.owner_group_id,
+			label: `Invite to Email Template ${template.name}`,
 			from: {
 				id: current_user_id,
 				name: from_name,

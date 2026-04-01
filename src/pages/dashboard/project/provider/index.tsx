@@ -4,7 +4,7 @@ import { useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
+import { AppSnackbar } from "@components/AppSnackbar";
 import formParser from "@shpaw415/formdata-parser";
 import { navigate } from "@utils";
 import type {
@@ -38,7 +38,7 @@ import React, {
 } from "react";
 
 // MDX documentation imports
-const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
+const providerDocs: Record<ProviderType | "default", () => Promise<{ default: ComponentType }>> =
 	{
 		google: () => import("@docs/providers/google.mdx"),
 		github: () => import("@docs/providers/github.mdx"),
@@ -52,6 +52,8 @@ const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
 		slack: () => import("@docs/providers/slack.mdx"),
 		cognito: () => import("@docs/providers/cognito.mdx"),
 		apple: () => import("@docs/providers/apple.mdx"),
+		appleoidc: () => import("@docs/providers/appleoidc.mdx"),
+		appleoauth: () => import("@docs/providers/appleoauth.mdx"),
 		facebook: () => import("@docs/providers/facebook.mdx"),
 		spotify: () => import("@docs/providers/spotify.mdx"),
 		twitch: () => import("@docs/providers/twitch.mdx"),
@@ -106,9 +108,9 @@ export default function ProviderForm() {
 	const [DocComponent, setDocComponent] = useState<ComponentType | null>(null);
 
 	const formRef = useRef<HTMLFormElement | null>(null);
-	const [snackData, setSnackData] = useState<{
+	const [notification, setNotification] = useState<{
 		message: string;
-		type: "success" | "error";
+		type?: "success" | "error";
 	} | null>(null);
 
 	const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -119,13 +121,13 @@ export default function ProviderForm() {
 		projectHook
 			.updateProvider(updatedConfig)
 			.then(() =>
-				setSnackData({
+				setNotification({
 					message: "Provider saved successfully",
 					type: "success",
 				}),
 			)
 			.catch((err) =>
-				setSnackData({
+				setNotification({
 					message:
 						"" +
 						(err instanceof Error ? err.message : "Failed to save provider"),
@@ -163,7 +165,7 @@ export default function ProviderForm() {
 			initialConfig = {
 				type: providerType,
 				enabled: true,
-				data: projectHook.project.providers_data.find(
+				data: projectHook.project?.providers_data?.find(
 					(p) => p.type === providerType,
 				)?.data as ProviderConfig["data"],
 			} as ProviderConfig;
@@ -212,12 +214,7 @@ export default function ProviderForm() {
 
 	return (
 		<>
-			<Snackbar
-				message={snackData?.message || ""}
-				open={!!snackData}
-				timeoutMs={6000}
-				onClose={() => setSnackData(null)}
-			/>
+			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
 			<div className="min-h-screen bg-gray-900">
 				{/* Header */}
 				<div className="bg-gray-800 border-b border-gray-700">
@@ -563,8 +560,14 @@ function FormFields({ type }: { type: ProviderType }) {
 			return <QrCodeFields />;
 		case "passkey":
 			return <PasskeyFields />;
+		case "spotify":
+			return <OAuth2Fields query pkce scopes={["user-read-email"]} />;
+		case "github":
+			return <OAuth2Fields query pkce scopes={["user:email"]} />;
+		case "x":
+			return <OAuth2Fields query pkce scopes={["users.read"]} />;
 		default:
-			return <OAuth2Fields query pkce scopes />;
+			return <OAuth2Fields query pkce scopes={["email"]} />;
 	}
 }
 
@@ -640,7 +643,7 @@ function ScopesField({
 	placeholder: string;
 }) {
 	return (
-		<InputFieldForm label="Scopes">
+		<InputFieldForm label="Scopes" required>
 			<InputField
 				type="text"
 				name="array::scopes"
@@ -698,26 +701,25 @@ function TemplateSelection(
 			</div>
 		);
 	}
-	console.log(currentSelect);
-
 	return (
 		<InputFieldForm
 			label={props.label}
 			help={props.help}
 			required
 			action={
-				currentSelect && (
+				currentSelect ? (
 					<a
 						href={`/dashboard/templates/manage?project_id=${params.project_id}&edit=${templates.templates.find((t) => t.id === currentSelect)?.name}`}
 						className="text-sm text-blue-400 hover:text-blue-300"
 					>
 						Manage templates
 					</a>
-				)
+				) : null
 			}
 		>
 			<SelectField
 				{...opt}
+				required
 				name={`number::${props.name}`}
 				defaultValue={props.defaultValue}
 				onChange={onChange}
@@ -758,7 +760,7 @@ function OAuth2Fields({
 }: {
 	query?: boolean;
 	pkce?: boolean;
-	scopes?: boolean;
+	scopes?: string[];
 }) {
 	const data = useProviderFormState<OAuth2ProviderConfig>();
 	return (
@@ -768,7 +770,7 @@ function OAuth2Fields({
 				clientSecret={data.data?.clientSecret}
 			/>
 			{scopes && (
-				<ScopesField value={data.data?.scopes} placeholder="email, profile" />
+				<ScopesField value={data.data?.scopes ?? scopes} placeholder="email, profile" />
 			)}
 			{pkce && <PkceField enabled={data.data?.pkce} />}
 			{query && <QueryParametersField value={data.data?.query} />}
@@ -901,7 +903,7 @@ function KeycloakFields() {
 				/>
 			</InputFieldForm>
 
-			<ScopesField value={data.data?.scopes} placeholder="openid, email" />
+			<ScopesField value={data.data?.scopes ?? ["email"]} placeholder="openid, email" />
 		</>
 	);
 }
@@ -921,6 +923,12 @@ function CodeFields() {
 				<p className="text-gray-500 text-sm mt-1">
 					Number of digits in the verification code (4-8)
 				</p>
+			</InputFieldForm>
+			<InputFieldForm label="Confirmation type">
+				<SelectField name="codeMode" defaultValue={data.data?.codeMode || "email"}>
+					<option value="email">email</option>
+					<option value="phone">phone</option>
+				</SelectField>
 			</InputFieldForm>
 			<TemplateSelection
 				label="Email Template for Login Code Sending"
@@ -946,14 +954,6 @@ function PasswordFields() {
 					placeholder="Minimum password length"
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="On password to short message">
-				<InputField
-					type="text"
-					name="shortPasswordMsg"
-					defaultValue={data.data?.shortPasswordMsg || ""}
-					placeholder="Your custom message for short passwords"
-				/>
-			</InputFieldForm>
 			<InputFieldForm
 				label="Password Policy: Require Uppercase Letter"
 				required
@@ -963,26 +963,10 @@ function PasswordFields() {
 					defaultChecked={data.data?.requireUppercase}
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="On missing uppercase message">
-				<InputField
-					type="text"
-					name="requireUppercaseMsg"
-					defaultValue={data.data?.requireUppercaseMsg || ""}
-					placeholder="Your custom message for missing uppercase letters"
-				/>
-			</InputFieldForm>
 			<InputFieldForm label="Password Policy: Require Number" required>
 				<ToggleBase
 					name="boolean::requireNumber"
 					defaultChecked={data.data?.requireNumber}
-				/>
-			</InputFieldForm>
-			<InputFieldForm label="On missing number message">
-				<InputField
-					type="text"
-					name="requireNumberMsg"
-					defaultValue={data.data?.requireNumberMsg || ""}
-					placeholder="Your custom message for missing numbers"
 				/>
 			</InputFieldForm>
 			<InputFieldForm
@@ -992,14 +976,6 @@ function PasswordFields() {
 				<ToggleBase
 					name="boolean::requireSpecialChar"
 					defaultChecked={data.data?.requireSpecialChar}
-				/>
-			</InputFieldForm>
-			<InputFieldForm label="On missing special character message">
-				<InputField
-					type="text"
-					name="requireSpecialCharMsg"
-					defaultValue={data.data?.requireSpecialCharMsg || ""}
-					placeholder="Your custom message for missing special characters"
 				/>
 			</InputFieldForm>
 			<TemplateSelection
@@ -1061,14 +1037,7 @@ function SlackFields() {
 					placeholder="Your Slack workspace team ID"
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="Scopes">
-				<InputField
-					type="text"
-					name="array::scopes"
-					defaultValue={data.data?.scopes?.join(", ") || ""}
-					placeholder="email, openid, profile"
-				/>
-			</InputFieldForm>
+			<ScopesField value={data.data?.scopes ?? ["email"]} placeholder="openid, email, profile" />
 			<InputFieldForm label="PKCE">
 				<ToggleBase name="boolean::pkce" defaultChecked={data.data?.pkce} />
 			</InputFieldForm>
@@ -1101,7 +1070,7 @@ function CognitoFields() {
 					placeholder="Your AWS Cognito domain"
 				/>
 			</InputFieldForm>
-			<ScopesField value={data.data?.scopes} placeholder="email, openid" />
+			<ScopesField value={data.data?.scopes ?? ["email"]} placeholder="email, openid" />
 			<PkceField enabled={data.data?.pkce} />
 			<QueryParametersField value={data.data?.query} />
 		</>
@@ -1118,7 +1087,7 @@ function MicrosoftFields() {
 				clientSecret={data.data?.clientSecret}
 			/>
 			<ScopesField
-				value={data.data?.scopes}
+				value={data.data?.scopes ?? ["email"]}
 				placeholder="User.Read, email, profile"
 			/>
 			<InputFieldForm label="Tenant ID" required>
@@ -1144,7 +1113,7 @@ function AppleOAuthFields() {
 				clientId={data.data?.clientID}
 				clientSecret={data.data?.clientSecret}
 			/>
-			<ScopesField value={data.data?.scopes} placeholder="email, name" />
+			<ScopesField value={data.data?.scopes ?? ["email"]} placeholder="email, name" />
 			<InputFieldForm label="Response Mode">
 				<SelectField
 					name="responseMode"
@@ -1173,7 +1142,7 @@ function AppleOIDCFields() {
 					placeholder="Your Apple OIDC client ID"
 				/>
 			</InputFieldForm>
-			<ScopesField value={data.data?.scopes} placeholder="email, name" />
+			<ScopesField value={data.data?.scopes ?? ["email"]} placeholder="email, name" />
 			<QueryParametersField value={data.data?.query} />
 		</>
 	);

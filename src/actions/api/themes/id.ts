@@ -64,6 +64,8 @@ export async function GET(params: { id: number }): Promise<{
 			id: themes.id,
 			name: themes.name,
 			themeData: themes.themeData as Theme,
+			owner_id: themes.owner_id,
+			owner_group_id: themes.owner_group_id,
 		},
 	};
 }
@@ -103,7 +105,7 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 	}
 
 	// Get current theme
-	const existing = await db
+	const [existing] = await db
 		.select()
 		.from(uiStyleTable)
 		.where(
@@ -111,34 +113,34 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 		)
 		.limit(1);
 
-	if (existing.length === 0) {
+	if (!existing) {
 		return {
 			success: false,
-			error: "Theme not found",
+			error: "Theme not found or you don't have permission to update it",
 		};
 	}
 
-	const currentTheme =
-		(existing.at(0)?.themeData as Theme | undefined) || ({} as Theme);
-	const updatedTheme: Theme = {
-		...currentTheme,
-		...data,
-	};
 
-	await db
+	const [updated] = await db
 		.update(uiStyleTable)
 		.set({
-			themeData: updatedTheme,
+			themeData: {
+				...existing.themeData,
+				...data,
+			},
 		})
-		.where(eq(uiStyleTable.id, id));
+		.where(eq(uiStyleTable.id, id)).returning();
+
+		if(!updated) {
+			return {
+				success: false,
+				error: "Failed to update theme",
+			};
+		}
 
 	return {
 		success: true,
-		data: {
-			id: id,
-			name: existing.at(0)?.name || "",
-			themeData: updatedTheme,
-		},
+		data: updated,
 	};
 }
 
@@ -182,7 +184,7 @@ export async function DELETE(params: { id: number }): Promise<{
 	if (existing.length === 0) {
 		return {
 			success: false,
-			error: "Theme not found",
+			error: "Theme not found or you don't have permission to delete it",
 		};
 	}
 

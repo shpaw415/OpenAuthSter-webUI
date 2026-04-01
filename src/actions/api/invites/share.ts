@@ -162,7 +162,7 @@ export const invites = (_db: D1Database) => {
 
 			if (!user) {
 				return { success: false, error: "User not found" };
-			} else if (!currentUser) {
+			} else if (!currentUser?.id) {
 				return { success: false, error: "Current user not found" };
 			}
 
@@ -179,7 +179,7 @@ export const invites = (_db: D1Database) => {
 				.get();
 			if (!res) return { success: false, error: "Invite not found" };
 
-			if (!user?.session_private.group_ids?.includes(res.owner_id)) {
+			if (!user.session_private?.group_ids?.includes(res.owner_id)) {
 				return { success: false, error: "Unauthorized" };
 			}
 			await client.updateUserById(user_id, {

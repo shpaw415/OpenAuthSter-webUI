@@ -1,19 +1,15 @@
 "use client";
 
+import { PUT as updateUserData } from "@api/users";
+import { useParams } from "@hooks/useParams";
 import { useProject, useProjects } from "@hooks/useProjects";
 import { useProjectUsers } from "@hooks/useProjectUsers";
 import { Icon } from "@iconify/react";
 import { navigate } from "@utils";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function UserListPage() {
-	const clientID = useMemo(
-		() =>
-			typeof window === "undefined"
-				? ""
-				: new URLSearchParams(window.location.search).get("project_id") || "",
-		[],
-	);
+	const { project_id: clientID } = useParams<{ project_id: string }>();
 
 	const projectsHook = useProjects();
 	const projectHook = useProject(clientID);
@@ -24,6 +20,10 @@ export default function UserListPage() {
 	>>(null);
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
+	const [editingUser, setEditingUser] = useState<null | Record<
+		string,
+		unknown
+	>>(null);
 
 	const {
 		users,
@@ -69,7 +69,7 @@ export default function UserListPage() {
 	const publicPreview = (data: Record<string, unknown> | null) => {
 		if (!data || Object.keys(data).length === 0) return "—";
 		const json = JSON.stringify(data);
-		return json.length > 80 ? json.slice(0, 80) + "…" : json;
+		return json.length > 80 ? `${json.slice(0, 80)}…` : json;
 	};
 
 	const handleDelete = async (userID: string) => {
@@ -207,7 +207,9 @@ export default function UserListPage() {
 					</span>
 					<button
 						type="button"
-						onClick={refetch}
+						onClick={() => {
+							void refetch();
+						}}
 						className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
 					>
 						Refresh
@@ -345,17 +347,31 @@ export default function UserListPage() {
 													{publicPreview(user.data)}
 												</td>
 												<td className="px-6 py-4 text-sm text-gray-300">
-													<button
-														type="button"
-														onClick={(e) => {
-															e.stopPropagation();
-															handleDelete(user.id);
-														}}
-														disabled={deletingId === user.id || isLoading}
-														className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-600/60 text-white rounded-lg transition-colors"
-													>
-														{deletingId === user.id ? "Deleting..." : "Delete"}
-													</button>
+													<div className="flex items-center gap-2">
+														<button
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation();
+																setEditingUser(user as Record<string, unknown>);
+															}}
+															className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+														>
+															Edit
+														</button>
+														<button
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleDelete(user.id);
+															}}
+															disabled={deletingId === user.id || isLoading}
+															className="px-3 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-600/60 text-white rounded-lg transition-colors"
+														>
+															{deletingId === user.id
+																? "Deleting..."
+																: "Delete"}
+														</button>
+													</div>
 												</td>
 											</tr>
 										);
@@ -407,7 +423,17 @@ export default function UserListPage() {
 										<div className="text-xs text-gray-300 font-mono whitespace-pre-wrap wrap-break-word">
 											Meta: {publicPreview(user.data)}
 										</div>
-										<div className="pt-2">
+										<div className="pt-2 flex gap-2">
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setEditingUser(user as Record<string, unknown>);
+												}}
+												className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
+											>
+												Edit
+											</button>
 											<button
 												type="button"
 												onClick={(e) => {
@@ -428,6 +454,22 @@ export default function UserListPage() {
 				)}
 			</div>
 
+			{editingUser && (
+				<EditUserModal
+					user={editingUser}
+					clientID={clientID}
+					availableRoles={
+						(projectHook.project?.projectData?.roles as string[] | undefined) ||
+						[]
+					}
+					onClose={() => setEditingUser(null)}
+					onSaved={() => {
+						setEditingUser(null);
+						void refetch();
+					}}
+					setActionError={setActionError}
+				/>
+			)}
 			{selectedUser && (
 				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
 					<div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden mx-auto">
@@ -454,6 +496,150 @@ export default function UserListPage() {
 					</div>
 				</div>
 			)}
+		</div>
+	);
+}
+
+function EditUserModal({
+	user,
+	clientID,
+	availableRoles,
+	onClose,
+	onSaved,
+	setActionError,
+}: {
+	user: Record<string, unknown>;
+	clientID: string;
+	availableRoles: string[];
+	onClose: () => void;
+	onSaved: () => void;
+	setActionError: (err: string | null) => void;
+}) {
+	const [role, setRole] = useState<string>((user.role as string | null) ?? "");
+	const [isSaving, setIsSaving] = useState(false);
+
+	const handleSave = async () => {
+		setIsSaving(true);
+		setActionError(null);
+		try {
+			const res = await updateUserData(
+				{ project_id: clientID, user_id: user.id as string },
+				// biome-ignore lint/suspicious/noExplicitAny: role is dynamic
+				{ role: (role || undefined) as any },
+			);
+			if (res instanceof Response) {
+				if (!res.ok) throw new Error(await res.text());
+			} else if (!res.success) {
+				throw new Error(res.error || "Failed to update user");
+			}
+			onSaved();
+		} catch (err) {
+			setActionError(
+				err instanceof Error ? err.message : "Failed to update user",
+			);
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	const displayName =
+		((user.data as Record<string, unknown> | null)?.email as
+			| string
+			| undefined) || (user.identifier as string);
+
+	return (
+		<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+			<div className="bg-gray-900 border border-gray-700 rounded-xl shadow-xl w-full max-w-md">
+				<div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+					<div>
+						<p className="text-sm text-gray-400">Edit user</p>
+						<p className="text-white font-semibold break-all">{displayName}</p>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+						title="Close"
+					>
+						<Icon icon="lucide:x" className="w-5 h-5" />
+					</button>
+				</div>
+
+				<div className="p-5 space-y-4">
+					<div>
+						<label
+							className="block text-sm font-medium text-gray-300 mb-2"
+							htmlFor="user-role-select"
+						>
+							Role
+						</label>
+						{availableRoles.length > 0 ? (
+							<select
+								id="user-role-select"
+								value={role}
+								onChange={(e) => setRole(e.target.value)}
+								disabled={isSaving}
+								className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+							>
+								<option value="">No role</option>
+								{availableRoles.map((r) => (
+									<option key={r} value={r}>
+										{r}
+									</option>
+								))}
+							</select>
+						) : (
+							<input
+								id="user-role-select"
+								type="text"
+								value={role}
+								onChange={(e) => setRole(e.target.value)}
+								disabled={isSaving}
+								placeholder="Enter role"
+								className="w-full px-3 py-2.5 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+							/>
+						)}
+						{availableRoles.length === 0 && (
+							<p className="text-gray-500 text-xs mt-1">
+								No roles defined for this project. Configure roles in{" "}
+								<a
+									href={`/dashboard/project?project_id=${clientID}`}
+									className="text-blue-400 hover:underline"
+								>
+									Project Settings
+								</a>
+								.
+							</p>
+						)}
+					</div>
+				</div>
+
+				<div className="flex gap-3 px-5 py-4 border-t border-gray-800">
+					<button
+						type="button"
+						onClick={onClose}
+						disabled={isSaving}
+						className="flex-1 px-4 py-2.5 bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleSave}
+						disabled={isSaving}
+						className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+					>
+						{isSaving ? (
+							<>
+								<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+								Saving...
+							</>
+						) : (
+							"Save"
+						)}
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }

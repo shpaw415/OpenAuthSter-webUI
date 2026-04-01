@@ -11,23 +11,72 @@ import {
 	PUT as updateThemeById,
 } from "@api/themes/id";
 import { useCallback, useEffect, useState } from "react";
+import { createServerCache, useServerCacheValue } from "./serverCache";
 
 export type { UITheme };
 
+const UI_THEMES_CACHE_KEY = "all";
+const uiThemesCache = createServerCache<UITheme[]>();
+const uiThemeCache = createServerCache<UITheme>();
+
+function upsertTheme(themes: UITheme[], nextTheme: UITheme) {
+	const existingIndex = themes.findIndex((theme) => theme.id === nextTheme.id);
+
+	if (existingIndex === -1) {
+		return [...themes, nextTheme];
+	}
+
+	return themes.map((theme) =>
+		theme.id === nextTheme.id ? nextTheme : theme,
+	);
+}
+
+function syncTheme(theme: UITheme) {
+	uiThemeCache.set(String(theme.id), theme);
+	uiThemesCache.update(UI_THEMES_CACHE_KEY, (currentThemes) =>
+		upsertTheme(currentThemes ?? [], theme),
+	);
+}
+
+function syncThemes(themes: UITheme[]) {
+	uiThemesCache.set(UI_THEMES_CACHE_KEY, themes);
+	for (const theme of themes) {
+		uiThemeCache.set(String(theme.id), theme);
+	}
+}
+
+function removeThemeFromCache(id: number) {
+	uiThemeCache.clear(String(id));
+	uiThemesCache.update(UI_THEMES_CACHE_KEY, (currentThemes) =>
+		(currentThemes ?? []).filter((theme) => theme.id !== id),
+	);
+}
+
 export function useUIThemes() {
-	const [themes, setThemes] = useState<UITheme[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const themes = useServerCacheValue(uiThemesCache, UI_THEMES_CACHE_KEY) ?? [];
+	const [isLoading, setIsLoading] = useState(
+		() => uiThemesCache.getSnapshot(UI_THEMES_CACHE_KEY) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchThemes = useCallback(async () => {
-		setIsLoading(true);
+	const fetchThemes = useCallback(async (force = true) => {
+		if (force || uiThemesCache.getSnapshot(UI_THEMES_CACHE_KEY) === undefined) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const result = await getThemes();
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch themes");
-			}
-			setThemes(result.data || []);
+			const data = await uiThemesCache.fetch(
+				UI_THEMES_CACHE_KEY,
+				async () => {
+					const result = await getThemes();
+					if (!result.success) {
+						throw new Error(result.error || "Failed to fetch themes");
+					}
+					return result.data || [];
+				},
+				{ force },
+			);
+			syncThemes(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unknown error");
 		} finally {
@@ -36,7 +85,7 @@ export function useUIThemes() {
 	}, []);
 
 	useEffect(() => {
-		fetchThemes();
+		void fetchThemes(false);
 	}, [fetchThemes]);
 
 	const createTheme = useCallback(async (params: CreateThemeParams) => {
@@ -45,8 +94,9 @@ export function useUIThemes() {
 		if (!res.success) {
 			throw new Error(res.error || "Failed to create theme");
 		}
-		setThemes((prev) => [...prev, res.data as UITheme]);
-		return res.data as UITheme;
+		const theme = res.data as UITheme;
+		syncTheme(theme);
+		return theme;
 	}, []);
 
 	const deleteTheme = useCallback(async (id: number) => {
@@ -56,7 +106,7 @@ export function useUIThemes() {
 			throw new Error(res.error || "Failed to delete theme");
 		}
 
-		setThemes((prev) => prev.filter((t) => t.id !== id));
+		removeThemeFromCache(id);
 	}, []);
 
 	return {
@@ -70,34 +120,47 @@ export function useUIThemes() {
 }
 
 export function useUITheme(id: number | null) {
-	const [theme, setTheme] = useState<UITheme | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+	const cacheKey = id === null ? "" : String(id);
+	const theme = useServerCacheValue(uiThemeCache, cacheKey) ?? null;
+	const [isLoading, setIsLoading] = useState(
+		() => id !== null && uiThemeCache.getSnapshot(cacheKey) === undefined
+	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTheme = useCallback(async () => {
+	const fetchTheme = useCallback(async (force = true) => {
 		if (!id) {
 			setIsLoading(false);
 			return;
 		}
-		setIsLoading(true);
+		if (force || uiThemeCache.getSnapshot(cacheKey) === undefined) {
+			setIsLoading(true);
+		}
 		setError(null);
 		try {
-			const result = await getThemeById({ id });
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch theme");
-			} else if (!result.data) {
-				throw new Error("Theme data is undefined");
-			}
-			setTheme(result.data);
+			const data = await uiThemeCache.fetch(
+				cacheKey,
+				async () => {
+					const result = await getThemeById({ id });
+					if (!result.success) {
+						throw new Error(result.error || "Failed to fetch theme");
+					}
+					if (!result.data) {
+						throw new Error("Theme data is undefined");
+					}
+					return result.data;
+				},
+				{ force },
+			);
+			syncTheme(data);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Unknown error");
 		} finally {
 			setIsLoading(false);
 		}
-	}, [id]);
+	}, [cacheKey, id]);
 
 	useEffect(() => {
-		fetchTheme();
+		void fetchTheme(false);
 	}, [fetchTheme]);
 
 	const updateTheme = async (
@@ -115,8 +178,9 @@ export function useUITheme(id: number | null) {
 			throw new Error(error || "Failed to update theme");
 		}
 
-		setTheme(data as UITheme);
-		return data as UITheme;
+		const theme = data as UITheme;
+		syncTheme(theme);
+		return theme;
 	};
 
 	return {

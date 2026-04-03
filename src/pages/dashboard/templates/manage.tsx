@@ -224,7 +224,10 @@ export default function EmailTemplatesManage() {
 		isEditMode ? templateName : "",
 	);
 
-	const isTemplateOwner = useMemo(() => template?.owner_id === auth.userMeta?.id, [template, auth.userMeta]);
+	const isTemplateOwner = useMemo(
+		() => template?.owner_id === auth.userMeta?.id,
+		[template, auth.userMeta],
+	);
 
 	// Hook for creating new templates
 	const { createTemplate } = useEmailTemplates();

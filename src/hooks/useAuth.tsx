@@ -1,4 +1,4 @@
-import { createClient, type AuthClientType } from "@auth";
+import { type AuthClientType, createClient } from "@auth";
 import {
 	type Context,
 	createContext,

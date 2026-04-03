@@ -5,6 +5,7 @@ import EnvInHtml from "frame-master-plugin-env-in-html";
 import ImageOptimizerPlugin from "frame-master-plugin-image-optimizer";
 import mdxLoaderPlugin from "frame-master-plugin-mdx-to-js-loader";
 import ReactToHtml from "frame-master-plugin-react-to-html";
+import framemasterpluginserverobject from "frame-master-plugin-server-object";
 import TailwindPlugin from "frame-master-plugin-tailwind";
 import svgToJsxPlugin from "frame-master-svg-to-jsx-loader";
 import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
@@ -12,7 +13,6 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
-import framemasterpluginserverobject from "frame-master-plugin-server-object";
 
 export default {
 	HTTPServer: {

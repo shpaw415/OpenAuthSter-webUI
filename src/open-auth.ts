@@ -1,8 +1,7 @@
 import {
+	type CacheStoreData,
 	createOpenAuthsterClient,
 	defaultSubjectSchema,
-	type CacheStoreData,
-	type UserMetaData,
 } from "openauth-webui-shared-types/client/user";
 
 export const subject = defaultSubjectSchema;
@@ -27,7 +26,7 @@ export type Roles = "user";
 
 export type AuthClientType = ReturnType<typeof createClient>;
 
-const clientCache = new Map<string, CacheStoreData<any, any>>();
+const clientCache = new Map<string, CacheStoreData<Roles, never>>();
 
 export const createClient = ({
 	token,
@@ -58,7 +57,7 @@ export const createClient = ({
 				return Promise.resolve(clientCache.get(key) ?? null);
 			},
 			set(key, value) {
-				clientCache.set(key, value);
+				clientCache.set(key, value as never);
 				return Promise.resolve();
 			},
 			delete(key) {

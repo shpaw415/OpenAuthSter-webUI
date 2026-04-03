@@ -17,5 +17,10 @@ export async function POST({ code }: { code: string }) {
 	}
 
 	const manager = invites(ctx.env.PROJECT_DB);
-	return await manager.confirmInvite(code, userId, "email_template", ctx.data.client);
+	return await manager.confirmInvite(
+		code,
+		userId,
+		"email_template",
+		ctx.data.client,
+	);
 }

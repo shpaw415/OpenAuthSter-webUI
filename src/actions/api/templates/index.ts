@@ -16,7 +16,7 @@ export async function GET(): Promise<{
 	const ctx = getContext<Env, string, RequestDataContext>(arguments);
 	const { env } = ctx;
 
-	const session = (await ctx.data.client.getUserSession("private"));
+	const session = await ctx.data.client.getUserSession("private");
 
 	if (session instanceof Error) {
 		return {
@@ -36,9 +36,9 @@ export async function GET(): Promise<{
 			ownerGroupConditions({
 				user_group_ids: session.private?.group_ids || [],
 				ownerGroupIdColumn: emailTemplatesTable.owner_group_id,
-				otherEq:[eq(emailTemplatesTable.owner_id, currentUserId)],
+				otherEq: [eq(emailTemplatesTable.owner_id, currentUserId)],
 				self_host: ctx.env.SELF_HOSTED,
-			})
+			}),
 		);
 
 	return {

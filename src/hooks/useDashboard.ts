@@ -20,7 +20,10 @@ export function useDashboard(options?: UseDashboardOptions) {
 	const [error, setError] = useState<string | null>(null);
 
 	const refetch = useCallback(async (force = true) => {
-		if (force || dashboardCache.getSnapshot(DASHBOARD_CACHE_KEY) === undefined) {
+		if (
+			force ||
+			dashboardCache.getSnapshot(DASHBOARD_CACHE_KEY) === undefined
+		) {
 			setIsLoading(true);
 		}
 		setError(null);

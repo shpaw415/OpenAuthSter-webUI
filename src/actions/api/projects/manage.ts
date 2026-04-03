@@ -2,9 +2,9 @@ import type { RequestDataContext } from "@auth";
 import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
-	PUBLIC_CLIENT_ID,
-	type Project,
 	createWebUiProject,
+	type Project,
+	PUBLIC_CLIENT_ID,
 } from "openauth-webui-shared-types";
 import {
 	DeleteOTFusersTable,
@@ -12,11 +12,11 @@ import {
 	projectTable,
 	totpTable,
 	totpTokenTable,
+	uiStyleTable,
 	WebHookTable,
 	WebUiInviteLinkTable,
 	webAuthnTokenAccessTable,
 	webauthnChallengesTable,
-	uiStyleTable,
 	webauthnCredentialsTable,
 } from "openauth-webui-shared-types/database";
 import { and, drizzle, eq, or } from "openauth-webui-shared-types/drizzle";

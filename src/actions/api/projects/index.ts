@@ -2,9 +2,9 @@ import type { RequestDataContext } from "@auth";
 import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
+	createWebUiProject,
 	type Project,
 	type ProviderConfig,
-	createWebUiProject,
 } from "openauth-webui-shared-types";
 import {
 	createUserTable,

@@ -1,4 +1,7 @@
-import { DELETE as cancelInvite, POST as createInvite } from "@api/invites/project/manage";
+import {
+	DELETE as cancelInvite,
+	POST as createInvite,
+} from "@api/invites/project/manage";
 import {
 	CollaboratorManagementSection,
 	type InviteItem,

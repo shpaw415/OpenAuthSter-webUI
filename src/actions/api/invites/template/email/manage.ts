@@ -37,16 +37,19 @@ export async function POST({
 	const template = await db
 		.select()
 		.from(emailTemplatesTable)
-		.where(and(
-			eq(emailTemplatesTable.name, template_name),
-			eq(emailTemplatesTable.owner_id, current_user_id)
-		))
+		.where(
+			and(
+				eq(emailTemplatesTable.name, template_name),
+				eq(emailTemplatesTable.owner_id, current_user_id),
+			),
+		)
 		.get();
 
 	if (!template) {
 		return {
 			success: false,
-			error: "Email template not found or you do not have permission to manage it",
+			error:
+				"Email template not found or you do not have permission to manage it",
 		};
 	}
 

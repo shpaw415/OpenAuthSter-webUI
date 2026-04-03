@@ -6,9 +6,9 @@ import {
 	CollaboratorManagementSection,
 	type InviteItem,
 } from "@components/CollaboratorManagement";
+import { useAuth } from "@hooks/useAuth";
 import { useParams } from "@hooks/useParams";
 import { useUITheme } from "@hooks/useUIThemes";
-import { useAuth } from "@hooks/useAuth";
 import { Icon } from "@iconify/react";
 
 export default function UIThemeCollaborators() {

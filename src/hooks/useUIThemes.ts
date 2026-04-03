@@ -26,9 +26,7 @@ function upsertTheme(themes: UITheme[], nextTheme: UITheme) {
 		return [...themes, nextTheme];
 	}
 
-	return themes.map((theme) =>
-		theme.id === nextTheme.id ? nextTheme : theme,
-	);
+	return themes.map((theme) => (theme.id === nextTheme.id ? nextTheme : theme));
 }
 
 function syncTheme(theme: UITheme) {
@@ -123,41 +121,44 @@ export function useUITheme(id: number | null) {
 	const cacheKey = id === null ? "" : String(id);
 	const theme = useServerCacheValue(uiThemeCache, cacheKey) ?? null;
 	const [isLoading, setIsLoading] = useState(
-		() => id !== null && uiThemeCache.getSnapshot(cacheKey) === undefined
+		() => id !== null && uiThemeCache.getSnapshot(cacheKey) === undefined,
 	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTheme = useCallback(async (force = true) => {
-		if (!id) {
-			setIsLoading(false);
-			return;
-		}
-		if (force || uiThemeCache.getSnapshot(cacheKey) === undefined) {
-			setIsLoading(true);
-		}
-		setError(null);
-		try {
-			const data = await uiThemeCache.fetch(
-				cacheKey,
-				async () => {
-					const result = await getThemeById({ id });
-					if (!result.success) {
-						throw new Error(result.error || "Failed to fetch theme");
-					}
-					if (!result.data) {
-						throw new Error("Theme data is undefined");
-					}
-					return result.data;
-				},
-				{ force },
-			);
-			syncTheme(data);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unknown error");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [cacheKey, id]);
+	const fetchTheme = useCallback(
+		async (force = true) => {
+			if (!id) {
+				setIsLoading(false);
+				return;
+			}
+			if (force || uiThemeCache.getSnapshot(cacheKey) === undefined) {
+				setIsLoading(true);
+			}
+			setError(null);
+			try {
+				const data = await uiThemeCache.fetch(
+					cacheKey,
+					async () => {
+						const result = await getThemeById({ id });
+						if (!result.success) {
+							throw new Error(result.error || "Failed to fetch theme");
+						}
+						if (!result.data) {
+							throw new Error("Theme data is undefined");
+						}
+						return result.data;
+					},
+					{ force },
+				);
+				syncTheme(data);
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Unknown error");
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[cacheKey, id],
+	);
 
 	useEffect(() => {
 		void fetchTheme(false);

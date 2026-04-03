@@ -2,7 +2,7 @@ import type { RequestDataContext } from "@auth";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import { projectTable } from "openauth-webui-shared-types";
 import { and, drizzle, eq } from "openauth-webui-shared-types/drizzle";
-import { invites, type InviteStatus, type InviteType } from "../share";
+import { type InviteStatus, type InviteType, invites } from "../share";
 
 /**
  * POST /api/projects/invite - Invite a user to a project

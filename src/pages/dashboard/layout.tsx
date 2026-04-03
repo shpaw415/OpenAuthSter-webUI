@@ -1,6 +1,8 @@
+import { ErrorBoundary } from "@components/ErrorBoundary";
 import { useAuth } from "@hooks/useAuth";
 import { useNotifications } from "@hooks/useNotifications";
 import { Icon } from "@iconify/react";
+import { client } from "@kagii/openauth/storage/aws";
 import OpenAuthsterLogo from "@static/logo.webp";
 import {
 	type ReactNode,
@@ -14,8 +16,6 @@ import {
 	getCurrentIssuerVersion,
 	getCurrentWebUiVersion,
 } from "../../version-check";
-import { ErrorBoundary } from "@components/ErrorBoundary";
-import { client } from "@kagii/openauth/storage/aws";
 
 const semver = require("semver");
 

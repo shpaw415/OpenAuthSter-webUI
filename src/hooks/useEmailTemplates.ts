@@ -61,7 +61,8 @@ export function useEmailTemplates() {
 	const templates =
 		useServerCacheValue(emailTemplatesCache, EMAIL_TEMPLATES_CACHE_KEY) ?? [];
 	const [isLoading, setIsLoading] = useState(
-		() => emailTemplatesCache.getSnapshot(EMAIL_TEMPLATES_CACHE_KEY) === undefined,
+		() =>
+			emailTemplatesCache.getSnapshot(EMAIL_TEMPLATES_CACHE_KEY) === undefined,
 	);
 	const [error, setError] = useState<string | null>(null);
 
@@ -134,37 +135,40 @@ export function useEmailTemplate(name: string = "") {
 	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTemplate = useCallback(async (force = true) => {
-		if (!name) {
-			setIsLoading(false);
-			return;
-		}
-		if (force || emailTemplateCache.getSnapshot(name) === undefined) {
-			setIsLoading(true);
-		}
-		setError(null);
-		try {
-			const data = await emailTemplateCache.fetch(
-				name,
-				async () => {
-					const result = await getTemplateByName({ name });
-					if (!result.success) {
-						throw new Error(result.error || "Failed to fetch template");
-					}
-					if (!result.data) {
-						throw new Error("Template data is undefined");
-					}
-					return result.data;
-				},
-				{ force },
-			);
-			syncTemplate(data);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unknown error");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [name]);
+	const fetchTemplate = useCallback(
+		async (force = true) => {
+			if (!name) {
+				setIsLoading(false);
+				return;
+			}
+			if (force || emailTemplateCache.getSnapshot(name) === undefined) {
+				setIsLoading(true);
+			}
+			setError(null);
+			try {
+				const data = await emailTemplateCache.fetch(
+					name,
+					async () => {
+						const result = await getTemplateByName({ name });
+						if (!result.success) {
+							throw new Error(result.error || "Failed to fetch template");
+						}
+						if (!result.data) {
+							throw new Error("Template data is undefined");
+						}
+						return result.data;
+					},
+					{ force },
+				);
+				syncTemplate(data);
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Unknown error");
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[name],
+	);
 
 	useEffect(() => {
 		void fetchTemplate(false);

@@ -1,6 +1,6 @@
+import { AppSnackbar } from "@components/AppSnackbar";
 import { useUITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
-import { AppSnackbar } from "@components/AppSnackbar";
 import type { Theme } from "@kagii/openauth/ui/theme";
 import { navigate } from "@utils";
 import { useCallback, useEffect, useState } from "react";
@@ -222,7 +222,10 @@ export default function UIThemeManage() {
 	return (
 		<div className="max-w-7xl mx-auto px-4 pb-24 pt-4 sm:px-6 sm:py-6 md:pb-6 lg:px-8 lg:py-8">
 			{/* Notification */}
-			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
+			<AppSnackbar
+				notification={notification}
+				onClose={() => setNotification(null)}
+			/>
 
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

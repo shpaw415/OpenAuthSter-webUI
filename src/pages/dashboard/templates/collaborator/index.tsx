@@ -6,10 +6,10 @@ import {
 	CollaboratorManagementSection,
 	type InviteItem,
 } from "@components/CollaboratorManagement";
-import { useParams } from "@hooks/useParams";
-import { useEmailTemplate } from "@hooks/useEmailTemplates";
-import { Icon } from "@iconify/react";
 import { useAuth } from "@hooks/useAuth";
+import { useEmailTemplate } from "@hooks/useEmailTemplates";
+import { useParams } from "@hooks/useParams";
+import { Icon } from "@iconify/react";
 
 export default function EmailTemplateCollaborators() {
 	const { template_name: templateName } = useParams<{
@@ -22,7 +22,6 @@ export default function EmailTemplateCollaborators() {
 	const backHref = templateName
 		? `/dashboard/templates/manage?edit=${templateName}`
 		: "/dashboard/templates";
-
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-8">
@@ -52,20 +51,20 @@ export default function EmailTemplateCollaborators() {
 					isOwner={template.owner_id === auth.userMeta?.id}
 					inviteType="email_template"
 					inviteDescription="Invite another user to access email templates for this project by their user ID."
-				onInvite={(userId, fromName) =>
-								createEmailTemplateInvite({
-									user_id: userId,
-									from_name: fromName,
-									template_name: template.name,
-								})
-				}
-				onCancelInvite={(invite: InviteItem) =>
-					cancelEmailTemplateInvite({
-						user_id: invite.user_id,
-						owner_group_id: invite.owner_group_id,
-					})
-				}
-			/>
+					onInvite={(userId, fromName) =>
+						createEmailTemplateInvite({
+							user_id: userId,
+							from_name: fromName,
+							template_name: template.name,
+						})
+					}
+					onCancelInvite={(invite: InviteItem) =>
+						cancelEmailTemplateInvite({
+							user_id: invite.user_id,
+							owner_group_id: invite.owner_group_id,
+						})
+					}
+				/>
 			)}
 		</div>
 	);

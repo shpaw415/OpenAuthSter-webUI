@@ -45,7 +45,9 @@ export function useProjectUsers(
 	const users = cachedPage?.users ?? [];
 	const total = cachedPage?.total ?? 0;
 	const [isLoading, setIsLoading] = useState(
-		() => Boolean(clientID) && projectUsersCache.getSnapshot(cacheKey) === undefined,
+		() =>
+			Boolean(clientID) &&
+			projectUsersCache.getSnapshot(cacheKey) === undefined,
 	);
 
 	useEffect(() => {
@@ -54,10 +56,7 @@ export function useProjectUsers(
 	}, [options.initialSearch]);
 
 	const fetchUsers = useCallback(
-		async (
-			params?: { page?: number; search?: string },
-			force = true,
-		) => {
+		async (params?: { page?: number; search?: string }, force = true) => {
 			if (!clientID) return;
 
 			const nextPage = params?.page ?? page;

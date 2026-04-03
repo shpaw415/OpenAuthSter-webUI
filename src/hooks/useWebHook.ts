@@ -64,7 +64,9 @@ export function useWebHook(projectID: string) {
 				return {
 					success: false as const,
 					error:
-						error instanceof Error ? error.message : "Failed to retrieve webhooks",
+						error instanceof Error
+							? error.message
+							: "Failed to retrieve webhooks",
 				};
 			}
 		},

@@ -1,19 +1,12 @@
+import { AppSnackbar } from "@components/AppSnackbar";
 import { ProviderIcon } from "@components/provider-icons";
 import { Toggle, ToggleBase } from "@components/toggle";
 import { useEmailTemplates } from "@hooks/useEmailTemplates";
 import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { Icon } from "@iconify/react";
-import { AppSnackbar } from "@components/AppSnackbar";
 import formParser from "@shpaw415/formdata-parser";
 import { navigate } from "@utils";
-import {
-	getDefaultProviderScopes,
-	normalizeProviderScopes,
-	getProviderScopeOptions,
-	type ScopeOption,
-	uniqueScopeValues,
-} from "./providerScopes";
 import type {
 	AppleOAuthProviderConfig,
 	AppleOIDCProviderConfig,
@@ -42,6 +35,13 @@ import React, {
 	useRef,
 	useState,
 } from "react";
+import {
+	getDefaultProviderScopes,
+	getProviderScopeOptions,
+	normalizeProviderScopes,
+	type ScopeOption,
+	uniqueScopeValues,
+} from "./providerScopes";
 
 type ProviderDocProps = {
 	redirectURI: string;

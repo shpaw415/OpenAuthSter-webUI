@@ -120,7 +120,6 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 		};
 	}
 
-
 	const [updated] = await db
 		.update(uiStyleTable)
 		.set({
@@ -129,14 +128,15 @@ export async function PUT(params: UpdateThemeParams): Promise<{
 				...data,
 			},
 		})
-		.where(eq(uiStyleTable.id, id)).returning();
+		.where(eq(uiStyleTable.id, id))
+		.returning();
 
-		if(!updated) {
-			return {
-				success: false,
-				error: "Failed to update theme",
-			};
-		}
+	if (!updated) {
+		return {
+			success: false,
+			error: "Failed to update theme",
+		};
+	}
 
 	return {
 		success: true,

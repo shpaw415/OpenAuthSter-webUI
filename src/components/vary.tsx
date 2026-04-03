@@ -20,7 +20,10 @@ export function InviteCollaboratorForm({
 
 	const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
 		e.preventDefault();
-		const userId = new FormData(e.currentTarget).get("userId")?.toString().trim();
+		const userId = new FormData(e.currentTarget)
+			.get("userId")
+			?.toString()
+			.trim();
 		if (!userId) return;
 		setIsLoading(true);
 		setError(null);

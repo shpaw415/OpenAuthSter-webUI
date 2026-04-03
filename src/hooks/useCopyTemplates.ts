@@ -19,10 +19,7 @@ const COPY_TEMPLATES_CACHE_KEY = "all";
 const copyTemplatesCache = createServerCache<CopyTemplate[]>();
 const copyTemplateCache = createServerCache<CopyTemplate>();
 
-function upsertTemplate(
-	templates: CopyTemplate[],
-	nextTemplate: CopyTemplate,
-) {
+function upsertTemplate(templates: CopyTemplate[], nextTemplate: CopyTemplate) {
 	const existingIndex = templates.findIndex(
 		(template) => template.name === nextTemplate.name,
 	);
@@ -61,7 +58,8 @@ export function useCopyTemplates() {
 	const templates =
 		useServerCacheValue(copyTemplatesCache, COPY_TEMPLATES_CACHE_KEY) ?? [];
 	const [isLoading, setIsLoading] = useState(
-		() => copyTemplatesCache.getSnapshot(COPY_TEMPLATES_CACHE_KEY) === undefined,
+		() =>
+			copyTemplatesCache.getSnapshot(COPY_TEMPLATES_CACHE_KEY) === undefined,
 	);
 	const [error, setError] = useState<string | null>(null);
 
@@ -139,37 +137,40 @@ export function useCopyTemplate(name: string = "") {
 	);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchTemplate = useCallback(async (force = true) => {
-		if (!name) {
-			setIsLoading(false);
-			return;
-		}
-		if (force || copyTemplateCache.getSnapshot(name) === undefined) {
-			setIsLoading(true);
-		}
-		setError(null);
-		try {
-			const data = await copyTemplateCache.fetch(
-				name,
-				async () => {
-					const result = await getCopyTemplateByName({ name });
-					if (!result.success) {
-						throw new Error(result.error || "Failed to fetch copy template");
-					}
-					if (!result.data) {
-						throw new Error("Copy template data is undefined");
-					}
-					return result.data;
-				},
-				{ force },
-			);
-			syncTemplate(data);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unknown error");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [name]);
+	const fetchTemplate = useCallback(
+		async (force = true) => {
+			if (!name) {
+				setIsLoading(false);
+				return;
+			}
+			if (force || copyTemplateCache.getSnapshot(name) === undefined) {
+				setIsLoading(true);
+			}
+			setError(null);
+			try {
+				const data = await copyTemplateCache.fetch(
+					name,
+					async () => {
+						const result = await getCopyTemplateByName({ name });
+						if (!result.success) {
+							throw new Error(result.error || "Failed to fetch copy template");
+						}
+						if (!result.data) {
+							throw new Error("Copy template data is undefined");
+						}
+						return result.data;
+					},
+					{ force },
+				);
+				syncTemplate(data);
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Unknown error");
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[name],
+	);
 
 	useEffect(() => {
 		void fetchTemplate(false);

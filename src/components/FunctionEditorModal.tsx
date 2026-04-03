@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
-import type * as monacoModule from "monaco-editor";
 import Editor from "@monaco-editor/react";
+import type * as monacoModule from "monaco-editor";
 import type { IPosition, editor as MonacoEditor } from "monaco-editor";
 import { useCallback, useEffect, useRef, useState } from "react";
 

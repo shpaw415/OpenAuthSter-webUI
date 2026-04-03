@@ -1,9 +1,9 @@
 import { GET as getInvites } from "@api/invites";
 import { DELETE as revokeCollaborator } from "@api/invites/revoke";
 import { GET as getUserInfo } from "@api/users/info";
+import { AppSnackbar } from "@components/AppSnackbar";
 import { InviteCollaboratorForm } from "@components/vary";
 import { Icon } from "@iconify/react";
-import { AppSnackbar } from "@components/AppSnackbar";
 import {
 	type ReactNode,
 	useCallback,
@@ -152,7 +152,10 @@ export function CollaboratorManagementSection({
 
 	return (
 		<>
-			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
+			<AppSnackbar
+				notification={notification}
+				onClose={() => setNotification(null)}
+			/>
 
 			{isOwner && onInvite && (
 				<InviteCollaboratorForm

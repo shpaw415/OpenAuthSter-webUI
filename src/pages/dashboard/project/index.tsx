@@ -1,4 +1,5 @@
 import { POST as createInviteLink } from "@api/invitelink";
+import { AppSnackbar } from "@components/AppSnackbar";
 import { FunctionEditorModal } from "@components/FunctionEditorModal";
 import { SelectWrapper, TemplateSelection } from "@components/InputFields";
 import { ProviderIcon } from "@components/provider-icons";
@@ -8,7 +9,6 @@ import { useProject } from "@hooks/useProjects";
 import { useUIThemes } from "@hooks/useUIThemes";
 import { useWebHook } from "@hooks/useWebHook";
 import { Icon } from "@iconify/react";
-import { AppSnackbar } from "@components/AppSnackbar";
 import type {
 	Project,
 	ProjectData,

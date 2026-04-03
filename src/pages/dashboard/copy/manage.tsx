@@ -1,8 +1,8 @@
 import { useCopyTemplate, useCopyTemplates } from "@hooks/useCopyTemplates";
-import { navigate } from "@utils";
-import { useEffect, useState } from "react";
 import type { CodeUICopy } from "@kagii/openauth/ui/code";
+import { navigate } from "@utils";
 import type { PasswordUICopy } from "openauth-webui-shared-types";
+import { useEffect, useState } from "react";
 
 // ──────────────────────────────────────────────
 // Default values (from @openauthjs/openauth source)
@@ -264,9 +264,19 @@ export default function CopyManagePage() {
 						href={`/dashboard/copy/collaborator?template_name=${encodeURIComponent(editName)}`}
 						className="ml-auto inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
 					>
-						<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg
+							className="w-4 h-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
 							<title>Collaborators</title>
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+							/>
 						</svg>
 						<span className="hidden sm:inline">Collaborators</span>
 					</a>

@@ -1,8 +1,10 @@
+import { AppSnackbar } from "@components/AppSnackbar";
 import { ProviderIcon } from "@components/provider-icons";
 import { Toggle, ToggleBase } from "@components/toggle";
+import { useEmailTemplates } from "@hooks/useEmailTemplates";
+import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
 import formParser from "@shpaw415/formdata-parser";
 import { navigate } from "@utils";
 import type {
@@ -21,10 +23,9 @@ import type {
 	ProviderType,
 	QRProviderConfig,
 	SlackProviderConfig,
-	WebAuthnProviderConfig,
 } from "openauth-webui-shared-types";
 import { getProviderMeta } from "openauth-webui-shared-types";
-import {
+import React, {
 	type ComponentType,
 	createContext,
 	useCallback,
@@ -34,32 +35,48 @@ import {
 	useRef,
 	useState,
 } from "react";
+import {
+	getDefaultProviderScopes,
+	getProviderScopeOptions,
+	normalizeProviderScopes,
+	type ScopeOption,
+	uniqueScopeValues,
+} from "./providerScopes";
+
+type ProviderDocProps = {
+	redirectURI: string;
+	RedirectURI: ComponentType<{ value: string }>;
+};
 
 // MDX documentation imports
-const providerDocs: Record<string, () => Promise<{ default: ComponentType }>> =
-	{
-		google: () => import("@docs/providers/google.mdx"),
-		github: () => import("@docs/providers/github.mdx"),
-		discord: () => import("@docs/providers/discord.mdx"),
-		microsoft: () => import("@docs/providers/microsoft.mdx"),
-		keycloak: () => import("@docs/providers/keycloak.mdx"),
-		oidc: () => import("@docs/providers/oidc.mdx"),
-		oauth: () => import("@docs/providers/oauth.mdx"),
-		code: () => import("@docs/providers/code.mdx"),
-		password: () => import("@docs/providers/password.mdx"),
-		slack: () => import("@docs/providers/slack.mdx"),
-		cognito: () => import("@docs/providers/cognito.mdx"),
-		apple: () => import("@docs/providers/apple.mdx"),
-		facebook: () => import("@docs/providers/facebook.mdx"),
-		spotify: () => import("@docs/providers/spotify.mdx"),
-		twitch: () => import("@docs/providers/twitch.mdx"),
-		x: () => import("@docs/providers/x.mdx"),
-		yahoo: () => import("@docs/providers/yahoo.mdx"),
-		jumpcloud: () => import("@docs/providers/jumpcloud.mdx"),
-		qr: () => import("@docs/providers/QRCode.mdx"),
-		passkey: () => import("@docs/providers/passkey.mdx"),
-		default: () => import("@docs/providers/default.mdx"),
-	};
+const providerDocs: Record<
+	ProviderType | "default",
+	() => Promise<{ default: ComponentType<ProviderDocProps> }>
+> = {
+	google: () => import("@docs/providers/google.mdx"),
+	github: () => import("@docs/providers/github.mdx"),
+	discord: () => import("@docs/providers/discord.mdx"),
+	microsoft: () => import("@docs/providers/microsoft.mdx"),
+	keycloak: () => import("@docs/providers/keycloak.mdx"),
+	oidc: () => import("@docs/providers/oidc.mdx"),
+	oauth: () => import("@docs/providers/oauth.mdx"),
+	code: () => import("@docs/providers/code.mdx"),
+	password: () => import("@docs/providers/password.mdx"),
+	slack: () => import("@docs/providers/slack.mdx"),
+	cognito: () => import("@docs/providers/cognito.mdx"),
+	apple: () => import("@docs/providers/apple.mdx"),
+	appleoidc: () => import("@docs/providers/appleoidc.mdx"),
+	appleoauth: () => import("@docs/providers/appleoauth.mdx"),
+	facebook: () => import("@docs/providers/facebook.mdx"),
+	spotify: () => import("@docs/providers/spotify.mdx"),
+	twitch: () => import("@docs/providers/twitch.mdx"),
+	x: () => import("@docs/providers/x.mdx"),
+	yahoo: () => import("@docs/providers/yahoo.mdx"),
+	jumpcloud: () => import("@docs/providers/jumpcloud.mdx"),
+	qr: () => import("@docs/providers/QRCode.mdx"),
+	passkey: () => import("@docs/providers/passkey.mdx"),
+	default: () => import("@docs/providers/default.mdx"),
+};
 
 type ProviderFormState<T extends ProviderConfig> = {
 	clientID: string;
@@ -70,36 +87,29 @@ type ProviderFormState<T extends ProviderConfig> = {
 	data: Partial<T["data"]> | null;
 };
 
-const providerFormStateContext = createContext<ProviderFormState<any> | null>(
-	null,
-);
+const providerFormStateContext =
+	createContext<ProviderFormState<ProviderConfig> | null>(null);
 
 function useProviderFormState<T extends ProviderConfig>() {
-	return useContext(providerFormStateContext)! as ProviderFormState<T>;
+	return useContext(providerFormStateContext) as ProviderFormState<T>;
 }
 
 export default function ProviderForm() {
-	const project_id = useMemo(
-		() =>
-			typeof window === "undefined"
-				? undefined
-				: new URLSearchParams(window.location.search).get("project_id"),
-		[typeof window !== "undefined" && window.location.href],
-	);
-	const provider_type = useMemo(
-		() =>
-			typeof window === "undefined"
-				? undefined
-				: (new URLSearchParams(window.location.search).get(
-						"provider_type",
-					) as Exclude<ProviderType, "apple">),
-		[typeof window !== "undefined" && window.location.href],
-	);
+	const { project_id, provider_type } = useParams<{
+		project_id: string;
+		provider_type: ProviderType;
+	}>();
+
+	if (typeof window !== "undefined" && (!project_id || !provider_type)) {
+		throw new Error("Missing project_id or provider_type in URL parameters");
+	}
+
 	const projectHook = useProject(
 		typeof window === "undefined"
 			? undefined
 			: new URLSearchParams(window.location.search).get("project_id") || "",
 	);
+
 	const meta = useMemo(
 		() => provider_type && getProviderMeta(provider_type),
 		[provider_type],
@@ -109,13 +119,45 @@ export default function ProviderForm() {
 		ProviderConfig | Partial<ProviderConfig>
 	>({});
 	const [showSecret, setShowSecret] = useState(false);
-	const [DocComponent, setDocComponent] = useState<ComponentType | null>(null);
+	const [DocComponent, setDocComponent] =
+		useState<ComponentType<ProviderDocProps> | null>(null);
+	const redirectURI = useMemo(
+		() =>
+			buildProviderRedirectURI(
+				projectHook.project?.authEndpointURL,
+				provider_type,
+			),
+		[projectHook.project?.authEndpointURL, provider_type],
+	);
 
 	const formRef = useRef<HTMLFormElement | null>(null);
-	const [snackData, setSnackData] = useState<{
+	const [notification, setNotification] = useState<{
 		message: string;
-		type: "success" | "error";
+		type?: "success" | "error";
 	} | null>(null);
+	const RedirectURIComponent = useMemo(
+		() =>
+			function RedirectURIComponent({ value }: { value: string }) {
+				return (
+					<CopyableInlineCode
+						value={value}
+						onCopy={() =>
+							setNotification({
+								message: "Callback URL copied to clipboard",
+								type: "success",
+							})
+						}
+						onError={(message) =>
+							setNotification({
+								message,
+								type: "error",
+							})
+						}
+					/>
+				);
+			},
+		[],
+	);
 
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -125,13 +167,13 @@ export default function ProviderForm() {
 		projectHook
 			.updateProvider(updatedConfig)
 			.then(() =>
-				setSnackData({
+				setNotification({
 					message: "Provider saved successfully",
 					type: "success",
 				}),
 			)
 			.catch((err) =>
-				setSnackData({
+				setNotification({
 					message:
 						"" +
 						(err instanceof Error ? err.message : "Failed to save provider"),
@@ -145,8 +187,8 @@ export default function ProviderForm() {
 		e.preventDefault();
 
 		const res = parseFormToProviderConfig({
-			formData: new FormData(formRef.current!),
-			providerType: provider_type!,
+			formData: new FormData(formRef.current as HTMLFormElement),
+			providerType: provider_type as ProviderConfig["type"],
 			providerEnabled: config.enabled ?? false,
 		});
 		console.log(res);
@@ -161,15 +203,15 @@ export default function ProviderForm() {
 
 		let initialConfig: Partial<ProviderConfig> | null = {
 			enabled: false,
-			type: providerType!,
-			data: {} as any,
+			type: providerType,
+			data: {} as never,
 		};
 
 		if (providerType) {
 			initialConfig = {
 				type: providerType,
 				enabled: true,
-				data: projectHook.project.providers_data.find(
+				data: projectHook.project?.providers_data?.find(
 					(p) => p.type === providerType,
 				)?.data as ProviderConfig["data"],
 			} as ProviderConfig;
@@ -181,27 +223,27 @@ export default function ProviderForm() {
 			// Invalid state, navigate back to providers list
 			navigate(`/project?project_id=${projectHook.project?.clientID}`);
 		}
-	}, [projectHook.project]);
+	}, [projectHook.project, provider_type]);
 
 	// Load MDX documentation based on provider type
 	useEffect(() => {
 		const loadDocs = async () => {
-			const providerType = config.type || "default";
-			const loader = providerDocs[providerType] ?? providerDocs["default"];
+			const loader = providerDocs[provider_type] ?? providerDocs.default;
+			console.log({ loader, provider_type });
 			try {
-				const module = await loader!();
-				setDocComponent(() => module.default);
+				const module = await loader();
+				setDocComponent(() => module?.default || null);
 			} catch {
-				const defaultModule = await providerDocs["default"]!();
-				setDocComponent(() => defaultModule.default);
+				const defaultModule = await providerDocs.default();
+				setDocComponent(() => defaultModule?.default || null);
 			}
 		};
 		loadDocs();
-	}, [config?.type]);
+	}, [provider_type]);
 
-	const formState: ProviderFormState<any> = {
-		clientID: project_id!,
-		provider_type: config?.type!,
+	const formState: ProviderFormState<ProviderConfig> = {
+		clientID: project_id as string,
+		provider_type: config?.type as ProviderType,
 		showSecret,
 		setShowSecret,
 		meta,
@@ -218,11 +260,9 @@ export default function ProviderForm() {
 
 	return (
 		<>
-			<Snackbar
-				message={snackData?.message || ""}
-				open={!!snackData}
-				timeoutMs={6000}
-				onClose={() => setSnackData(null)}
+			<AppSnackbar
+				notification={notification}
+				onClose={() => setNotification(null)}
 			/>
 			<div className="min-h-screen bg-gray-900">
 				{/* Header */}
@@ -239,7 +279,7 @@ export default function ProviderForm() {
 								←
 							</a>
 							<ProviderIcon
-								type={provider_type!}
+								type={provider_type as ProviderType}
 								className="w-10 h-10 text-gray-300"
 							/>
 							<div>
@@ -301,6 +341,7 @@ export default function ProviderForm() {
 									Cancel
 								</a>
 								<button
+									type="button"
 									onClick={() => formRef.current?.requestSubmit()}
 									disabled={isSaving}
 									className="flex-1 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -321,7 +362,10 @@ export default function ProviderForm() {
 
 							<DocComponentWrapper>
 								{DocComponent ? (
-									<DocComponent />
+									<DocComponent
+										redirectURI={redirectURI}
+										RedirectURI={RedirectURIComponent}
+									/>
 								) : (
 									<div className="flex items-center gap-2 text-gray-400">
 										<span className="animate-spin">⏳</span>
@@ -351,6 +395,78 @@ function parseFormToProviderConfig({
 		type: providerType,
 		enabled: providerEnabled,
 	} as ProviderConfig;
+}
+
+function buildProviderRedirectURI(
+	authEndpointURL?: string,
+	providerType?: ProviderType,
+) {
+	const providerPath = providerType || "provider";
+
+	if (!authEndpointURL) {
+		return `https://your-auth-endpoint.com/${providerPath}/callback`;
+	}
+
+	const baseURL = /^(https?:)?\/\//.test(authEndpointURL)
+		? authEndpointURL
+		: `https://${authEndpointURL}`;
+
+	return `${baseURL.replace(/\/+$/, "")}/${providerPath}/callback`;
+}
+
+function CopyableInlineCode({
+	value,
+	onCopy,
+	onError,
+}: {
+	value: string;
+	onCopy?: (value: string) => void;
+	onError?: (message: string) => void;
+}) {
+	const [copied, setCopied] = useState(false);
+
+	useEffect(() => {
+		if (!copied) return;
+
+		const timeout = globalThis.setTimeout(() => setCopied(false), 1600);
+		return () => globalThis.clearTimeout(timeout);
+	}, [copied]);
+
+	const handleCopy = useCallback(async () => {
+		try {
+			if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+				throw new Error("Clipboard access is not available in this browser");
+			}
+
+			await navigator.clipboard.writeText(value);
+			setCopied(true);
+			onCopy?.(value);
+		} catch (error) {
+			onError?.(
+				error instanceof Error ? error.message : "Failed to copy callback URL",
+			);
+		}
+	}, [onCopy, onError, value]);
+
+	return (
+		<span className="not-prose inline-flex max-w-full items-center gap-2 align-middle rounded-lg border border-gray-700 bg-gray-900/90 px-2 py-1">
+			<code className="max-w-full overflow-x-auto whitespace-nowrap rounded-md bg-transparent px-0 py-0 font-mono text-xs text-emerald-300">
+				{value}
+			</code>
+			<button
+				type="button"
+				onClick={handleCopy}
+				className="inline-flex shrink-0 items-center gap-1 rounded-md border border-gray-600 bg-gray-800 px-2 py-1 text-xs font-medium text-gray-200 transition-colors hover:border-gray-500 hover:text-white"
+				aria-label="Copy callback URL"
+			>
+				<Icon
+					icon={copied ? "lucide:check" : "lucide:clipboard-copy"}
+					className="h-3.5 w-3.5"
+				/>
+				<span>{copied ? "Copied" : "Copy"}</span>
+			</button>
+		</span>
+	);
 }
 
 function DocComponentWrapper({ children }: { children: React.ReactNode }) {
@@ -419,7 +535,7 @@ function KeyValueEditor({
 
 	useEffect(() => {
 		const checkedKeys: string[] = [];
-		keyList.forEach((k, i) => {
+		keyList.forEach((k, _i) => {
 			if (k !== "") {
 				checkedKeys.push(k);
 			}
@@ -430,36 +546,33 @@ function KeyValueEditor({
 		if (hasDuplicates) {
 			setError("Duplicate keys are not allowed");
 		} else setError(null);
-	}, [keyList, new_value]);
+	}, [keyList]);
 
-	const handleChange = useCallback(
-		(type: "key" | "value", index: number) => {
-			return (e: React.ChangeEvent<HTMLInputElement>) => {
-				const content = e.target.value || "";
-				if (type === "key") {
-					setNewValue((current) =>
-						current.map((item, i) =>
-							i === index ? { ...item, key: content } : item,
-						),
-					);
-				} else if (type === "value") {
-					setNewValue((current) =>
-						current.map((item, i) =>
-							i === index ? { ...item, val: content } : item,
-						),
-					);
-				}
-			};
-		},
-		[new_value],
-	);
+	const handleChange = useCallback((type: "key" | "value", index: number) => {
+		return (e: React.ChangeEvent<HTMLInputElement>) => {
+			const content = e.target.value || "";
+			if (type === "key") {
+				setNewValue((current) =>
+					current.map((item, i) =>
+						i === index ? { ...item, key: content } : item,
+					),
+				);
+			} else if (type === "value") {
+				setNewValue((current) =>
+					current.map((item, i) =>
+						i === index ? { ...item, val: content } : item,
+					),
+				);
+			}
+		};
+	}, []);
 
 	const handleAdd = useCallback(() => {
 		setNewValue((current) => [
 			...current,
 			{ key: "", val: "", hash: crypto.randomUUID() },
 		]);
-	}, [setNewValue]);
+	}, []);
 
 	const handleRemove = useCallback((index: number) => {
 		setNewValue((current) => current.filter((_, i) => i !== index));
@@ -518,21 +631,29 @@ function InputFieldForm({
 	label,
 	children,
 	help,
+	action,
 }: {
 	children: React.ReactNode;
 	required?: boolean;
 	label: string;
 	help?: string;
+	action?: React.ReactNode;
 }) {
 	return (
 		<div>
-			<label className="block text-sm font-medium text-gray-300 mb-2">
+			<label
+				className="block text-sm font-medium text-gray-300 mb-2"
+				htmlFor=""
+			>
 				{label} {required && <span className="text-red-400">*</span>}
 			</label>
 			<RequiredContext.Provider value={Boolean(required)}>
 				{children}
 			</RequiredContext.Provider>
-			{help && <p className="text-gray-500 text-sm mt-1">{help}</p>}
+			<div className="flex-row flex justify-between">
+				{help && <p className="text-gray-500 text-sm mt-1">{help}</p>}
+				{action && <div>{action}</div>}
+			</div>
 		</div>
 	);
 }
@@ -563,8 +684,14 @@ function FormFields({ type }: { type: ProviderType }) {
 			return <QrCodeFields />;
 		case "passkey":
 			return <PasskeyFields />;
+		case "spotify":
+			return <OAuth2Fields query pkce />;
+		case "github":
+			return <OAuth2Fields query pkce />;
+		case "x":
+			return <OAuth2Fields query pkce />;
 		default:
-			return <OAuth2Fields query pkce scopes />;
+			return <OAuth2Fields query pkce />;
 	}
 }
 
@@ -632,24 +759,268 @@ function QueryParametersField({ value }: { value?: Record<string, string> }) {
 	);
 }
 
-function ScopesField({
-	value,
-	placeholder,
+function ScopeOptionCard({
+	option,
+	selected,
+	onToggle,
 }: {
-	value?: string[];
-	placeholder: string;
+	option: ScopeOption;
+	selected: boolean;
+	onToggle: (scope: string) => void;
 }) {
+	const locked = option.mandatory && selected;
+
 	return (
-		<InputFieldForm label="Scopes">
-			<InputField
-				type="text"
-				name="array::scopes"
-				defaultValue={value?.join(", ") || ""}
-				placeholder={placeholder}
-			/>
-			<p className="text-gray-500 text-sm mt-1">
-				Comma-separated list of OAuth scopes
-			</p>
+		<button
+			type="button"
+			disabled={locked}
+			onClick={() => onToggle(option.value)}
+			aria-pressed={selected}
+			className={`rounded-xl border p-3 text-left transition-colors ${
+				selected
+					? "border-blue-500 bg-blue-500/10"
+					: "border-gray-700 bg-gray-900/40 hover:border-gray-600 hover:bg-gray-700/40"
+			}`}
+		>
+			<div className="flex items-start justify-between gap-3">
+				<div>
+					<p className="text-sm font-medium text-white">
+						{option.label || option.value}
+					</p>
+					<p className="mt-1 text-xs leading-5 text-gray-400">
+						{option.description}
+					</p>
+				</div>
+				<div className="flex items-center gap-2">
+					{option.mandatory ? (
+						<span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">
+							Required
+						</span>
+					) : null}
+					{option.recommended ? (
+						<span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
+							Recommended
+						</span>
+					) : null}
+					<span
+						className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border text-xs ${
+							selected
+								? "border-blue-400 bg-blue-500 text-white"
+								: "border-gray-500 text-gray-400"
+						}`}
+					>
+						{selected ? (
+							locked ? (
+								<Icon icon="lucide:lock" className="h-3 w-3" />
+							) : (
+								<Icon icon="lucide:check" className="h-3 w-3" />
+							)
+						) : (
+							<Icon icon="lucide:plus" className="h-3 w-3" />
+						)}
+					</span>
+				</div>
+			</div>
+		</button>
+	);
+}
+
+function ScopesField({ value }: { value?: string[] }) {
+	const { provider_type } = useProviderFormState<ProviderConfig>();
+	const options = useMemo(
+		() => getProviderScopeOptions(provider_type),
+		[provider_type],
+	);
+	const mandatoryScopeValues = useMemo(
+		() =>
+			new Set(
+				options
+					.filter((option) => option.mandatory)
+					.map((option) => option.value),
+			),
+		[options],
+	);
+	const initialScopes = useMemo(() => {
+		const configuredScopes = uniqueScopeValues(value || []);
+		if (configuredScopes.length > 0) {
+			return normalizeProviderScopes(provider_type, configuredScopes);
+		}
+
+		return normalizeProviderScopes(
+			provider_type,
+			getDefaultProviderScopes(provider_type),
+		);
+	}, [provider_type, value]);
+	const [selectedScopes, setSelectedScopes] = useState<string[]>(initialScopes);
+	const [customScope, setCustomScope] = useState("");
+
+	useEffect(() => {
+		setSelectedScopes(initialScopes);
+	}, [initialScopes]);
+
+	const optionValues = useMemo(
+		() => new Set(options.map((option) => option.value)),
+		[options],
+	);
+	const customScopes = useMemo(
+		() => selectedScopes.filter((scope) => !optionValues.has(scope)),
+		[selectedScopes, optionValues],
+	);
+
+	const toggleScope = useCallback(
+		(scope: string) => {
+			setSelectedScopes((current) => {
+				if (current.includes(scope)) {
+					if (mandatoryScopeValues.has(scope)) return current;
+
+					return normalizeProviderScopes(
+						provider_type,
+						current.filter((item) => item !== scope),
+					);
+				}
+
+				return normalizeProviderScopes(provider_type, [...current, scope]);
+			});
+		},
+		[mandatoryScopeValues, provider_type],
+	);
+
+	const removeScope = useCallback(
+		(scope: string) => {
+			setSelectedScopes((current) => {
+				if (mandatoryScopeValues.has(scope)) return current;
+
+				return normalizeProviderScopes(
+					provider_type,
+					current.filter((item) => item !== scope),
+				);
+			});
+		},
+		[mandatoryScopeValues, provider_type],
+	);
+
+	const addCustomScope = useCallback(() => {
+		const normalized = customScope.trim();
+		if (!normalized) return;
+
+		setSelectedScopes((current) =>
+			normalizeProviderScopes(provider_type, [...current, normalized]),
+		);
+		setCustomScope("");
+	}, [customScope, provider_type]);
+
+	const handleCustomScopeKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key !== "Enter") return;
+
+			e.preventDefault();
+			addCustomScope();
+		},
+		[addCustomScope],
+	);
+
+	return (
+		<InputFieldForm
+			label="Scopes"
+			required
+			help="Select the provider scopes to request. Required scopes stay enabled automatically, existing custom scopes are preserved, and you can add extra values when your provider exposes more options."
+		>
+			<div className="space-y-4">
+				<input
+					readOnly
+					required
+					value={selectedScopes.join(",")}
+					tabIndex={-1}
+					aria-hidden="true"
+					className="sr-only absolute h-0 w-0 opacity-0 pointer-events-none"
+				/>
+
+				{selectedScopes.length > 0 ? (
+					<div className="flex flex-wrap gap-2">
+						{selectedScopes.map((scope) =>
+							mandatoryScopeValues.has(scope) ? (
+								<span
+									key={scope}
+									className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-200"
+								>
+									<span>{scope}</span>
+									<span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
+										Required
+									</span>
+								</span>
+							) : (
+								<button
+									key={scope}
+									type="button"
+									onClick={() => removeScope(scope)}
+									className="inline-flex items-center gap-2 rounded-full border border-blue-500/40 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-200 hover:border-blue-400"
+								>
+									<span>{scope}</span>
+									<span className="text-blue-300">×</span>
+								</button>
+							),
+						)}
+					</div>
+				) : (
+					<p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+						Select at least one scope.
+					</p>
+				)}
+
+				{options.length > 0 ? (
+					<div className="grid gap-2 sm:grid-cols-2">
+						{options.map((option) => (
+							<ScopeOptionCard
+								key={option.value}
+								option={option}
+								selected={selectedScopes.includes(option.value)}
+								onToggle={toggleScope}
+							/>
+						))}
+					</div>
+				) : (
+					<p className="text-sm text-gray-400">
+						No predefined scopes are registered for this provider. Add them
+						manually below.
+					</p>
+				)}
+
+				<div className="rounded-xl border border-gray-700 bg-gray-900/40 p-4">
+					<p className="mb-2 block text-sm font-medium text-gray-300">
+						Add custom scope
+					</p>
+					<div className="flex gap-2">
+						<input
+							type="text"
+							value={customScope}
+							onChange={(e) => setCustomScope(e.target.value)}
+							onKeyDown={handleCustomScopeKeyDown}
+							placeholder="Enter an additional scope value"
+							className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+						<button
+							type="button"
+							onClick={addCustomScope}
+							className="shrink-0 rounded-lg bg-gray-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+						>
+							Add
+						</button>
+					</div>
+					<p className="mt-2 text-xs text-gray-500">
+						Use this when your provider supports additional scopes beyond the
+						curated list.
+					</p>
+					{customScopes.length > 0 ? (
+						<p className="mt-2 text-xs text-gray-400">
+							Custom scopes: {customScopes.join(", ")}
+						</p>
+					) : null}
+				</div>
+
+				{selectedScopes.map((scope) => (
+					<input key={scope} type="hidden" name="array::scopes" value={scope} />
+				))}
+			</div>
 		</InputFieldForm>
 	);
 }
@@ -665,35 +1036,92 @@ function SelectField(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 	);
 }
 
+function TemplateSelection(
+	props: React.SelectHTMLAttributes<HTMLSelectElement> & {
+		defaultValue: number | undefined;
+		label: string;
+		help?: string;
+		name: string;
+	},
+) {
+	const templates = useEmailTemplates();
+	const [currentSelect, setCurrentSelect] = useState<number | undefined>(
+		props.defaultValue,
+	);
+	const params = useParams<{ project_id: string }>();
+	const onChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
+		(e) => {
+			setCurrentSelect(Number(e.target.value));
+		},
+		[],
+	);
+
+	const opt = useMemo(() => {
+		const { defaultValue, label, help, name, onChange, ...rest } = props;
+		return rest;
+	}, [props]);
+
+	if (templates.isLoading) {
+		return (
+			<div className="flex items-center gap-2 text-gray-400">
+				<Icon icon="lucide:loader" className="w-4 h-4 animate-spin" />
+				Loading templates...
+			</div>
+		);
+	}
+	return (
+		<InputFieldForm
+			label={props.label}
+			help={props.help}
+			required
+			action={
+				currentSelect ? (
+					<a
+						href={`/dashboard/templates/manage?project_id=${params.project_id}&edit=${templates.templates.find((t) => t.id === currentSelect)?.name}`}
+						className="text-sm text-blue-400 hover:text-blue-300"
+					>
+						Manage templates
+					</a>
+				) : null
+			}
+		>
+			<SelectField
+				{...opt}
+				required
+				name={`number::${props.name}`}
+				defaultValue={props.defaultValue}
+				onChange={onChange}
+			>
+				<option value="">Chose a template</option>
+				{templates.templates.map((template) => (
+					<option key={template.id} value={template.id}>
+						{template.name}
+					</option>
+				))}
+			</SelectField>
+		</InputFieldForm>
+	);
+}
+
 // Provider setups /////////////////////////////////////////
 
 function QrCodeFields() {
 	const data = useProviderFormState<QRProviderConfig>();
 	return (
-		<>
-			<InputFieldForm
-				label="Require MFA"
-				help="If the user has MFA set up, the MFA token will be required"
-				required
-			>
-				<ToggleBase
-					defaultChecked={data.data?.requireMFA || false}
-					name="boolean::requireMFA"
-				/>
-			</InputFieldForm>
-		</>
+		<InputFieldForm
+			label="Require MFA"
+			help="If the user has MFA set up, the MFA token will be required"
+			required
+		>
+			<ToggleBase
+				defaultChecked={data.data?.requireMFA || false}
+				name="boolean::requireMFA"
+			/>
+		</InputFieldForm>
 	);
 }
 
-function OAuth2Fields({
-	query,
-	pkce,
-	scopes,
-}: {
-	query?: boolean;
-	pkce?: boolean;
-	scopes?: boolean;
-}) {
+function OAuth2Fields({ query, pkce }: { query?: boolean; pkce?: boolean }) {
 	const data = useProviderFormState<OAuth2ProviderConfig>();
 	return (
 		<>
@@ -701,9 +1129,7 @@ function OAuth2Fields({
 				clientId={data.data?.clientID}
 				clientSecret={data.data?.clientSecret}
 			/>
-			{scopes && (
-				<ScopesField value={data.data?.scopes} placeholder="email, profile" />
-			)}
+			<ScopesField value={data.data?.scopes} />
 			{pkce && <PkceField enabled={data.data?.pkce} />}
 			{query && <QueryParametersField value={data.data?.query} />}
 		</>
@@ -731,7 +1157,7 @@ function OIDCFields() {
 					placeholder="https://auth.example.com"
 				/>
 			</InputFieldForm>
-			<ScopesField value={data.data?.scopes} placeholder="openid, email" />
+			<ScopesField value={data.data?.scopes} />
 			<QueryParametersField value={data.data?.query} />
 		</>
 	);
@@ -762,7 +1188,7 @@ function GenericOAuthFields() {
 					placeholder="https://auth.example.com/token"
 				/>
 			</InputFieldForm>
-			<ScopesField value={data.data?.scopes} placeholder="email, profile" />
+			<ScopesField value={data.data?.scopes} />
 			<QueryParametersField value={data.data?.query} />
 			<span className="block my-4 border-t border-gray-600" />
 			<h2 className="text-white">
@@ -835,14 +1261,13 @@ function KeycloakFields() {
 				/>
 			</InputFieldForm>
 
-			<ScopesField value={data.data?.scopes} placeholder="openid, email" />
+			<ScopesField value={data.data?.scopes} />
 		</>
 	);
 }
 
 function CodeFields() {
 	const data = useProviderFormState<CodeProviderConfig>();
-
 	return (
 		<>
 			<InputFieldForm label="Code Length">
@@ -857,6 +1282,21 @@ function CodeFields() {
 					Number of digits in the verification code (4-8)
 				</p>
 			</InputFieldForm>
+			<InputFieldForm label="Confirmation type">
+				<SelectField
+					name="codeMode"
+					defaultValue={data.data?.codeMode || "email"}
+				>
+					<option value="email">email</option>
+					<option value="phone">phone</option>
+				</SelectField>
+			</InputFieldForm>
+			<TemplateSelection
+				label="Email Template for Login Code Sending"
+				help="the template used while sending a OTP code for login"
+				defaultValue={data.data?.registerTemplateId ?? undefined}
+				name="registerTemplateId"
+			/>
 		</>
 	);
 }
@@ -875,14 +1315,6 @@ function PasswordFields() {
 					placeholder="Minimum password length"
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="On password to short message">
-				<InputField
-					type="text"
-					name="shortPasswordMsg"
-					defaultValue={data.data?.shortPasswordMsg || ""}
-					placeholder="Your custom message for short passwords"
-				/>
-			</InputFieldForm>
 			<InputFieldForm
 				label="Password Policy: Require Uppercase Letter"
 				required
@@ -892,26 +1324,10 @@ function PasswordFields() {
 					defaultChecked={data.data?.requireUppercase}
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="On missing uppercase message">
-				<InputField
-					type="text"
-					name="requireUppercaseMsg"
-					defaultValue={data.data?.requireUppercaseMsg || ""}
-					placeholder="Your custom message for missing uppercase letters"
-				/>
-			</InputFieldForm>
 			<InputFieldForm label="Password Policy: Require Number" required>
 				<ToggleBase
 					name="boolean::requireNumber"
 					defaultChecked={data.data?.requireNumber}
-				/>
-			</InputFieldForm>
-			<InputFieldForm label="On missing number message">
-				<InputField
-					type="text"
-					name="requireNumberMsg"
-					defaultValue={data.data?.requireNumberMsg || ""}
-					placeholder="Your custom message for missing numbers"
 				/>
 			</InputFieldForm>
 			<InputFieldForm
@@ -923,14 +1339,18 @@ function PasswordFields() {
 					defaultChecked={data.data?.requireSpecialChar}
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="On missing special character message">
-				<InputField
-					type="text"
-					name="requireSpecialCharMsg"
-					defaultValue={data.data?.requireSpecialCharMsg || ""}
-					placeholder="Your custom message for missing special characters"
-				/>
-			</InputFieldForm>
+			<TemplateSelection
+				label="Email Template for Registration Code Sending"
+				help="the template used while sending a OTP code for registration"
+				name="registerTemplateId"
+				defaultValue={data.data?.registerTemplateId || undefined}
+			/>
+			<TemplateSelection
+				label="Email Template for Password Code Sending"
+				help="the template used while sending a OTP code for password reset"
+				name="resetPasswordTemplateId"
+				defaultValue={data.data?.resetPasswordTemplateId || undefined}
+			/>
 		</>
 	);
 }
@@ -978,14 +1398,7 @@ function SlackFields() {
 					placeholder="Your Slack workspace team ID"
 				/>
 			</InputFieldForm>
-			<InputFieldForm label="Scopes">
-				<InputField
-					type="text"
-					name="array::scopes"
-					defaultValue={data.data?.scopes?.join(", ") || ""}
-					placeholder="email, openid, profile"
-				/>
-			</InputFieldForm>
+			<ScopesField value={data.data?.scopes} />
 			<InputFieldForm label="PKCE">
 				<ToggleBase name="boolean::pkce" defaultChecked={data.data?.pkce} />
 			</InputFieldForm>
@@ -1018,7 +1431,7 @@ function CognitoFields() {
 					placeholder="Your AWS Cognito domain"
 				/>
 			</InputFieldForm>
-			<ScopesField value={data.data?.scopes} placeholder="email, openid" />
+			<ScopesField value={data.data?.scopes} />
 			<PkceField enabled={data.data?.pkce} />
 			<QueryParametersField value={data.data?.query} />
 		</>
@@ -1034,10 +1447,7 @@ function MicrosoftFields() {
 				clientId={data.data?.clientID}
 				clientSecret={data.data?.clientSecret}
 			/>
-			<ScopesField
-				value={data.data?.scopes}
-				placeholder="User.Read, email, profile"
-			/>
+			<ScopesField value={data.data?.scopes} />
 			<InputFieldForm label="Tenant ID" required>
 				<InputField
 					type="text"
@@ -1061,7 +1471,7 @@ function AppleOAuthFields() {
 				clientId={data.data?.clientID}
 				clientSecret={data.data?.clientSecret}
 			/>
-			<ScopesField value={data.data?.scopes} placeholder="email, name" />
+			<ScopesField value={data.data?.scopes} />
 			<InputFieldForm label="Response Mode">
 				<SelectField
 					name="responseMode"
@@ -1090,20 +1500,16 @@ function AppleOIDCFields() {
 					placeholder="Your Apple OIDC client ID"
 				/>
 			</InputFieldForm>
-			<ScopesField value={data.data?.scopes} placeholder="email, name" />
+			<ScopesField value={data.data?.scopes} />
 			<QueryParametersField value={data.data?.query} />
 		</>
 	);
 }
 
 function PasskeyFields() {
-	const data = useProviderFormState<WebAuthnProviderConfig>();
-
 	return (
-		<>
-			<p className="text-sm text-white mb-4">
-				There is no specific configuration required for Passkeys.
-			</p>
-		</>
+		<p className="text-sm text-white mb-4">
+			There is no specific configuration required for Passkeys.
+		</p>
 	);
 }

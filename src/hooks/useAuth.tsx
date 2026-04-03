@@ -1,5 +1,4 @@
-import { createClient } from "@auth";
-import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
+import { type AuthClientType, createClient } from "@auth";
 import {
 	type Context,
 	createContext,
@@ -11,12 +10,12 @@ import {
 } from "react";
 
 declare global {
-	var __OPENAUTHSTER_CLIENT__: Context<OpenAuthsterClient>;
-	var __OPENAUTHSTER_CLIENT_INSTANCE__: OpenAuthsterClient;
+	var __OPENAUTHSTER_CLIENT__: Context<AuthClientType>;
+	var __OPENAUTHSTER_CLIENT_INSTANCE__: AuthClientType;
 }
 
-globalThis.__OPENAUTHSTER_CLIENT__ ??= createContext<OpenAuthsterClient>(
-	null as unknown as OpenAuthsterClient,
+globalThis.__OPENAUTHSTER_CLIENT__ ??= createContext<AuthClientType>(
+	null as unknown as AuthClientType,
 );
 
 export function useAuth() {

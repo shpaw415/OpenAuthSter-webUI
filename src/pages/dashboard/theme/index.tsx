@@ -1,6 +1,6 @@
 import { type UITheme, useUIThemes } from "@hooks/useUIThemes";
 import { Icon } from "@iconify/react";
-import type { Theme } from "@openauthjs/openauth/ui/theme";
+import type { Theme } from "@kagii/openauth/ui/theme";
 import { useState } from "react";
 
 export default function UIThemeList() {
@@ -33,7 +33,7 @@ export default function UIThemeList() {
 		}
 	};
 
-	const getPrimaryColor = (theme: Theme): string => {
+	const getPrimaryColor = (theme: Partial<Theme>): string => {
 		if (typeof theme.primary === "string") {
 			return theme.primary;
 		}
@@ -155,7 +155,7 @@ function ThemeCard({
 	isDeleting,
 }: {
 	theme: UITheme;
-	getPrimaryColor: (theme: Theme) => string;
+	getPrimaryColor: (theme: Partial<Theme>) => string;
 	getRadiusLabel: (radius?: Theme["radius"]) => string;
 	onDelete: (id: number) => void;
 	isDeleting: boolean;

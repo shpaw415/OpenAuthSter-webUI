@@ -8,7 +8,7 @@ Configure Apple Sign In to allow users to sign in with their Apple ID.
 2. Navigate to **Certificates, Identifiers & Profiles**
 3. Create an **App ID** with Sign In with Apple enabled
 4. Create a **Services ID** for web authentication
-5. Configure your **Return URL** (redirect URI)
+5. Configure your **Return URL** (redirect URI) as <props.RedirectURI value={props.redirectURI} />
 6. Create a **Key** for Sign In with Apple and download it
 7. Note your **Team ID**, **Key ID**, and **Client ID** (Services ID)
 
@@ -18,7 +18,7 @@ Configure Apple Sign In to allow users to sign in with their Apple ID.
 | --------------------------- | -------- | ---------------------------------------------------- |
 | Client ID                   | Yes      | The Services ID from Apple Developer Portal          |
 | Client Secret               | Yes      | Generated JWT using your private key                 |
-| Scopes                      | No       | OAuth scopes to request (default: name, email)       |
+| Scopes                      | No       | OAuth scopes to request (default: email)       |
 | PKCE                        | No       | Enable PKCE for enhanced security                    |
 | Additional Query Parameters | No       | Extra parameters to include in the authorization URL |
 

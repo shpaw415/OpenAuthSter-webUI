@@ -9,7 +9,7 @@ Configure Google OAuth2 to allow users to sign in with their Google accounts.
 3. Navigate to **APIs & Services** > **Credentials**
 4. Click **Create Credentials** > **OAuth client ID**
 5. Select **Web application** as the application type
-6. Add your authorized redirect URI (e.g., `https://your-domain.com/google/callback`)
+6. Add your authorized redirect URI: <props.RedirectURI value={props.redirectURI} />
 7. Copy the **Client ID** and **Client Secret**
 
 ## Configuration Fields
@@ -18,7 +18,7 @@ Configure Google OAuth2 to allow users to sign in with their Google accounts.
 | --------------------------- | -------- | --------------------------------------------------------- |
 | Client ID                   | Yes      | The OAuth 2.0 client ID from Google Cloud Console         |
 | Client Secret               | Yes      | The OAuth 2.0 client secret from Google Cloud Console     |
-| Scopes                      | No       | Additional OAuth scopes (default: email, profile, openid) |
+| Scopes                      | No       | Additional OAuth scopes (default: email) |
 | PKCE                        | No       | Enable PKCE for enhanced security                         |
 | Additional Query Parameters | No       | Extra parameters to include in the authorization URL      |
 

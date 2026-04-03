@@ -7,34 +7,95 @@ import {
 } from "@api/projects/manage";
 import type { Project, ProviderConfig } from "openauth-webui-shared-types";
 import { useCallback, useEffect, useState } from "react";
+import { createServerCache, useServerCacheValue } from "./serverCache";
 import { useAuth } from "./useAuth";
 
+const PROJECTS_CACHE_KEY = "all";
+const projectsCache = createServerCache<Project[]>();
+const projectCache = createServerCache<Project>();
+
+function upsertProject(projects: Project[], nextProject: Project) {
+	const existingIndex = projects.findIndex(
+		(project) => project.clientID === nextProject.clientID,
+	);
+
+	if (existingIndex === -1) {
+		return [...projects, nextProject];
+	}
+
+	return projects.map((project) =>
+		project.clientID === nextProject.clientID ? nextProject : project,
+	);
+}
+
+function syncProject(project: Project) {
+	projectCache.set(project.clientID, project);
+	projectsCache.update(PROJECTS_CACHE_KEY, (currentProjects) =>
+		upsertProject(currentProjects ?? [], project),
+	);
+}
+
+function syncProjects(projects: Project[]) {
+	projectsCache.set(PROJECTS_CACHE_KEY, projects);
+	for (const project of projects) {
+		projectCache.set(project.clientID, project);
+	}
+}
+
+function removeProjectFromCache(clientID: string) {
+	projectCache.clear(clientID);
+	projectsCache.update(PROJECTS_CACHE_KEY, (currentProjects) =>
+		(currentProjects ?? []).filter((project) => project.clientID !== clientID),
+	);
+}
+
 export function useProjects() {
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const projects = useServerCacheValue(projectsCache, PROJECTS_CACHE_KEY) ?? [];
+	const [isLoading, setIsLoading] = useState(
+		() => projectsCache.getSnapshot(PROJECTS_CACHE_KEY) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
 	const auth = useAuth();
 
-	const fetchProjects = useCallback(async () => {
-		if (!auth.isAuthenticated && process.env.NODE_ENV !== "development") return;
-		setIsLoading(true);
-		setError(null);
-		try {
-			const projects = await getProjects();
-			if (!projects.success) {
-				throw new Error("Failed to fetch projects");
+	const fetchProjects = useCallback(
+		async (force = true) => {
+			if (!auth.isAuthenticated && process.env.NODE_ENV !== "development") {
+				setIsLoading(false);
+				return;
 			}
-			setProjects(projects.data || []);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unknown error");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [auth.isAuthenticated]);
+
+			if (
+				force ||
+				projectsCache.getSnapshot(PROJECTS_CACHE_KEY) === undefined
+			) {
+				setIsLoading(true);
+			}
+			setError(null);
+			try {
+				const data = await projectsCache.fetch(
+					PROJECTS_CACHE_KEY,
+					async () => {
+						const response = await getProjects();
+						if (!response.success) {
+							throw new Error("Failed to fetch projects");
+						}
+						return response.data || [];
+					},
+					{ force },
+				);
+				syncProjects(data);
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Unknown error");
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[auth.isAuthenticated],
+	);
 
 	useEffect(() => {
 		if (!auth.isLoaded) return;
-		fetchProjects();
+		void fetchProjects(false);
 	}, [fetchProjects, auth.isLoaded]);
 
 	const createProject = useCallback(async (name: string) => {
@@ -43,7 +104,8 @@ export function useProjects() {
 		if (!res.success) {
 			throw new Error(res.error || "Failed to create project");
 		}
-		setProjects((prev) => [...prev, res.data!]);
+
+		syncProject(res.data as Project);
 	}, []);
 
 	const deleteProject = useCallback(async (clientID: string) => {
@@ -53,7 +115,7 @@ export function useProjects() {
 			throw new Error(res.error || "Failed to delete project");
 		}
 
-		setProjects((prev) => prev.filter((p) => p.clientID !== clientID));
+		removeProjectFromCache(clientID);
 	}, []);
 
 	return {
@@ -67,31 +129,58 @@ export function useProjects() {
 }
 
 export function useProject(clientID: string = "") {
-	const [project, setProject] = useState<Project | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+	const project = useServerCacheValue(projectCache, clientID) ?? null;
+	const [isLoading, setIsLoading] = useState(
+		() => Boolean(clientID) && projectCache.getSnapshot(clientID) === undefined,
+	);
 	const [error, setError] = useState<string | null>(null);
-
-	const fetchProject = useCallback(async () => {
-		if (!clientID) return;
-		setIsLoading(true);
-		setError(null);
-		try {
-			const project = await getProjectById({ clientID });
-			if (!project.success) {
-				throw new Error(project.error || "Failed to fetch project");
-			} else if (!project.data) {
-				throw new Error("Project data is undefined");
-			}
-			setProject(project.data);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Unknown error");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [clientID]);
+	const [isProjectOwner, setIsProjectOwner] = useState(false);
+	const auth = useAuth();
 
 	useEffect(() => {
-		fetchProject();
+		if (auth.userMeta.id) {
+			setIsProjectOwner(project?.owner_id === auth.userMeta.id);
+		}
+	}, [auth?.userMeta?.id, project]);
+
+	const fetchProject = useCallback(
+		async (force = true) => {
+			if (!clientID) {
+				setIsLoading(false);
+				return;
+			}
+
+			if (force || projectCache.getSnapshot(clientID) === undefined) {
+				setIsLoading(true);
+			}
+			setError(null);
+			try {
+				const data = await projectCache.fetch(
+					clientID,
+					async () => {
+						const response = await getProjectById({ clientID });
+						if (!response.success) {
+							throw new Error(response.error || "Failed to fetch project");
+						}
+						if (!response.data) {
+							throw new Error("Project data is undefined");
+						}
+						return response.data;
+					},
+					{ force },
+				);
+				syncProject(data);
+			} catch (err) {
+				setError(err instanceof Error ? err.message : "Unknown error");
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[clientID],
+	);
+
+	useEffect(() => {
+		void fetchProject(false);
 	}, [fetchProject]);
 
 	const updateProject = async (updates: updateProjectParams["data"]) => {
@@ -104,7 +193,12 @@ export function useProject(clientID: string = "") {
 			throw new Error(error || "Failed to update project");
 		}
 
-		setProject(data || null);
+		if (data) {
+			syncProject(data);
+			return;
+		}
+
+		await fetchProject(true);
 	};
 
 	const updateProviders = async (providers: ProviderConfig[]) => {
@@ -115,9 +209,16 @@ export function useProject(clientID: string = "") {
 		if (!project) {
 			throw new Error("Project not loaded");
 		}
-		if (!project.providers_data.find((p) => p.type === updatedProvider.type)) {
+		if (
+			!project.providers_data?.find(
+				(provider) => provider.type === updatedProvider.type,
+			)
+		) {
 			await updateProject({
-				providers_data: [...project.providers_data, updatedProvider],
+				providers_data: [
+					...(project.providers_data as ProviderConfig[]),
+					updatedProvider,
+				],
 			});
 		} else {
 			const updatedProviders = project.providers_data.map((provider) =>
@@ -135,5 +236,6 @@ export function useProject(clientID: string = "") {
 		updateProject,
 		updateProviders,
 		updateProvider,
+		isProjectOwner,
 	};
 }

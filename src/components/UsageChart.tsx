@@ -26,7 +26,7 @@ function transformToChartData(usage: UsageOverTime) {
 			bucket: formatBucketLabel(bucket),
 		};
 		for (const s of usage.series) {
-			point[s.clientID] = s.counts[i] ?? 0;
+			point[s.name] = s.counts[i] ?? 0;
 		}
 		return point;
 	});
@@ -112,14 +112,14 @@ export function UsageChart({
 						/>
 						{usageOverTime.series.map((s) => (
 							<Area
-								key={s.clientID}
+								key={s.name}
 								type="monotone"
-								dataKey={s.clientID}
+								dataKey={s.name}
 								stackId="1"
 								stroke={s.color}
 								fill={s.color}
 								fillOpacity={0.6}
-								name={s.clientID}
+								name={s.name}
 							/>
 						))}
 					</AreaChart>

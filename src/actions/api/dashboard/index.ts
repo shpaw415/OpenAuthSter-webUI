@@ -1,12 +1,11 @@
 import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
+import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import type { Project } from "openauth-webui-shared-types";
 import {
-	isClientIdValid,
+	createWebUiProject,
 	LogsTable,
 	OTFusersTable,
-	parseDBProject,
 	projectTable,
 	WebHookTable,
 } from "openauth-webui-shared-types/database";
@@ -66,7 +65,7 @@ const USAGE_COLOR_PALETTE = [
 ];
 
 export type UsageSeries = {
-	clientID: string;
+	name: string;
 	color: string;
 	counts: number[];
 };
@@ -90,7 +89,7 @@ export async function GET(): Promise<{
 	error?: string;
 	data?: DashboardData;
 }> {
-	const { env, data } = getContext<Env, any, RequestDataContext>(arguments);
+	const { env, data } = getContext<Env, "", RequestDataContext>(arguments);
 	const db = drizzle(env.PROJECT_DB);
 
 	const session = await data.client.getUserSession("private");
@@ -114,7 +113,38 @@ export async function GET(): Promise<{
 					self_host: env.SELF_HOSTED,
 				}),
 			);
-		const parsedProjects = projects.map(parseDBProject) as Project[];
+		onSelfHosted(
+			env.SELF_HOSTED,
+			() =>
+				projects.push(
+					createWebUiProject({
+						secret: env.WEBUI_SECRET,
+						originURL: env.PUBLIC_REDIRECT_URI,
+					}),
+				),
+			null,
+		);
+
+		if (projects.length === 0) {
+			return {
+				success: true,
+				data: {
+					kpis: {
+						totalProjects: 0,
+						totalUsers: 0,
+						totalErrors24h: 0,
+						totalWebhooks: 0,
+					},
+					projectStats: [],
+					recentLogs: [],
+					alerts: [],
+					usageOverTime: {
+						buckets: [],
+						series: [],
+					},
+				},
+			};
+		}
 
 		const projectStatsMap = new Map<
 			string,
@@ -122,7 +152,7 @@ export async function GET(): Promise<{
 		>();
 
 		// Initialize project stats
-		for (const p of parsedProjects) {
+		for (const p of projects) {
 			projectStatsMap.set(p.clientID, {
 				clientID: p.clientID,
 				userCount: 0,
@@ -133,8 +163,7 @@ export async function GET(): Promise<{
 		}
 
 		// 2. User count per project
-		for (const p of parsedProjects) {
-			if (!isClientIdValid(p.clientID)) continue;
+		for (const p of projects) {
 			try {
 				const usersTable = OTFusersTable(p.clientID);
 				const countRow = await db
@@ -154,9 +183,7 @@ export async function GET(): Promise<{
 		const webhooks = await db
 			.select()
 			.from(WebHookTable)
-			.where(
-				or(...parsedProjects.map((p) => eq(WebHookTable.clientID, p.clientID))),
-			);
+			.where(or(...projects.map((p) => eq(WebHookTable.clientID, p.clientID))));
 		const webhookCountByProject = new Map<string, number>();
 		for (const wh of webhooks) {
 			const c = webhookCountByProject.get(wh.clientID) ?? 0;
@@ -169,11 +196,15 @@ export async function GET(): Promise<{
 
 		// 4. Recent logs (all projects, limit 15)
 		const recentLogsRows = await db
-			.select()
+			.select({
+				id: LogsTable.id,
+				clientID: LogsTable.clientID,
+				type: LogsTable.type,
+				message: LogsTable.message,
+				timestamp: LogsTable.timestamp,
+			})
 			.from(LogsTable)
-			.where(
-				or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
-			)
+			.where(or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))))
 			.orderBy(desc(LogsTable.timestamp))
 			.limit(15);
 
@@ -194,7 +225,7 @@ export async function GET(): Promise<{
 				and(
 					eq(LogsTable.type, "error"),
 					gt(LogsTable.timestamp, oneDayAgo),
-					or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
+					or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))),
 				),
 			);
 
@@ -231,7 +262,7 @@ export async function GET(): Promise<{
 			.where(
 				and(
 					eq(LogsTable.type, "error"),
-					or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
+					or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))),
 				),
 			)
 			.orderBy(desc(LogsTable.timestamp));
@@ -254,7 +285,7 @@ export async function GET(): Promise<{
 				alerts.push({
 					type: "errors",
 					projectId: stats.clientID,
-					message: `Project ${stats.clientID} has ${stats.errorsCount24h} error(s) in the last 24 hours`,
+					message: `Project \`${projects.find((p) => p.clientID === stats.clientID)?.name || stats.clientID}\` has ${stats.errorsCount24h} error(s) in the last 24 hours`,
 					count: stats.errorsCount24h,
 				});
 			}
@@ -285,7 +316,7 @@ export async function GET(): Promise<{
 		const totalWebhooks = webhooks.length;
 
 		const kpis: DashboardKPIs = {
-			totalProjects: parsedProjects.length,
+			totalProjects: projects.length,
 			totalUsers,
 			totalErrors24h,
 			totalWebhooks,
@@ -298,7 +329,7 @@ export async function GET(): Promise<{
 			.where(
 				and(
 					gt(LogsTable.timestamp, oneDayAgo),
-					or(...parsedProjects.map((p) => eq(LogsTable.clientID, p.clientID))),
+					or(...projects.map((p) => eq(LogsTable.clientID, p.clientID))),
 				),
 			);
 
@@ -319,7 +350,7 @@ export async function GET(): Promise<{
 		const bucketToIndex = new Map(buckets.map((b, i) => [b, i]));
 
 		const countByProjectAndBucket = new Map<string, number[]>();
-		for (const p of parsedProjects) {
+		for (const p of projects) {
 			countByProjectAndBucket.set(p.clientID, Array(buckets.length).fill(0));
 		}
 
@@ -334,7 +365,7 @@ export async function GET(): Promise<{
 			const idx = bucketToIndex.get(bucketKey);
 			if (idx !== undefined) {
 				const arr = countByProjectAndBucket.get(row.clientID);
-				if (arr) arr[idx]!++;
+				if (arr?.[idx] !== undefined) arr[idx]++;
 				else {
 					const newArr = Array(buckets.length).fill(0);
 					newArr[idx] = 1;
@@ -343,9 +374,9 @@ export async function GET(): Promise<{
 			}
 		}
 
-		const usageSeries: UsageSeries[] = parsedProjects.map((p, i) => ({
-			clientID: p.clientID,
-			color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length]!,
+		const usageSeries: UsageSeries[] = projects.map((p, i) => ({
+			name: p.name,
+			color: USAGE_COLOR_PALETTE[i % USAGE_COLOR_PALETTE.length] as string,
 			counts:
 				countByProjectAndBucket.get(p.clientID) ??
 				Array(buckets.length).fill(0),

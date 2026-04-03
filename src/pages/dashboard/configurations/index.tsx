@@ -1,5 +1,5 @@
+import { AppSnackbar } from "@components/AppSnackbar";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
 import { useCallback, useEffect, useState } from "react";
 import {
 	getCurrentIssuerVersion,
@@ -60,13 +60,10 @@ export default function ConfigurationsPage() {
 
 	return (
 		<div className="min-h-screen bg-gray-900">
-			{notification && (
-				<Snackbar
-					message={notification?.message}
-					actionText="OK"
-					onClose={() => setNotification(null)}
-				/>
-			)}
+			<AppSnackbar
+				notification={notification}
+				onClose={() => setNotification(null)}
+			/>
 			{newVersionAvailable && (
 				<NewVersionModale
 					onClose={() => setNewVersionAvailable(false)}

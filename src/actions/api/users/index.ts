@@ -130,6 +130,7 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
 				session_public: usersTable.session_public,
 				created_at: usersTable.created_at,
 				role: usersTable.role,
+				email: usersTable.email,
 			})
 			.from(usersTable);
 

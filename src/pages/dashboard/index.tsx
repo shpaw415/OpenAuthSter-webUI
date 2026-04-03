@@ -137,10 +137,11 @@ export default function AdminPanel() {
 	const [createError, setCreateError] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [versionOutdated, setVersionOutdated] = useState(false);
 
 	const projectHook = useProjects();
-	const dashboard = useDashboard({ pollInterval: 60000 });
+	const dashboard = useDashboard({ pollInterval: 60000 * 5 }); // Refresh every 5 minutes
 
 	const checkVersions = useCallback(async () => {
 		if (process.env.NODE_ENV === "development") return;
@@ -204,20 +205,20 @@ export default function AdminPanel() {
 	};
 
 	const handleDelete = async (clientID: string) => {
+		setIsDeleting(true);
 		try {
 			await projectHook.deleteProject(clientID);
 			setDeleteConfirm(null);
 			await dashboard.refetch();
 		} catch (err) {
 			alert(err instanceof Error ? err.message : "Failed to delete project");
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
 	const getProjectStats = (clientID: string) =>
 		dashboard.data?.projectStats.find((s) => s.clientID === clientID);
-
-	const isInitialLoading =
-		projectHook.isLoading || (dashboard.isLoading && !dashboard.data);
 
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-6">
@@ -248,50 +249,48 @@ export default function AdminPanel() {
 			</div>
 
 			{/* KPIs */}
-			{isInitialLoading ? (
+			{!dashboard.data ? (
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 					{[1, 2, 3, 4].map((i) => (
 						<StatCardSkeleton key={i} />
 					))}
 				</div>
 			) : (
-				dashboard.data && (
-					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-						<StatCard
-							label="Projects"
-							value={dashboard.data.kpis.totalProjects}
-							tone="text-white"
-							icon="lucide:folder-kanban"
-						/>
-						<StatCard
-							label="Users"
-							value={dashboard.data.kpis.totalUsers}
-							tone="text-blue-200"
-							icon="lucide:users"
-						/>
-						<StatCard
-							label="Errors (24h)"
-							value={dashboard.data.kpis.totalErrors24h}
-							tone="text-red-200"
-							icon="lucide:alert-circle"
-						/>
-						<StatCard
-							label="Webhooks"
-							value={dashboard.data.kpis.totalWebhooks}
-							tone="text-green-200"
-							icon="lucide:webhook"
-						/>
-					</div>
-				)
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+					<StatCard
+						label="Projects"
+						value={dashboard.data.kpis.totalProjects}
+						tone="text-white"
+						icon="lucide:folder-kanban"
+					/>
+					<StatCard
+						label="Users"
+						value={dashboard.data.kpis.totalUsers}
+						tone="text-blue-200"
+						icon="lucide:users"
+					/>
+					<StatCard
+						label="Errors (24h)"
+						value={dashboard.data.kpis.totalErrors24h}
+						tone="text-red-200"
+						icon="lucide:alert-circle"
+					/>
+					<StatCard
+						label="Webhooks"
+						value={dashboard.data.kpis.totalWebhooks}
+						tone="text-green-200"
+						icon="lucide:webhook"
+					/>
+				</div>
 			)}
 
 			{/* Usage chart */}
-			{isInitialLoading ? (
+			{!dashboard.data ? (
 				<ChartSkeleton />
 			) : (
 				<UsageChart
-					usageOverTime={dashboard.data?.usageOverTime}
-					isLoading={dashboard.isLoading && !dashboard.data}
+					usageOverTime={dashboard.data.usageOverTime}
+					isLoading={false}
 				/>
 			)}
 
@@ -349,7 +348,7 @@ export default function AdminPanel() {
 			)}
 
 			{/* Recent activity */}
-			{isInitialLoading ? (
+			{!dashboard.data ? (
 				<RecentActivitySkeleton />
 			) : (
 				dashboard.data &&
@@ -389,7 +388,11 @@ export default function AdminPanel() {
 										{log.message}
 									</p>
 									<span className="text-xs text-gray-500 shrink-0">
-										{log.clientID}
+										{
+											projectHook.projects.find(
+												(p) => p.clientID === log.clientID,
+											)?.name
+										}
 									</span>
 									<span className="text-xs text-gray-500 shrink-0">
 										{formatDate(log.timestamp)}
@@ -402,7 +405,7 @@ export default function AdminPanel() {
 			)}
 
 			{/* Project Grid */}
-			{isInitialLoading ? (
+			{projectHook.isLoading ? (
 				<div>
 					<div className="h-6 w-24 bg-gray-700 rounded animate-pulse mb-4" />
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -507,7 +510,7 @@ export default function AdminPanel() {
 											/>
 											<span>
 												Providers:{" "}
-												{project.providers_data?.filter((p) => p.enabled)
+												{project?.providers_data?.filter((p) => p.enabled)
 													.length || 0}{" "}
 												enabled
 											</span>
@@ -678,10 +681,14 @@ export default function AdminPanel() {
 							<button
 								type="button"
 								onClick={() => handleDelete(deleteConfirm)}
-								className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
+								disabled={isDeleting}
+								className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors inline-flex items-center justify-center gap-2"
 							>
-								<Icon icon="lucide:trash-2" className="w-4 h-4" />
-								Delete
+								<Icon
+									icon={isDeleting ? "lucide:loader-circle" : "lucide:trash-2"}
+									className={`w-4 h-4 ${isDeleting ? "animate-spin" : ""}`}
+								/>
+								{isDeleting ? "Deleting..." : "Delete"}
 							</button>
 						</div>
 					</div>

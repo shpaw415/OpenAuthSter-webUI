@@ -5,6 +5,7 @@ import EnvInHtml from "frame-master-plugin-env-in-html";
 import ImageOptimizerPlugin from "frame-master-plugin-image-optimizer";
 import mdxLoaderPlugin from "frame-master-plugin-mdx-to-js-loader";
 import ReactToHtml from "frame-master-plugin-react-to-html";
+import framemasterpluginserverobject from "frame-master-plugin-server-object";
 import TailwindPlugin from "frame-master-plugin-tailwind";
 import svgToJsxPlugin from "frame-master-svg-to-jsx-loader";
 import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
@@ -91,6 +92,10 @@ export default {
 			skipExisting: true,
 			enableImports: true,
 			keepOriginal: true,
+		}),
+		framemasterpluginserverobject({
+			prefix: "OBJECT_",
+			src: "src",
 		}),
 	],
 } satisfies FrameMasterConfig;

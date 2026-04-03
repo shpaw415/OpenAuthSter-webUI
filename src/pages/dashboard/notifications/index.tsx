@@ -93,8 +93,8 @@ export default function NotificationsPage() {
 		}
 	};
 
-	const activeInvites = invites.filter((i) => !isExpired(i.expiresAt));
-	const expiredInvites = invites.filter((i) => isExpired(i.expiresAt));
+	const activeInvites = invites.filter((i) => !isExpired(i.expires_at));
+	const expiredInvites = invites.filter((i) => isExpired(i.expires_at));
 
 	return (
 		<div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-6">
@@ -234,7 +234,7 @@ function InviteCard({
 		tone: "bg-gray-500/10 text-gray-300 border border-gray-500/30",
 		canAccept: false,
 	};
-	const expired = isExpired(invite.expiresAt);
+	const expired = isExpired(invite.expires_at);
 	const busy = pending !== undefined;
 
 	return (
@@ -268,7 +268,7 @@ function InviteCard({
 					<div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-gray-500">
 						<span>Sent {formatDate(invite.created_at)}</span>
 						<span className={expired ? "text-red-400" : "text-gray-500"}>
-							{expired ? "Expired" : "Expires"} {formatDate(invite.expiresAt)}
+							{expired ? "Expired" : "Expires"} {formatDate(invite.expires_at)}
 						</span>
 					</div>
 				</div>
@@ -331,7 +331,7 @@ function InviteSkeletons() {
 		<div className="space-y-3">
 			{Array.from({ length: 3 }).map((_, i) => (
 				<div
-					key={i}
+					key={crypto.randomUUID()}
 					className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-5 animate-pulse"
 				>
 					<div className="flex flex-col sm:flex-row sm:items-start gap-3">

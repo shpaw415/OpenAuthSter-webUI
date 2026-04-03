@@ -1,5 +1,4 @@
 import Cloudflare from "cloudflare";
-import { a } from "shiki/dist/langs-bundle-full-C-zczmvu.mjs";
 
 export class CloudflareClientError extends Error {
 	public data: unknown;
@@ -19,14 +18,18 @@ export async function createCustomDomainForProject(
 ): Promise<Cloudflare.Workers.Domains.Domain> {
 	const cf = client;
 	const issuer_url = new URL(env.CLOUDFLARE_AUTH_ENDPOINT_DOMAIN);
-	const rawName = `${crypto.randomUUID().replaceAll("-", "")}-${
-		issuer_url.hostname
-	}`;
-	const newDomaineName = rawName.slice(0, 63);
+	const subdomainLabel = crypto.randomUUID().replaceAll("-", "").slice(0, 63);
+
+	const dotCount = issuer_url.hostname.split(".").length - 1;
+
+	const newDomaineName =
+		dotCount > 1
+			? `${subdomainLabel}-${issuer_url.hostname}`
+			: `${subdomainLabel}.${issuer_url.hostname}`;
 
 	try {
 		const domaine = await cf.workers.domains.update({
-			account_id: env.CLOUDFLARE_ACCOUNT_ID,
+			account_id: env.CF_ACCOUNT_ID,
 			zone_id: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
 			hostname: newDomaineName,
 			service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
@@ -40,7 +43,7 @@ export async function createCustomDomainForProject(
 			error,
 			{
 				domaineName: newDomaineName,
-				accountId: env.CLOUDFLARE_ACCOUNT_ID,
+				accountId: env.CF_ACCOUNT_ID,
 				zoneId: env.CLOUDFLARE_AUTH_DOMAIN_ZONE_ID,
 				service: env.CLOUDFLARE_WORKER_SERVICE_NAME,
 			},
@@ -54,7 +57,7 @@ export async function deleteCustomDomainForProject(
 	domaineID: string,
 ): Promise<void> {
 	return client.workers.domains.delete(domaineID, {
-		account_id: env.CLOUDFLARE_ACCOUNT_ID,
+		account_id: env.CF_ACCOUNT_ID,
 	});
 }
 

@@ -1,10 +1,10 @@
 import type { RequestDataContext } from "@auth";
-import { ownerGroupConditions } from "@utils/server";
+import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
+	createWebUiProject,
 	type Project,
 	type ProviderConfig,
-	parseDBProject,
 } from "openauth-webui-shared-types";
 import {
 	createUserTable,
@@ -12,13 +12,14 @@ import {
 	isClientIdValid,
 	projectTable,
 } from "openauth-webui-shared-types/database";
-import { drizzle, eq, or } from "openauth-webui-shared-types/drizzle";
+import { drizzle, eq } from "openauth-webui-shared-types/drizzle";
 import {
 	CloudflareClientError,
 	createClient,
 	createCustomDomainForProject,
 	deleteCustomDomainForProject,
 } from "../../../cloudflare";
+import { generateSecret } from "./share";
 
 // GET /api/projects - List all projects
 export async function GET(): Promise<{
@@ -26,7 +27,7 @@ export async function GET(): Promise<{
 	error?: string;
 	data: Project[];
 }> {
-	const { env, data } = getContext<Env, any, RequestDataContext>(arguments);
+	const { env, data } = getContext<Env, never, RequestDataContext>(arguments);
 
 	const session = await data.client.getUserSession("private");
 
@@ -51,9 +52,21 @@ export async function GET(): Promise<{
 			}),
 		);
 
+	onSelfHosted(
+		env.SELF_HOSTED,
+		() =>
+			projects.push(
+				createWebUiProject({
+					secret: env.WEBUI_SECRET,
+					originURL: env.PUBLIC_REDIRECT_URI,
+				}),
+			),
+		null,
+	);
+
 	return {
 		success: true,
-		data: projects.map(parseDBProject),
+		data: projects,
 	};
 }
 
@@ -67,10 +80,10 @@ export async function POST(params: {
 	name: string;
 	providers_data?: ProviderConfig[];
 }): Promise<{ success: boolean; error?: string; data?: Project }> {
-	const ctx = getContext<Env, any, RequestDataContext>(arguments);
+	const ctx = getContext<Env, never, RequestDataContext>(arguments);
 	const { env, data } = ctx;
 
-	const currentUserId = await data.client.getMetaData().then((meta) => meta.id);
+	const currentUserId = (await data.client.getMetaData())?.id;
 
 	if (!currentUserId) {
 		return {
@@ -137,18 +150,12 @@ export async function POST(params: {
 			created_at: new Date().toISOString(),
 			active: true,
 			providers_data,
-			codeMode: "email",
 			originURL: "",
 			authEndpointURL: cfDomaineCreate.hostname,
 			cloudflareDomaineID: cfDomaineCreate.id,
 			registerOnInvite: false,
-			secret: [
-				crypto.randomUUID(),
-				crypto.randomUUID(),
-				crypto.randomUUID(),
-			].join("-"),
+			secret: generateSecret(),
 			theme_id: null,
-			emailTemplateId: null,
 			projectData: {},
 		};
 
@@ -170,7 +177,7 @@ export async function POST(params: {
 		}
 
 		return await createUserTable(clientID, env.PROJECT_DB)
-			.then(() => ({ success: true, data: parseDBProject(insertedProject) }))
+			.then(() => ({ success: true, data: insertedProject }))
 			.catch(async (err) => {
 				console.error(
 					`Failed to create user table for project ${clientID}: ${err}`,

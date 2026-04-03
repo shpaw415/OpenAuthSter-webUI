@@ -20,9 +20,9 @@ describe("isClientIdValid - SQLite table name safety", () => {
 			expect(isClientIdValid("a_1")).toBe(true);
 		});
 
-		test("maximum length (30 characters)", () => {
-			expect(isClientIdValid("a".repeat(30))).toBe(true);
-			expect(isClientIdValid("project_" + "a".repeat(22))).toBe(true);
+		test("maximum length (250 characters)", () => {
+			expect(isClientIdValid("a".repeat(250))).toBe(true);
+			expect(isClientIdValid("project_" + "a".repeat(242))).toBe(true);
 		});
 	});
 
@@ -33,9 +33,8 @@ describe("isClientIdValid - SQLite table name safety", () => {
 			expect(isClientIdValid("")).toBe(false);
 		});
 
-		test("too long (more than 30 characters)", () => {
-			expect(isClientIdValid("a".repeat(31))).toBe(false);
-			expect(isClientIdValid("a".repeat(50))).toBe(false);
+		test("too long (more than 250 characters)", () => {
+			expect(isClientIdValid("a".repeat(260))).toBe(false);
 		});
 
 		test("starts with number (invalid for SQLite)", () => {

@@ -1,4 +1,5 @@
 import {
+	type CacheStoreData,
 	createOpenAuthsterClient,
 	defaultSubjectSchema,
 } from "openauth-webui-shared-types/client/user";
@@ -21,6 +22,12 @@ export type RequestDataContext = {
 	client: ReturnType<typeof createClient>;
 };
 
+export type Roles = "user";
+
+export type AuthClientType = ReturnType<typeof createClient>;
+
+const clientCache = new Map<string, CacheStoreData<Roles, never>>();
+
 export const createClient = ({
 	token,
 	clientID,
@@ -34,7 +41,7 @@ export const createClient = ({
 	redirectURI?: string;
 	secret?: string;
 } = {}) =>
-	createOpenAuthsterClient<PublicSessionData, PrivateSessionData>({
+	createOpenAuthsterClient<PublicSessionData, PrivateSessionData, Roles>({
 		clientID: clientID ?? process.env.PUBLIC_CLIENT_ID,
 		issuerURI: issuerURI ?? process.env.PUBLIC_ISSUER,
 		redirectURI: redirectURI ?? process.env.PUBLIC_REDIRECT_URI,
@@ -43,6 +50,19 @@ export const createClient = ({
 		authFlowCallbacks: {
 			onLoginRequired: () => {
 				console.log("Login required");
+			},
+		},
+		cache_provider: {
+			get(key) {
+				return Promise.resolve(clientCache.get(key) ?? null);
+			},
+			set(key, value) {
+				clientCache.set(key, value as never);
+				return Promise.resolve();
+			},
+			delete(key) {
+				clientCache.delete(key);
+				return Promise.resolve();
 			},
 		},
 		secret,

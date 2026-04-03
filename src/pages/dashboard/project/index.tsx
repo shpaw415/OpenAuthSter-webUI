@@ -1,13 +1,14 @@
 import { POST as createInviteLink } from "@api/invitelink";
+import { AppSnackbar } from "@components/AppSnackbar";
+import { FunctionEditorModal } from "@components/FunctionEditorModal";
+import { SelectWrapper, TemplateSelection } from "@components/InputFields";
 import { ProviderIcon } from "@components/provider-icons";
-import { InviteCollaboratorSectionProject } from "@components/vary";
 import { useCopyTemplates } from "@hooks/useCopyTemplates";
-import { useEmailTemplates } from "@hooks/useEmailTemplates";
+import { useParams } from "@hooks/useParams";
 import { useProject } from "@hooks/useProjects";
 import { useUIThemes } from "@hooks/useUIThemes";
 import { useWebHook } from "@hooks/useWebHook";
 import { Icon } from "@iconify/react";
-import { Snackbar } from "@material/react-snackbar";
 import type {
 	Project,
 	ProjectData,
@@ -42,6 +43,7 @@ const STANDARD_PROJECT_DATA_FIELDS = [
 	"logoUrl",
 	"primaryColor",
 	"emailFrom",
+	"roles",
 ] as const;
 
 const WEBHOOK_EVENT_OPTIONS = WebHookEventsDetails;
@@ -54,15 +56,15 @@ const getWebHookEventLabel = (event: WebHookEvents) => {
 };
 
 export default function ProjectDetail() {
-	const projectHook = useProject(
-		typeof window === "undefined"
-			? undefined
-			: new URLSearchParams(window.location.search).get("project_id") || "",
-	);
+	const params = useParams<{
+		project_id: string;
+		category?: ProviderCategory;
+	}>();
+	const projectHook = useProject(params.project_id);
 	const { themes, isLoading: themesLoading } = useUIThemes();
-	const { templates, isLoading: templatesLoading } = useEmailTemplates();
-	const [activeCategory, setActiveCategory] =
-		useState<ProviderCategory>("social");
+	const [activeCategory, setActiveCategory] = useState<ProviderCategory>(
+		params.category || "social",
+	);
 	const [isSaving, setIsSaving] = useState(false);
 	const [notification, setNotification] = useState<{
 		message: string;
@@ -70,6 +72,16 @@ export default function ProjectDetail() {
 	const [isProjectDataExpanded, setIsProjectDataExpanded] = useState(false);
 	const [projectData, setProjectData] = useState<ProjectData>({});
 	const [customFieldKey, setCustomFieldKey] = useState("");
+	const [fnEditorModal, setFnEditorModal] = useState<{
+		key: string;
+		draft: string;
+	} | null>(null);
+
+	useEffect(() => {
+		if (!params.category) return;
+		if (activeCategory === params.category) return;
+		setActiveCategory(params.category);
+	}, [params.category, activeCategory]);
 
 	// Sync projectData when project loads
 	useEffect(() => {
@@ -136,7 +148,9 @@ export default function ProjectDetail() {
 		useState<ExtendedWebHookConfig | null>(null);
 	const [isWebHookSaving, setIsWebHookSaving] = useState(false);
 
-	const categoryProviders = getProvidersByCategory(activeCategory);
+	const categoryProviders = getProvidersByCategory(activeCategory).filter(
+		(p) => !["yahoo"].includes(p.type),
+	);
 	const enabledCount = providers.filter((p) => p.enabled).length;
 
 	useEffect(() => {
@@ -214,34 +228,62 @@ export default function ProjectDetail() {
 		);
 	}
 
-	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-10">
-			{/* Notification */}
-			{notification && (
-				<Snackbar
-					message={notification.message}
-					actionText="OK"
-					onClose={() => setNotification(null)}
-				/>
-			)}
-
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center space-x-4">
+	if (projectHook.error) {
+		return (
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+				<div className="flex flex-col items-center justify-center py-20">
+					<div className="relative mb-6">
+						<div className="absolute inset-0 rounded-full bg-red-500/20 blur-xl scale-150" />
+						<div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-red-900/40 border border-red-700/50">
+							<Icon
+								icon="lucide:alert-circle"
+								className="w-10 h-10 text-red-400"
+							/>
+						</div>
+					</div>
+					<h2 className="text-xl font-semibold text-white mb-2">
+						Something went wrong
+					</h2>
+					<p className="text-red-300 text-sm text-center max-w-md mb-8">
+						{projectHook.error}
+					</p>
 					<a
 						href="/dashboard"
 						className="inline-flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors"
 					>
+						<Icon icon="lucide:arrow-left" className="w-4 h-4" />
+						<span>Back to Dashboard</span>
+					</a>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-10">
+			{/* Notification */}
+			<AppSnackbar
+				notification={notification}
+				onClose={() => setNotification(null)}
+			/>
+
+			{/* Header */}
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+					<a
+						href="/dashboard"
+						className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white sm:w-auto"
+					>
 						<Icon icon="lucide:arrow-left" className="w-5 h-5" />
 						<span>Back</span>
 					</a>
-					<div>
-						<div className="flex items-center space-x-3">
-							<h2 className="text-2xl font-bold text-white">
+					<div className="min-w-0 flex-1">
+						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+							<h2 className="text-2xl font-bold text-white wrap-break-word">
 								{projectHook.project?.name}
 							</h2>
 							<span
-								className={`px-2 py-1 text-xs rounded ${
+								className={`inline-flex w-fit rounded px-2 py-1 text-xs ${
 									projectHook.project?.active
 										? "bg-green-500/10 text-green-400"
 										: "bg-gray-500/10 text-gray-400"
@@ -250,15 +292,24 @@ export default function ProjectDetail() {
 								{projectHook.project?.active ? "Active" : "Inactive"}
 							</span>
 						</div>
-						<p className="text-gray-400 mt-1">
+						<p className="mt-1 text-sm text-gray-400 sm:text-base">
 							{enabledCount} provider{enabledCount !== 1 ? "s" : ""} enabled
 						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center space-x-4">
-					<label className="flex items-center space-x-3 cursor-pointer">
-						<span className="text-gray-300">Project Active</span>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
+					<a
+						href={`/dashboard/project/collaborator?project_id=${projectHook.project?.clientID}`}
+						className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-gray-300 transition-colors hover:bg-gray-700 hover:text-white sm:w-auto"
+					>
+						<Icon icon="lucide:users" className="w-4 h-4" />
+						<span>Collaborators</span>
+					</a>
+					<label className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-700 bg-gray-800/70 px-4 py-3 sm:w-auto sm:justify-start sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+						<span className="text-sm text-gray-300 sm:text-base">
+							Project Active
+						</span>
 						<button
 							type="button"
 							onClick={() =>
@@ -284,7 +335,8 @@ export default function ProjectDetail() {
 
 			{/* Project Client Info */}
 			<ProjectClientInfo
-				project={projectHook.project!}
+				project={projectHook.project}
+				updateProject={projectHook.updateProject}
 				setNotification={setNotification}
 			/>
 
@@ -316,7 +368,7 @@ export default function ProjectDetail() {
 								setIsSaving(true);
 								try {
 									await projectHook.updateProject({
-										theme_id: parseInt(e.target.value, 10) || null,
+										theme_id: Number(e.target.value) || null,
 									});
 									setNotification({ message: "Theme updated" });
 								} catch (err) {
@@ -342,110 +394,13 @@ export default function ProjectDetail() {
 						</select>
 						{projectHook.project?.theme_id && (
 							<p className="text-gray-500 text-xs mt-2">
-								Using theme: {projectHook.project.theme_id}
+								Using theme:{" "}
+								{
+									themes.find((t) => t.id === projectHook.project?.theme_id)
+										?.name
+								}
 							</p>
 						)}
-					</SelectWrapper>
-					{/* Email Template Selection */}
-					<SelectWrapper
-						name="Email/SMS Template"
-						icon={<Icon icon="lucide:mail" className="w-5 h-5 text-gray-300" />}
-						action={
-							<a
-								href="/dashboard/templates"
-								className="text-xs text-blue-400 hover:text-blue-300"
-							>
-								Manage Templates
-							</a>
-						}
-					>
-						<select
-							value={projectHook.project?.emailTemplateId || ""}
-							onChange={async (e) => {
-								setIsSaving(true);
-								try {
-									await projectHook.updateProject({
-										emailTemplateId: e.target.value || null,
-									});
-									setNotification({ message: "Email template updated" });
-								} catch (err) {
-									setNotification({
-										message:
-											err instanceof Error
-												? err.message
-												: "Failed to update email template",
-									});
-								} finally {
-									setIsSaving(false);
-								}
-							}}
-							disabled={isSaving || templatesLoading}
-							className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-						>
-							<option value="">No template selected</option>
-							{templates.map((template) => (
-								<option key={template.name} value={template.name}>
-									{template.name} - {template.subject}
-								</option>
-							))}
-						</select>
-						{projectHook.project?.emailTemplateId && (
-							<div className="flex items-center justify-between mt-2">
-								<p className="text-gray-500 text-xs">
-									Using template: {projectHook.project.emailTemplateId}
-								</p>
-								<a
-									href={`/dashboard/templates/manage?edit=${encodeURIComponent(
-										projectHook.project.emailTemplateId,
-									)}&project_id=${encodeURIComponent(
-										projectHook.project.clientID,
-									)}`}
-									className="text-xs text-blue-400 hover:text-blue-300"
-								>
-									Edit Template
-								</a>
-							</div>
-						)}
-					</SelectWrapper>
-					{/* codeMode Section */}
-					<SelectWrapper
-						name="Code Mode"
-						icon={
-							<Icon icon="lucide:monitor" className="w-5 h-5 text-gray-300" />
-						}
-						helpText="Select the mode for registration code sending"
-					>
-						<select
-							defaultValue={projectHook.project?.codeMode || "email"}
-							disabled={isSaving}
-							className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-							onChange={(e) => {
-								const value = e.currentTarget.value as "email" | "phone";
-
-								setIsSaving(true);
-								projectHook
-									.updateProject({
-										codeMode: value,
-									})
-									.then(() => {
-										setNotification({ message: "Code mode updated" });
-									})
-									.catch((err) => {
-										setNotification({
-											message:
-												err instanceof Error
-													? err.message
-													: "Failed to update code mode",
-										});
-									})
-									.finally(() => {
-										setIsSaving(false);
-									});
-							}}
-						>
-							<option value="email">Email Code Mode</option>
-							<option value="phone">Phone Code Mode</option>
-						</select>
 					</SelectWrapper>
 					<AllowOriginForm
 						isSaving={isSaving}
@@ -638,6 +593,17 @@ export default function ProjectDetail() {
 									Use in templates: {"{{logoUrl}}"}
 								</p>
 							</div>
+							<RolesField
+								roles={
+									(projectData.roles as unknown as string[] | undefined) || []
+								}
+								onChange={(roles) =>
+									setProjectData({
+										...projectData,
+										roles,
+									})
+								}
+							/>
 							<div>
 								<label
 									className="block text-gray-300 text-sm mb-1"
@@ -688,27 +654,57 @@ export default function ProjectDetail() {
 												key as (typeof STANDARD_PROJECT_DATA_FIELDS)[number],
 											),
 									)
+									.map(([key, value]) => [
+										key,
+										Array.isArray(value) ? value.join(",") : value,
+									])
 									.map(([key, value]) => (
 										<div key={key} className="flex gap-2 items-center">
 											<span className="text-gray-400 text-sm w-32 truncate">
 												{key}:
 											</span>
-											<input
-												type="text"
-												value={value || ""}
-												onChange={(e) =>
-													setProjectData({
-														...projectData,
-														[key]: e.target.value,
-													})
-												}
-												className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-											/>
+											{value?.startsWith("function::") ? (
+												<div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-purple-950/40 border border-purple-700/50 rounded">
+													<Icon
+														icon="lucide:code-2"
+														className="w-4 h-4 text-purple-400 shrink-0"
+													/>
+													<span className="text-purple-300 text-xs font-mono truncate flex-1">
+														function
+													</span>
+													<button
+														type="button"
+														onClick={() =>
+															setFnEditorModal({
+																key: key as string,
+																draft: value.slice(
+																	"function::".length,
+																) as string,
+															})
+														}
+														className="text-purple-400 hover:text-purple-200 text-xs underline"
+													>
+														Edit
+													</button>
+												</div>
+											) : (
+												<input
+													type="text"
+													value={value || ""}
+													onChange={(e) =>
+														setProjectData({
+															...projectData,
+															[key as string]: e.target.value,
+														})
+													}
+													className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+												/>
+											)}
 											<button
 												type="button"
 												onClick={() => {
 													const newData = { ...projectData };
-													delete newData[key];
+													delete newData[key as string];
 													setProjectData(newData);
 												}}
 												className="px-2 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded"
@@ -759,6 +755,8 @@ export default function ProjectDetail() {
 								</div>
 							</div>
 						</div>
+
+						<TemplateSelection project_id={params.project_id} />
 
 						{/* Save Button */}
 						<div className="flex justify-end pt-2">
@@ -874,12 +872,6 @@ export default function ProjectDetail() {
 				)}
 			</div>
 
-			{/* Invite Collaborator */}
-			<InviteCollaboratorSectionProject
-				project={projectHook.project as Project}
-				setNotification={setNotification}
-			/>
-
 			{/* Authentication Providers */}
 			<div>
 				<h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
@@ -924,7 +916,12 @@ export default function ProjectDetail() {
 						<button
 							key={cat.id}
 							type="button"
-							onClick={() => setActiveCategory(cat.id)}
+							onClick={() => {
+								setActiveCategory(cat.id);
+								const url = new URL(window.location.href);
+								url.searchParams.set("category", cat.id);
+								window.history.pushState({}, "", url);
+							}}
 							className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
 								activeCategory === cat.id
 									? "bg-blue-600 text-white"
@@ -1043,18 +1040,103 @@ export default function ProjectDetail() {
 					onSave={handleSaveWebhook}
 				/>
 			)}
+			<FunctionEditorModal
+				variableKey={fnEditorModal?.key ?? ""}
+				value={fnEditorModal !== null ? fnEditorModal.draft : null}
+				props={projectData as Record<string, string>}
+				onAccept={(body) => {
+					if (fnEditorModal) {
+						setProjectData({
+							...projectData,
+							[fnEditorModal.key]: `function::${body}`,
+						});
+					}
+					setFnEditorModal(null);
+				}}
+				onClose={() => setFnEditorModal(null)}
+				onRemove={() => {
+					if (fnEditorModal) {
+						setProjectData({
+							...projectData,
+							[fnEditorModal.key]: "",
+						});
+					}
+					setFnEditorModal(null);
+				}}
+			/>
 		</div>
 	);
 }
 
 function ProjectClientInfo({
 	project,
+	updateProject,
 	setNotification,
 }: {
-	project: Project;
+	project: Project | null;
+	updateProject: (data: Partial<Project>) => Promise<void>;
 	setNotification: (notif: { message: string } | null) => void;
 }) {
 	const [showSecret, setShowSecret] = useState(false);
+	const [isRotatingSecret, setIsRotatingSecret] = useState(false);
+
+	const handleRotateSecret = async () => {
+		if (!project?.secret) {
+			setNotification({ message: "Project secret is unavailable" });
+			return;
+		}
+
+		if (
+			!confirm(
+				"Rotate the Client Secret? Existing server-side integrations using the current secret will stop working until they are updated.",
+			)
+		) {
+			return;
+		}
+
+		setIsRotatingSecret(true);
+		try {
+			await updateProject({ secret: project.secret });
+			setShowSecret(true);
+			setNotification({
+				message:
+					"Client Secret rotated. Update your server-side integrations with the new value.",
+			});
+		} catch (err) {
+			setNotification({
+				message:
+					err instanceof Error ? err.message : "Failed to rotate Client Secret",
+			});
+		} finally {
+			setIsRotatingSecret(false);
+		}
+	};
+
+	if (!project) {
+		return (
+			<div className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-pulse">
+				<div className="flex items-center space-x-2 mb-5">
+					<div className="w-5 h-5 rounded bg-gray-700" />
+					<div className="h-6 w-44 rounded bg-gray-700" />
+				</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+					<div className="space-y-2">
+						<div className="h-4 w-20 rounded bg-gray-700" />
+						<div className="h-9 rounded-lg bg-gray-700" />
+					</div>
+					<div className="space-y-2">
+						<div className="h-4 w-24 rounded bg-gray-700" />
+						<div className="h-9 rounded-lg bg-gray-700" />
+					</div>
+					<div className="space-y-2 md:col-span-2">
+						<div className="h-4 w-28 rounded bg-gray-700" />
+						<div className="h-9 rounded-lg bg-gray-700" />
+						<div className="h-3 w-3/4 rounded bg-gray-700 mt-2" />
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -1112,13 +1194,15 @@ function ProjectClientInfo({
 				{/* Secret */}
 				<div className="space-y-2 md:col-span-2">
 					<div>
-						<div className="flex items-center gap-2 mb-1">
+						<div className="flex items-center justify-between gap-3 mb-1">
+							<div className="flex items-center gap-2">
 							<label className="text-gray-400 text-sm" htmlFor="client-secret">
 								Client Secret
 							</label>
 							<button
 								type="button"
 								onClick={() => setShowSecret(!showSecret)}
+								disabled={isRotatingSecret}
 								className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors inline-flex items-center justify-center"
 								title={showSecret ? "Hide Client Secret" : "Show Client Secret"}
 							>
@@ -1128,12 +1212,34 @@ function ProjectClientInfo({
 									<Icon icon="lucide:eye" className="w-4 h-4" />
 								)}
 							</button>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									void handleRotateSecret();
+								}}
+								disabled={isRotatingSecret}
+								className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm text-amber-200 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+								title="Rotate Client Secret"
+							>
+								{isRotatingSecret ? (
+									<>
+										<div className="w-4 h-4 border-2 border-amber-200/30 border-t-amber-200 rounded-full animate-spin" />
+										Rotating...
+									</>
+								) : (
+									<>
+										<Icon icon="lucide:refresh-cw" className="w-4 h-4" />
+										Rotate Secret
+									</>
+								)}
+							</button>
 						</div>
 						<div className="flex items-center gap-2">
 							<code className="flex-1 min-w-0 px-3 py-2 bg-gray-900 border border-gray-600 text-white font-mono text-sm rounded-lg break-all">
 								{showSecret
 									? project?.secret
-									: "*".repeat(project.secret.length)}
+									: "*".repeat(project?.secret?.length || 0)}
 							</code>
 							<button
 								type="button"
@@ -1141,6 +1247,7 @@ function ProjectClientInfo({
 									navigator.clipboard.writeText(project?.secret || "");
 									setNotification({ message: "Client Secret copied!" });
 								}}
+								disabled={isRotatingSecret}
 								className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors inline-flex items-center justify-center shrink-0"
 								title="Copy Client Secret"
 							>
@@ -1151,6 +1258,9 @@ function ProjectClientInfo({
 							Do not share your Client Secret with anyone. it can modify any
 							part of the user data. ONLY use it in secure server-side
 							environments.
+						</p>
+						<p className="text-amber-300/80 text-xs mt-2">
+							Rotating the secret immediately invalidates the previous one.
 						</p>
 					</div>
 				</div>
@@ -1394,7 +1504,7 @@ function InviteLinkModal({
 								type="number"
 								value={expiresIn}
 								onChange={(e) =>
-									setExpiresIn(Math.max(1, parseInt(e.target.value) || 60))
+									setExpiresIn(Math.max(1, parseInt(e.target.value, 10) || 60))
 								}
 								disabled={isLoading}
 								min="1"
@@ -1505,6 +1615,82 @@ function InviteLinkModal({
 	);
 }
 
+function RolesField({
+	roles,
+	onChange,
+}: {
+	roles: string[];
+	onChange: (roles: string[]) => void;
+}) {
+	const [newRole, setNewRole] = useState("");
+
+	const handleAdd = () => {
+		const trimmed = newRole.trim();
+		if (trimmed && !roles.includes(trimmed)) {
+			onChange([...roles, trimmed]);
+			setNewRole("");
+		}
+	};
+
+	return (
+		<div className="md:col-span-2">
+			<label className="block text-gray-300 text-sm mb-1" htmlFor="roles-input">
+				Roles
+			</label>
+			<div className="flex flex-wrap gap-2 mb-2 min-h-8">
+				{roles.map((role) => (
+					<span
+						key={role}
+						className="inline-flex items-center gap-1 px-2 py-1 bg-blue-900/40 border border-blue-700/50 rounded text-blue-300 text-sm"
+					>
+						{role}
+						<button
+							type="button"
+							onClick={() => onChange(roles.filter((r) => r !== role))}
+							className="text-blue-400 hover:text-blue-200 ml-1"
+							title={`Remove ${role}`}
+						>
+							<Icon icon="lucide:x" className="w-3 h-3" />
+						</button>
+					</span>
+				))}
+				{roles.length === 0 && (
+					<span className="text-gray-500 text-sm">No roles defined</span>
+				)}
+			</div>
+			<div className="flex gap-2">
+				<input
+					id="roles-input"
+					type="text"
+					value={newRole}
+					onChange={(e) =>
+						setNewRole(e.target.value.replace(/[^a-zA-Z0-9_\-:.]/g, ""))
+					}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							e.preventDefault();
+							handleAdd();
+						}
+					}}
+					placeholder="e.g. admin"
+					className="flex-1 px-3 py-1.5 bg-gray-900 border border-gray-600 text-white rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+				/>
+				<button
+					type="button"
+					onClick={handleAdd}
+					disabled={!newRole.trim() || roles.includes(newRole.trim())}
+					className="px-3 py-1.5 bg-gray-700 text-white rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+				>
+					+ Add Role
+				</button>
+			</div>
+			<p className="text-gray-500 text-xs mt-1">
+				Use in templates: {"{{roles}}"}
+			</p>
+		</div>
+	);
+}
+
 function AllowOriginForm({
 	isSaving,
 	setIsSaving,
@@ -1572,39 +1758,6 @@ function AllowOriginForm({
 	);
 }
 
-function SelectWrapper({
-	children,
-	name,
-	icon,
-	action,
-	helpText,
-}: {
-	children: React.ReactNode;
-	name: string;
-	icon: React.ReactNode;
-	action?: React.ReactNode;
-	helpText?: string | React.ReactNode;
-}) {
-	return (
-		<div className="bg-gray-800 rounded-lg p-5 border border-gray-700">
-			<div className="flex items-center justify-between mb-4">
-				<div className="flex items-center space-x-2">
-					{icon}
-					<h3 className="text-base font-medium text-white">{name}</h3>
-				</div>
-				{action}
-			</div>
-			{children}
-			{helpText && (
-				<div className="flex items-center justify-between mt-2">
-					<p className="text-gray-500 text-xs">{helpText}</p>
-					<span></span>
-				</div>
-			)}
-		</div>
-	);
-}
-
 function WebHookModal({
 	data,
 	onClose,
@@ -1632,7 +1785,7 @@ function WebHookModal({
 				data.headers
 					? Object.entries(data.headers).map(([key, value]) => ({
 							key,
-							value,
+							value: value as string,
 						}))
 					: [],
 			);

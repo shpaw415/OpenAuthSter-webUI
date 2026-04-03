@@ -20,7 +20,7 @@
 		// Cloudflare API Token with permissions to manage Workers
 		"CLOUDFLARE_API_TOKEN": "<YOUR_CLOUDFLARE_API_TOKEN>",
 		// Cloudflare Account ID where your Cloudflare Worker OpenAuthster-issuer instance is deployed
-		"CLOUDFLARE_ACCOUNT_ID": "<YOUR_CLOUDFLARE_ACCOUNT_ID>",
+		"CF_ACCOUNT_ID": "<YOUR_CLOUDFLARE_ACCOUNT_ID>",
 		// Cloudflare Zone ID for the domain used for auth endpoints
 		// it must match the domain set in CLOUDFLARE_AUTH_ENDPOINT_DOMAIN
 		"CLOUDFLARE_AUTH_DOMAIN_ZONE_ID": "<YOUR_CLOUDFLARE_AUTH_DOMAIN_ZONE_ID>",

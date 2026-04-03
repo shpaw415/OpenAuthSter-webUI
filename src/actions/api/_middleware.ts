@@ -6,10 +6,11 @@ import {
 	type RequestDataContext,
 } from "@auth";
 import type { EventContext } from "@cloudflare/workers-types";
+import type { ProviderType } from "openauth-webui-shared-types";
 import type { OpenAuthsterClient } from "openauth-webui-shared-types/client/user";
 
 export async function onRequest(
-	context: EventContext<Env, any, RequestDataContext>,
+	context: EventContext<Env, never, RequestDataContext>,
 ) {
 	// @ts-expect-error - This is a custom property we add in development for mocking authentication
 	if (context.env.NODE_ENV === "development") {
@@ -26,12 +27,13 @@ export async function onRequest(
 		/**
 		 * In development, we mock the authentication by injecting a fake client into the context.
 		 */
-		// @ts-expect-error - This is a custom property we add in development for mocking authentication
+		// @ts-expect-error - We are intentionally mocking the client for development
 		context.data.client = {
 			getMetaData: async () => ({
 				id: "admin",
 				identifier: "admin@example.com",
 				provider: "password",
+				role: "admin",
 			}),
 			getUserSession: async () => ({
 				public: {},
@@ -41,8 +43,14 @@ export async function onRequest(
 				user_id: "admin",
 				provider: "password",
 				user_identifier: "admin@example.com",
+				role: "admin",
 			}),
-		} as OpenAuthsterClient<PublicSessionData, PrivateSessionData>;
+		} as OpenAuthsterClient<
+			PublicSessionData,
+			PrivateSessionData,
+			"admin" | "user",
+			{ provider: ProviderType; role: "admin" | "user" }
+		>;
 
 		return await context.next();
 	}

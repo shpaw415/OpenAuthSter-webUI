@@ -9,7 +9,7 @@ Configure GitHub OAuth to allow users to sign in with their GitHub accounts.
 3. Fill in your application details:
    - **Application name**: Your app's name
    - **Homepage URL**: Your application's URL
-   - **Authorization callback URL**: Your redirect URI (e.g., `https://your-domain.com/github/callback`)
+   - **Authorization callback URL**: <props.RedirectURI value={props.redirectURI} />
 4. Click **Register application**
 5. Copy the **Client ID**
 6. Click **Generate a new client secret** and copy it
@@ -20,7 +20,7 @@ Configure GitHub OAuth to allow users to sign in with their GitHub accounts.
 | --------------------------- | -------- | ---------------------------------------------------- |
 | Client ID                   | Yes      | The OAuth client ID from GitHub                      |
 | Client Secret               | Yes      | The OAuth client secret from GitHub                  |
-| Scopes                      | No       | Additional OAuth scopes                              |
+| Scopes                      | No       | Additional OAuth scopes to request (default: email)  |
 | PKCE                        | No       | Enable PKCE for enhanced security                    |
 | Additional Query Parameters | No       | Extra parameters to include in the authorization URL |
 

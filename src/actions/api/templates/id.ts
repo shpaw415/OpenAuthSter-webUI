@@ -144,7 +144,7 @@ export async function DELETE(params: { name: string }): Promise<{
 	const { env } = ctx;
 
 	try {
-		const currentUserId = (await ctx.data.client.getMetaData()).id;
+		const currentUserId = (await ctx.data.client.getMetaData())?.id;
 
 		if (!currentUserId) {
 			return {
@@ -171,7 +171,7 @@ export async function DELETE(params: { name: string }): Promise<{
 		if (!existing) {
 			return {
 				success: false,
-				error: "Template not found",
+				error: "Template not found or you do not have permission to delete it",
 			};
 		}
 

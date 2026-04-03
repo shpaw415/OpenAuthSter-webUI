@@ -8,7 +8,8 @@ Configure a custom OAuth2 provider for authentication.
 2. Obtain the **Token Endpoint** URL
 3. (Optional) Get the **JWKS Endpoint** for token verification
 4. Register your application to get **Client ID** and **Client Secret**
-5. Configure the appropriate **scopes** for your use case
+5. Configure the provider redirect URI as <props.RedirectURI value={props.redirectURI} />
+6. Configure the appropriate **scopes** for your use case
 
 ## Configuration Fields
 
@@ -19,7 +20,7 @@ Configure a custom OAuth2 provider for authentication.
 | Authorization Endpoint      | Yes      | URL for user authorization                           |
 | Token Endpoint              | Yes      | URL to exchange code for tokens                      |
 | JWKS Endpoint               | Yes      | URL for JSON Web Key Set (for token verification)    |
-| Scopes                      | No       | OAuth scopes to request                              |
+| Scopes                      | No       | OAuth scopes to request (default: email)             |
 | Additional Query Parameters | No       | Extra parameters to include in the authorization URL |
 
 ## Additional Query Parameters
@@ -38,6 +39,10 @@ Some OAuth providers require or support additional query parameters. Add them as
 2. User authenticates and authorizes your application
 3. Provider redirects back with an authorization code
 4. Your server exchanges the code for tokens at the Token Endpoint
+
+## Redirect URI
+
+Use <props.RedirectURI value={props.redirectURI} /> as the callback URL in your provider configuration.
 
 ## Useful Links
 

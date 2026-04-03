@@ -1,14 +1,10 @@
-import type { RequestDataContext } from "@auth";
+import { createClient, type RequestDataContext, type Roles } from "@auth";
 import { onSelfHosted, ownerGroupConditions } from "@utils/server";
 import { getContext } from "frame-master-plugin-cloudflare-pages-functions-action/context";
 import {
 	isClientIdValid,
-	type OTFUsersParsedType,
 	OTFusersTable,
-	parseDBUser,
 	projectTable,
-	totpTable,
-	webauthnCredentialsTable,
 } from "openauth-webui-shared-types/database";
 import {
 	and,
@@ -18,6 +14,7 @@ import {
 	like,
 	sql,
 } from "openauth-webui-shared-types/drizzle";
+import { deleteUserWithAuthState } from "openauth-webui-shared-types/user/delete";
 
 export type ProjectUser = {
 	id: string;
@@ -25,6 +22,7 @@ export type ProjectUser = {
 	data: Record<string, unknown> | null;
 	session_public: Record<string, unknown> | null;
 	created_at: string;
+	role: string | null;
 };
 
 export type ListUsersParams = {
@@ -38,7 +36,9 @@ export type ListUsersResponse = {
 	success: boolean;
 	error?: string;
 	data?: {
-		users: OTFUsersParsedType[];
+		users: Array<
+			Omit<ReturnType<typeof OTFusersTable>["$inferSelect"], "session_private">
+		>;
 		total: number;
 		page: number;
 		pageSize: number;
@@ -129,6 +129,7 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
 				data: usersTable.data,
 				session_public: usersTable.session_public,
 				created_at: usersTable.created_at,
+				role: usersTable.role,
 			})
 			.from(usersTable);
 
@@ -137,12 +138,10 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
 			dataQuery = dataQuery.where(filters);
 		}
 
-		const rows = await dataQuery
+		const users = await dataQuery
 			.orderBy(desc(usersTable.created_at))
 			.limit(pageSize)
 			.offset((page - 1) * pageSize);
-
-		const users = rows.map(parseDBUser) as OTFUsersParsedType[];
 
 		return {
 			success: true,
@@ -162,6 +161,9 @@ export async function GET(params: ListUsersParams): Promise<ListUsersResponse> {
 	}
 }
 
+/**
+ * DELETE /api/users - Delete a user by ID for a specific client
+ */
 export async function DELETE(
 	params: DeleteUserParams,
 ): Promise<DeleteUserResponse> {
@@ -174,29 +176,9 @@ export async function DELETE(
 	if (!session) {
 		return { success: false, error: "Unauthorized" };
 	}
-	const db = drizzle(env.PROJECT_DB);
 
-	// Verify the user has permission to delete users for this client by checking project ownership
-	if (
-		await db
-			.select()
-			.from(projectTable)
-			.where(
-				ownerGroupConditions({
-					user_group_ids: session?.private?.group_ids ?? [],
-					ownerGroupIdColumn: projectTable.owner_group_id,
-					otherEq: [eq(projectTable.owner_id, session.user_id)],
-					self_host: env.SELF_HOSTED,
-				}),
-			)
-			.get()
-			.then((e) => Boolean(e))
-	) {
-		return { success: false, error: "Unauthorized" };
-	}
-
-	const clientID = params.clientID?.trim();
-	const userID = params.userID?.trim();
+	const clientID = params.clientID.trim();
+	const userID = params.userID.trim();
 
 	if (!clientID) {
 		return { success: false, error: "Invalid or missing clientID" };
@@ -204,40 +186,36 @@ export async function DELETE(
 		return { success: false, error: "Invalid or missing userID" };
 	}
 
+	const db = drizzle(env.PROJECT_DB);
+
+	// Verify the user has permission to delete users for this client by checking project ownership
+	if (
+		!(await db
+			.select({ id: projectTable.clientID })
+			.from(projectTable)
+			.where(
+				and(
+					eq(projectTable.clientID, clientID),
+					ownerGroupConditions({
+						user_group_ids: session?.private?.group_ids ?? [],
+						ownerGroupIdColumn: projectTable.owner_group_id,
+						otherEq: [eq(projectTable.owner_id, session.user_id)],
+						self_host: env.SELF_HOSTED,
+					}),
+				),
+			)
+			.get()
+			.then((e) => Boolean(e)))
+	) {
+		return { success: false, error: "Unauthorized" };
+	}
+
 	try {
-		const usersTable = OTFusersTable(clientID);
-
-		const existing = await db
-			.select({ id: usersTable.id })
-			.from(usersTable)
-			.where(eq(usersTable.id, userID))
-			.limit(1)
-			.get();
-
-		if (!existing) {
-			return { success: false, error: "User not found" };
-		}
-
-		await db.delete(usersTable).where(eq(usersTable.id, userID));
-
-		// Clean up orphan MFA records for this user
-		await Promise.allSettled([
-			db
-				.delete(totpTable)
-				.where(
-					and(eq(totpTable.user_id, userID), eq(totpTable.clientID, clientID)),
-				),
-			db
-				.delete(webauthnCredentialsTable)
-				.where(
-					and(
-						eq(webauthnCredentialsTable.user_id, userID),
-						eq(webauthnCredentialsTable.clientID, clientID),
-					),
-				),
-		]);
-
-		return { success: true };
+		return await deleteUserWithAuthState({
+			d1db: env.PROJECT_DB,
+			clientID,
+			userID,
+		});
 	} catch (error) {
 		console.error("Failed to delete user:", error);
 		return {
@@ -245,4 +223,67 @@ export async function DELETE(
 			error: error instanceof Error ? error.message : "Failed to delete user",
 		};
 	}
+}
+
+export async function PUT(
+	{ project_id, user_id }: { project_id: string; user_id: string },
+	options: Partial<{ role: Roles }>,
+) {
+	const ctx = getContext<Env, string, RequestDataContext>(arguments);
+
+	const client = ctx.data.client;
+
+	const session = await client.getUserSession("private");
+
+	if (session instanceof Error) {
+		return new Response("Unauthorized", { status: 401 });
+	}
+
+	const project = await drizzle(ctx.env.PROJECT_DB)
+		.select({ id: projectTable.clientID, secret: projectTable.secret })
+		.from(projectTable)
+		.where(
+			and(
+				eq(projectTable.clientID, project_id),
+				ownerGroupConditions({
+					user_group_ids: session.private?.group_ids ?? [],
+					ownerGroupIdColumn: projectTable.owner_group_id,
+					otherEq: [eq(projectTable.owner_id, session?.user_id)],
+					self_host: ctx.env.SELF_HOSTED,
+				}),
+			),
+		)
+		.get();
+
+	if (!project) {
+		return new Response("Unauthorized", { status: 401 });
+	}
+
+	const projectClient = createClient({
+		token: client.getToken() as string,
+		clientID: project_id,
+		issuerURI: process.env.PUBLIC_ISSUER,
+		redirectURI: process.env.PUBLIC_REDIRECT_URI,
+		secret: project.secret,
+	});
+	if (options.role) {
+		const roleUpdateRes = await projectClient.setUserRoleById(
+			user_id,
+			options.role,
+		);
+		if (roleUpdateRes instanceof Error) {
+			console.error("Failed to update user role:", roleUpdateRes);
+			return {
+				success: false,
+				error:
+					roleUpdateRes instanceof Error
+						? roleUpdateRes.message
+						: "Failed to update user role",
+			};
+		}
+	}
+
+	return {
+		success: true,
+	};
 }

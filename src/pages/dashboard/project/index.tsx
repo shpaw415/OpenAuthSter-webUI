@@ -336,6 +336,7 @@ export default function ProjectDetail() {
 			{/* Project Client Info */}
 			<ProjectClientInfo
 				project={projectHook.project}
+				updateProject={projectHook.updateProject}
 				setNotification={setNotification}
 			/>
 
@@ -1069,12 +1070,47 @@ export default function ProjectDetail() {
 
 function ProjectClientInfo({
 	project,
+	updateProject,
 	setNotification,
 }: {
 	project: Project | null;
+	updateProject: (data: Partial<Project>) => Promise<void>;
 	setNotification: (notif: { message: string } | null) => void;
 }) {
 	const [showSecret, setShowSecret] = useState(false);
+	const [isRotatingSecret, setIsRotatingSecret] = useState(false);
+
+	const handleRotateSecret = async () => {
+		if (!project?.secret) {
+			setNotification({ message: "Project secret is unavailable" });
+			return;
+		}
+
+		if (
+			!confirm(
+				"Rotate the Client Secret? Existing server-side integrations using the current secret will stop working until they are updated.",
+			)
+		) {
+			return;
+		}
+
+		setIsRotatingSecret(true);
+		try {
+			await updateProject({ secret: project.secret });
+			setShowSecret(true);
+			setNotification({
+				message:
+					"Client Secret rotated. Update your server-side integrations with the new value.",
+			});
+		} catch (err) {
+			setNotification({
+				message:
+					err instanceof Error ? err.message : "Failed to rotate Client Secret",
+			});
+		} finally {
+			setIsRotatingSecret(false);
+		}
+	};
 
 	if (!project) {
 		return (
@@ -1158,13 +1194,15 @@ function ProjectClientInfo({
 				{/* Secret */}
 				<div className="space-y-2 md:col-span-2">
 					<div>
-						<div className="flex items-center gap-2 mb-1">
+						<div className="flex items-center justify-between gap-3 mb-1">
+							<div className="flex items-center gap-2">
 							<label className="text-gray-400 text-sm" htmlFor="client-secret">
 								Client Secret
 							</label>
 							<button
 								type="button"
 								onClick={() => setShowSecret(!showSecret)}
+								disabled={isRotatingSecret}
 								className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors inline-flex items-center justify-center"
 								title={showSecret ? "Hide Client Secret" : "Show Client Secret"}
 							>
@@ -1172,6 +1210,28 @@ function ProjectClientInfo({
 									<Icon icon="lucide:eye-off" className="w-4 h-4" />
 								) : (
 									<Icon icon="lucide:eye" className="w-4 h-4" />
+								)}
+							</button>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									void handleRotateSecret();
+								}}
+								disabled={isRotatingSecret}
+								className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-sm text-amber-200 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+								title="Rotate Client Secret"
+							>
+								{isRotatingSecret ? (
+									<>
+										<div className="w-4 h-4 border-2 border-amber-200/30 border-t-amber-200 rounded-full animate-spin" />
+										Rotating...
+									</>
+								) : (
+									<>
+										<Icon icon="lucide:refresh-cw" className="w-4 h-4" />
+										Rotate Secret
+									</>
 								)}
 							</button>
 						</div>
@@ -1187,6 +1247,7 @@ function ProjectClientInfo({
 									navigator.clipboard.writeText(project?.secret || "");
 									setNotification({ message: "Client Secret copied!" });
 								}}
+								disabled={isRotatingSecret}
 								className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors inline-flex items-center justify-center shrink-0"
 								title="Copy Client Secret"
 							>
@@ -1197,6 +1258,9 @@ function ProjectClientInfo({
 							Do not share your Client Secret with anyone. it can modify any
 							part of the user data. ONLY use it in secure server-side
 							environments.
+						</p>
+						<p className="text-amber-300/80 text-xs mt-2">
+							Rotating the secret immediately invalidates the previous one.
 						</p>
 					</div>
 				</div>

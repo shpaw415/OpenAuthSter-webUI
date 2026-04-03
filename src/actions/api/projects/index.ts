@@ -19,6 +19,7 @@ import {
 	createCustomDomainForProject,
 	deleteCustomDomainForProject,
 } from "../../../cloudflare";
+import { generateSecret } from "./share";
 
 // GET /api/projects - List all projects
 export async function GET(): Promise<{
@@ -153,11 +154,7 @@ export async function POST(params: {
 			authEndpointURL: cfDomaineCreate.hostname,
 			cloudflareDomaineID: cfDomaineCreate.id,
 			registerOnInvite: false,
-			secret: [
-				crypto.randomUUID(),
-				crypto.randomUUID(),
-				crypto.randomUUID(),
-			].join("-"),
+			secret: generateSecret(),
 			theme_id: null,
 			projectData: {},
 		};

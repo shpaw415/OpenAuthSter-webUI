@@ -24,6 +24,7 @@ import {
 	createClient,
 	deleteCustomDomainForProject,
 } from "../../../cloudflare";
+import { generateSecret } from "./share";
 
 // GET /projects/manage - Get a single project
 export async function GET(params: {
@@ -191,6 +192,9 @@ export async function PUT(
 		}
 		if (params.data.registerOnInvite !== undefined) {
 			updates.registerOnInvite = params.data.registerOnInvite ? 1 : 0;
+		}
+		if(params.data.secret !== undefined) {
+			updates.secret = generateSecret();
 		}
 
 		if (Object.keys(updates).length === 0)

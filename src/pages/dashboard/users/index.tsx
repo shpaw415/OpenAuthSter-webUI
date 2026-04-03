@@ -1,5 +1,6 @@
 "use client";
 
+import { ReadonlyJsonEditor } from "@components/ReadonlyJsonEditor";
 import { PUT as updateUserData } from "@api/users";
 import { useParams } from "@hooks/useParams";
 import { useProject, useProjects } from "@hooks/useProjects";
@@ -488,10 +489,13 @@ export default function UserListPage() {
 								Close
 							</button>
 						</div>
-						<div className="overflow-auto p-4 bg-gray-950 max-h-[80vh] sm:max-h-[70vh]">
-							<pre className="text-sm text-gray-100 whitespace-pre-wrap font-mono wrap-break-word overflow-x-auto">
-								{JSON.stringify(selectedUser, null, 2)}
-							</pre>
+						<div className="p-4 bg-gray-950 h-[70vh] sm:h-[60vh] min-h-0">
+							<div className="h-full overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+								<ReadonlyJsonEditor
+									value={selectedUser}
+									path="user-detail.json"
+								/>
+							</div>
 						</div>
 					</div>
 				</div>

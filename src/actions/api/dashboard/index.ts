@@ -285,7 +285,7 @@ export async function GET(): Promise<{
 				alerts.push({
 					type: "errors",
 					projectId: stats.clientID,
-					message: `Project ${stats.clientID} has ${stats.errorsCount24h} error(s) in the last 24 hours`,
+					message: `Project \`${projects.find((p) => p.clientID === stats.clientID)?.name || stats.clientID}\` has ${stats.errorsCount24h} error(s) in the last 24 hours`,
 					count: stats.errorsCount24h,
 				});
 			}

@@ -1,4 +1,6 @@
+import { ReadonlyJsonEditor } from "@components/ReadonlyJsonEditor";
 import { DELETE as deleteLogs, GET as getLogs } from "@api/logs";
+import { useParams } from "@hooks/useParams";
 import { useProjects } from "@hooks/useProjects";
 import type { LogsTable } from "openauth-webui-shared-types/database";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -57,7 +59,8 @@ export default function LogsPage() {
 		isLoading: projectsLoading,
 		error: projectsError,
 	} = useProjects();
-	const [currentProject, setCurrentProject] = useState<string>("");
+	const { project_id } = useParams<{ project_id?: string }>()
+	const [currentProject, setCurrentProject] = useState<string>(project_id || "");
 	const [logs, setLogs] = useState<LogRow[]>([]);
 	const [logsError, setLogsError] = useState<string | null>(null);
 	const [isFetchingLogs, setIsFetchingLogs] = useState(false);
@@ -300,7 +303,6 @@ export default function LogsPage() {
 									<th className="px-4 py-3 text-left">Type</th>
 									<th className="px-4 py-3 text-left">Message</th>
 									<th className="px-4 py-3 text-left">Timestamp</th>
-									<th className="px-4 py-3 text-left">Project</th>
 									<th className="px-4 py-3 text-left">Context</th>
 								</tr>
 							</thead>
@@ -358,9 +360,6 @@ export default function LogsPage() {
 											</td>
 											<td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
 												{formatDate(log.timestamp)}
-											</td>
-											<td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
-												{log.clientID}
 											</td>
 											<td className="px-4 py-3 text-sm whitespace-nowrap">
 												{log.context ? (
@@ -631,15 +630,15 @@ interface ContextModalProps {
 function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 	if (!isOpen) return null;
 
+	const serializedContext = JSON.stringify(context ?? {}, null, 2);
+
 	return (
-		<button
-			type="button"
+		<div
 			className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-			onMouseUp={onClose}
+			onClick={onClose}
 		>
-			<button
-				type="button"
-				className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+			<div
+				className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl max-w-4xl w-full h-[80vh] flex flex-col overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
@@ -667,10 +666,13 @@ function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 					</button>
 				</div>
 
-				<div className="flex-1 overflow-auto p-6">
-					<pre className="bg-gray-950 border border-gray-800 rounded-lg p-4 text-sm text-gray-200 font-mono overflow-auto max-h-full">
-						<code>{JSON.stringify(context, null, 2)}</code>
-					</pre>
+				<div className="flex-1 min-h-0 p-6">
+					<div className="h-full overflow-hidden rounded-lg border border-gray-800 bg-gray-950">
+						<ReadonlyJsonEditor
+							value={serializedContext}
+							path="activity-log-context.json"
+						/>
+					</div>
 				</div>
 
 				<div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-800">
@@ -684,14 +686,14 @@ function ContextModal({ isOpen, context, onClose }: ContextModalProps) {
 					<button
 						type="button"
 						onClick={() => {
-							navigator.clipboard.writeText(JSON.stringify(context, null, 2));
+							navigator.clipboard.writeText(serializedContext);
 						}}
 						className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
 					>
 						Copy JSON
 					</button>
 				</div>
-			</button>
-		</button>
+			</div>
+		</div>
 	);
 }

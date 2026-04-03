@@ -86,7 +86,9 @@ export async function POST(params: CreateCopyTemplateParams): Promise<{
 		const userData = await ctx.data.client.getMetaData();
 
 		if (!userData || !userData.id) {
-			insertLog({
+
+
+			await insertLog({
 				type: "error",
 				message: "Unauthorized attempt to create copy template",
 				database: env.PROJECT_DB,

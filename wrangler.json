@@ -3,12 +3,6 @@
 	"name": "openauthster-webui-test",
 	"pages_build_output_dir": ".frame-master/build",
 	"compatibility_date": "2025-11-09",
-	"d1_databases": [
-		{
-			"binding": "PROJECT_DB",
-			"database_id": "fbd2f747-c950-48bc-8939-addccae17553",
-			"remote": true
-		}
-	],
+	"d1_databases": [],
 	"compatibility_flags": ["nodejs_compat"]
 }

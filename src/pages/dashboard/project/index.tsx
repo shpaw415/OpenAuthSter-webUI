@@ -27,7 +27,6 @@ import type {
 } from "openauth-webui-shared-types/webhook/types";
 import { WebHookEventsDetails } from "openauth-webui-shared-types/webhook/types";
 import { useCallback, useEffect, useState } from "react";
-import { navigate } from "@utils";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
 	{ id: "social", label: "Social", icon: "lucide:users" },

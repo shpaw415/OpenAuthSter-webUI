@@ -10,7 +10,7 @@ Configure AWS Cognito as an identity provider for your application.
 4. Go to **App integration** tab and create an **App client**
 5. Configure the app client:
    - Enable **Cognito user pool** as identity provider
-   - Set your **Callback URL** (redirect URI)
+   - Set your **Callback URL** (redirect URI) to <props.RedirectURI value={props.redirectURI} />
    - Select the OAuth scopes you need
 6. Copy the **Client ID** and **Client Secret**
 7. Note your **User Pool Domain** (under "Domain" section)

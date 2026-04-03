@@ -7,7 +7,7 @@ Configure Apple Sign In using the OpenID Connect (OIDC) flow. This mode uses App
 1. Go to the [Apple Developer Portal](https://developer.apple.com/account)
 2. Navigate to **Certificates, Identifiers & Profiles**
 3. Create an **App ID** with **Sign In with Apple** enabled
-4. Create a **Services ID** and configure your **Return URL** (redirect URI)
+4. Create a **Services ID** and configure your **Return URL** (redirect URI) as <props.RedirectURI value={props.redirectURI} />
 5. Note your **Client ID** (Services ID, e.g. `com.example.app`)
 
 ## Configuration Fields

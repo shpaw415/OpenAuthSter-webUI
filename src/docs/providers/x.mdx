@@ -10,7 +10,7 @@ Configure X (formerly Twitter) OAuth to allow users to sign in with their X acco
 4. Under **User authentication settings**, click **Set up**
 5. Configure OAuth 2.0 settings:
    - **Type of App**: Web App
-   - **Callback URI**: Your redirect URL (e.g., `https://your-domain.com/x/callback`)
+   - **Callback URI**: <props.RedirectURI value={props.redirectURI} />
    - **Website URL**: Your application's URL
 6. Save and copy your **Client ID** and **Client Secret**
 

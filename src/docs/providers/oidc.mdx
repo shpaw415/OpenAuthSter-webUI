@@ -7,7 +7,7 @@ Configure a custom OpenID Connect (OIDC) provider for authentication.
 1. Obtain the **Issuer URL** from your OIDC provider
    - This URL should serve the `/.well-known/openid-configuration` endpoint
 2. Register your application with the OIDC provider
-3. Configure the **redirect URI** in your provider's settings
+3. Configure the **redirect URI** in your provider's settings as <props.RedirectURI value={props.redirectURI} />
 4. Copy the **Client ID** provided by your OIDC provider
 
 ## Configuration Fields

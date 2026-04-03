@@ -7,7 +7,7 @@ Configure Apple Sign In using the standard OAuth 2.0 flow with a client secret.
 1. Go to the [Apple Developer Portal](https://developer.apple.com/account)
 2. Navigate to **Certificates, Identifiers & Profiles**
 3. Create an **App ID** with **Sign In with Apple** enabled
-4. Create a **Services ID** and configure your **Return URL** (redirect URI)
+4. Create a **Services ID** and configure your **Return URL** (redirect URI) as <props.RedirectURI value={props.redirectURI} />
 5. Create a **Key** for Sign In with Apple and download the `.p8` private key file
 6. Note your **Team ID**, **Key ID**, and **Client ID** (Services ID)
 7. Generate a signed JWT to use as your **Client Secret**

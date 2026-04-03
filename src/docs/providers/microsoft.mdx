@@ -10,7 +10,7 @@ Configure Microsoft Azure AD to allow users to sign in with their Microsoft acco
 4. Fill in the application details:
    - **Name**: Your application name
    - **Supported account types**: Choose based on your needs
-   - **Redirect URI**: Select "Web" and enter your callback URL
+   - **Redirect URI**: Select "Web" and enter <props.RedirectURI value={props.redirectURI} />
 5. Click **Register**
 6. Copy the **Application (client) ID**
 7. Go to **Certificates & secrets** > **New client secret**

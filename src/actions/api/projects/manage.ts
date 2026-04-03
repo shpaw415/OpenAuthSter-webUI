@@ -223,6 +223,40 @@ export async function PUT(
 				error: "Project not found after update",
 			};
 
+		try {
+			ctx.data.client.updateOptions({ secret: existing.secret });
+			await ClearIssuerProjectCache({
+				project: existing,
+				env,
+				client: ctx.data.client,
+			}).then(({ success, error }) => {
+				if (!success) {
+					return insertLog({
+						type: "warning",
+						clientID: existing.clientID,
+						message: error as string,
+						database: env.PROJECT_DB,
+						endpoint: "/api/projects/manage",
+					});
+				}
+			});
+		} catch (error) {
+			console.error(
+				`Failed to clear issuer cache for project ${existing.clientID}:`,
+				error,
+			);
+			await insertLog({
+				type: "warning",
+				clientID: existing.clientID,
+				message: error instanceof Error ? error.message : String(error),
+				database: env.PROJECT_DB,
+				endpoint: "/api/projects/manage",
+			});
+			return {
+				success: false,
+				error: "Failed to clear issuer cache",
+			};
+		}
 		return {
 			success: true,
 			data: updatedProjects,
@@ -295,7 +329,13 @@ export async function DELETE(params: {
 		};
 
 	// Clean up all orphan records associated with this project
+	ctx.data.client.updateOptions({ secret: existing.secret });
 	await Promise.allSettled([
+		ClearIssuerProjectCache({
+			project: existing,
+			env,
+			client: ctx.data.client,
+		}),
 		db.delete(WebHookTable).where(eq(WebHookTable.clientID, params.clientID)),
 		db.delete(totpTable).where(eq(totpTable.clientID, params.clientID)),
 		db
@@ -342,4 +382,33 @@ export async function DELETE(params: {
 			error: "Failed to delete associated user table",
 		};
 	}
+}
+
+async function ClearIssuerProjectCache({
+	project,
+	env,
+	client,
+}: {
+	project: Project;
+	client: import("@auth").AuthClientType;
+	env: Env;
+}) {
+	const url = new URL(`/clear-cache/${project.clientID}`, env.PUBLIC_ISSUER);
+	const response = await client.fetch(url.toString());
+
+	if (response.ok) {
+		const data = (await response.json().catch(() => null)) as {
+			success: boolean;
+			error?: string;
+		} | null;
+		if (data?.success) {
+			return { success: true };
+		}
+
+		return { success: false, error: data?.error ?? "Failed to clear cache" };
+	}
+	return {
+		success: false,
+		error: await response.text(),
+	};
 }

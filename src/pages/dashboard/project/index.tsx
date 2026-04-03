@@ -27,6 +27,7 @@ import type {
 } from "openauth-webui-shared-types/webhook/types";
 import { WebHookEventsDetails } from "openauth-webui-shared-types/webhook/types";
 import { useCallback, useEffect, useState } from "react";
+import { navigate } from "@utils";
 
 const CATEGORIES: { id: ProviderCategory; label: string; icon: string }[] = [
 	{ id: "social", label: "Social", icon: "lucide:users" },
@@ -56,11 +57,15 @@ const getWebHookEventLabel = (event: WebHookEvents) => {
 };
 
 export default function ProjectDetail() {
-	const params = useParams<{ project_id: string }>();
+	const params = useParams<{
+		project_id: string;
+		category?: ProviderCategory;
+	}>();
 	const projectHook = useProject(params.project_id);
 	const { themes, isLoading: themesLoading } = useUIThemes();
-	const [activeCategory, setActiveCategory] =
-		useState<ProviderCategory>("social");
+	const [activeCategory, setActiveCategory] = useState<ProviderCategory>(
+		params.category || "social",
+	);
 	const [isSaving, setIsSaving] = useState(false);
 	const [notification, setNotification] = useState<{
 		message: string;
@@ -72,6 +77,12 @@ export default function ProjectDetail() {
 		key: string;
 		draft: string;
 	} | null>(null);
+
+	useEffect(() => {
+		if (!params.category) return;
+		if (activeCategory === params.category) return;
+		setActiveCategory(params.category);
+	}, [params.category, activeCategory]);
 
 	// Sync projectData when project loads
 	useEffect(() => {
@@ -138,7 +149,9 @@ export default function ProjectDetail() {
 		useState<ExtendedWebHookConfig | null>(null);
 	const [isWebHookSaving, setIsWebHookSaving] = useState(false);
 
-	const categoryProviders = getProvidersByCategory(activeCategory);
+	const categoryProviders = getProvidersByCategory(activeCategory).filter(
+		(p) => !["yahoo"].includes(p.type),
+	);
 	const enabledCount = providers.filter((p) => p.enabled).length;
 
 	useEffect(() => {
@@ -250,7 +263,10 @@ export default function ProjectDetail() {
 	return (
 		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 space-y-10">
 			{/* Notification */}
-			<AppSnackbar notification={notification} onClose={() => setNotification(null)} />
+			<AppSnackbar
+				notification={notification}
+				onClose={() => setNotification(null)}
+			/>
 
 			{/* Header */}
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -900,7 +916,12 @@ export default function ProjectDetail() {
 						<button
 							key={cat.id}
 							type="button"
-							onClick={() => setActiveCategory(cat.id)}
+							onClick={() => {
+								setActiveCategory(cat.id);
+								const url = new URL(window.location.href);
+								url.searchParams.set("category", cat.id);
+								window.history.pushState({}, "", url);
+							}}
 							className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
 								activeCategory === cat.id
 									? "bg-blue-600 text-white"

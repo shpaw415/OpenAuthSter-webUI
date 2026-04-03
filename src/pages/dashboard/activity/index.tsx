@@ -1,7 +1,9 @@
-import { GET as getLogs } from "@api/logs";
+import { DELETE as deleteLogs, GET as getLogs } from "@api/logs";
 import { useProjects } from "@hooks/useProjects";
 import type { LogsTable } from "openauth-webui-shared-types/database";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+const LOGS_PER_PAGE = 50;
 
 function ParseLogs(logs: Array<typeof LogsTable.$inferSelect>): LogRow[] {
 	return logs.map(
@@ -63,15 +65,21 @@ export default function LogsPage() {
 	const [contextModal, setContextModal] = useState<ContextModalState>({
 		isOpen: false,
 	});
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [currentPage, setCurrentPage] = useState(1);
+	const [totalLogs, setTotalLogs] = useState(0);
+	const [isDeletingLogs, setIsDeletingLogs] = useState(false);
 
-	const fetchLogs = useCallback(async (clientID: string) => {
+	const totalPages = Math.max(1, Math.ceil(totalLogs / LOGS_PER_PAGE));
+
+	const fetchLogs = useCallback(async (clientID: string, page = 1) => {
 		if (!clientID) return;
 
 		setIsFetchingLogs(true);
 		setLogsError(null);
 
 		try {
-			const response = await getLogs({ clientID });
+			const response = await getLogs({ clientID, page, limit: LOGS_PER_PAGE });
 
 			if (!response.success) {
 				setLogs([]);
@@ -80,7 +88,9 @@ export default function LogsPage() {
 			}
 
 			setLogs(ParseLogs(response.data) || []);
+			setTotalLogs(response.pagination?.total ?? 0);
 			setLastUpdated(new Date().toISOString());
+			setSelectedIds(new Set());
 		} catch (err) {
 			setLogsError(err instanceof Error ? err.message : String(err));
 		} finally {
@@ -92,6 +102,56 @@ export default function LogsPage() {
 		if (!currentProject) return;
 		fetchLogs(currentProject);
 	}, [currentProject, fetchLogs]);
+
+	const handlePageChange = useCallback(
+		(page: number) => {
+			setCurrentPage(page);
+			fetchLogs(currentProject, page);
+		},
+		[currentProject, fetchLogs],
+	);
+
+	const handleSelectAll = useCallback(() => {
+		if (selectedIds.size === logs.length) {
+			setSelectedIds(new Set());
+		} else {
+			setSelectedIds(new Set(logs.map((l) => l.id)));
+		}
+	}, [logs, selectedIds.size]);
+
+	const handleToggleSelect = useCallback((id: string) => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}, []);
+
+	const handleDeleteSelected = useCallback(async () => {
+		if (!currentProject || selectedIds.size === 0) return;
+		setIsDeletingLogs(true);
+		try {
+			const response = await deleteLogs({
+				clientID: currentProject,
+				ids: Array.from(selectedIds),
+			});
+			if (response.success) {
+				// Re-fetch the current page; if it's now empty go back one
+				const newTotal = totalLogs - selectedIds.size;
+				const newTotalPages = Math.max(1, Math.ceil(newTotal / LOGS_PER_PAGE));
+				const targetPage = Math.min(currentPage, newTotalPages);
+				setCurrentPage(targetPage);
+				await fetchLogs(currentProject, targetPage);
+			} else {
+				setLogsError(response.error || "Failed to delete logs");
+			}
+		} catch (err) {
+			setLogsError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setIsDeletingLogs(false);
+		}
+	}, [currentProject, selectedIds, totalLogs, currentPage, fetchLogs]);
 
 	const stats = useMemo(() => {
 		const total = logs.length;
@@ -107,6 +167,8 @@ export default function LogsPage() {
 		};
 	}, [logs]);
 
+	const allSelected = logs.length > 0 && selectedIds.size === logs.length;
+	const someSelected = selectedIds.size > 0 && selectedIds.size < logs.length;
 	const showEmptyLogs = !isFetchingLogs && !logsError && logs.length === 0;
 
 	return (
@@ -125,9 +187,40 @@ export default function LogsPage() {
 				</div>
 
 				<div className="flex items-center gap-3">
+					{selectedIds.size > 0 && (
+						<button
+							type="button"
+							onClick={handleDeleteSelected}
+							disabled={isDeletingLogs}
+							className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600/20 border border-red-500/50 text-red-300 hover:bg-red-600/30 hover:border-red-500 hover:text-red-200 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+						>
+							{isDeletingLogs ? (
+								<span className="h-4 w-4 border-2 border-red-400/60 border-t-transparent rounded-full animate-spin" />
+							) : (
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<title>Delete selected</title>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+									/>
+								</svg>
+							)}
+							<span>Delete {selectedIds.size}</span>
+						</button>
+					)}
 					<button
 						type="button"
-						onClick={() => currentProject && fetchLogs(currentProject)}
+						onClick={() => {
+							setCurrentPage(1);
+							currentProject && fetchLogs(currentProject, 1);
+						}}
 						disabled={!currentProject || isFetchingLogs}
 						className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 hover:border-gray-600 hover:text-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
 					>
@@ -185,7 +278,7 @@ export default function LogsPage() {
 						<span>
 							{isFetchingLogs
 								? "Fetching logs..."
-								: `${logs.length} entr${logs.length === 1 ? "y" : "ies"}`}
+								: `${totalLogs} entr${totalLogs === 1 ? "y" : "ies"}`}
 						</span>
 					</div>
 				</div>
@@ -195,6 +288,15 @@ export default function LogsPage() {
 						<table className="min-w-full divide-y divide-gray-800">
 							<thead className="bg-gray-800/60">
 								<tr className="text-xs uppercase tracking-wide text-gray-400">
+									{" "}
+									<th className="px-4 py-3 text-left w-10">
+										<Checkbox
+											checked={allSelected}
+											indeterminate={someSelected}
+											onChange={handleSelectAll}
+											disabled={isFetchingLogs || logs.length === 0}
+										/>
+									</th>{" "}
 									<th className="px-4 py-3 text-left">Type</th>
 									<th className="px-4 py-3 text-left">Message</th>
 									<th className="px-4 py-3 text-left">Timestamp</th>
@@ -207,7 +309,7 @@ export default function LogsPage() {
 
 								{!isFetchingLogs && logsError && (
 									<tr>
-										<td colSpan={5} className="px-4 py-6">
+										<td colSpan={6} className="px-4 py-6">
 											<div className="bg-red-900/30 border border-red-800 text-red-200 rounded-lg px-4 py-3">
 												{logsError}
 											</div>
@@ -218,7 +320,7 @@ export default function LogsPage() {
 								{!isFetchingLogs && !logsError && showEmptyLogs && (
 									<tr>
 										<td
-											colSpan={5}
+											colSpan={6}
 											className="px-4 py-8 text-center text-gray-400"
 										>
 											No log entries for this project yet.
@@ -231,8 +333,14 @@ export default function LogsPage() {
 									logs.map((log) => (
 										<tr
 											key={log.id}
-											className="hover:bg-gray-800/40 transition-colors"
+											className={`hover:bg-gray-800/40 transition-colors ${selectedIds.has(log.id) ? "bg-blue-500/5" : ""}`}
 										>
+											<td className="px-4 py-3 w-10">
+												<Checkbox
+													checked={selectedIds.has(log.id)}
+													onChange={() => handleToggleSelect(log.id)}
+												/>
+											</td>
 											<td className="px-4 py-3 whitespace-nowrap">
 												<span
 													className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
@@ -286,9 +394,106 @@ export default function LogsPage() {
 					</div>
 				)}
 
-				{!projectsLoading && !projectsError && (
-					<div className="mt-4 text-sm text-gray-400">
-						Create a project to start collecting logs.
+				{!projectsLoading && !projectsError && totalPages > 1 && (
+					<div className="mt-4 flex items-center justify-between text-sm text-gray-400">
+						<span>
+							Page {currentPage} of {totalPages} &mdash; {totalLogs} total
+						</span>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => handlePageChange(currentPage - 1)}
+								disabled={currentPage <= 1 || isFetchingLogs}
+								className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 hover:border-gray-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+							>
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<title>Previous page</title>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M15 19l-7-7 7-7"
+									/>
+								</svg>
+								Prev
+							</button>
+							{Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+								// Show pages around current
+								let page: number;
+								if (totalPages <= 7) {
+									page = i + 1;
+								} else if (currentPage <= 4) {
+									page = i + 1;
+									if (i === 6) page = totalPages;
+								} else if (currentPage >= totalPages - 3) {
+									page = totalPages - 6 + i;
+									if (i === 0) page = 1;
+								} else {
+									const offsets = [-3, -2, -1, 0, 1, 2, 3];
+									page = currentPage + (offsets[i] as number);
+									if (i === 0) page = 1;
+									if (i === 6) page = totalPages;
+								}
+								const isEllipsis =
+									(i === 1 &&
+										page !== 2 &&
+										totalPages > 7 &&
+										currentPage > 4) ||
+									(i === 5 &&
+										page !== totalPages - 1 &&
+										totalPages > 7 &&
+										currentPage < totalPages - 3);
+								if (isEllipsis) {
+									return (
+										<span key={`ellipsis-${i}`} className="px-1 text-gray-600">
+											…
+										</span>
+									);
+								}
+								return (
+									<button
+										key={page}
+										type="button"
+										onClick={() => handlePageChange(page)}
+										disabled={isFetchingLogs}
+										className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors disabled:cursor-not-allowed ${
+											page === currentPage
+												? "bg-blue-600 text-white border border-blue-500"
+												: "bg-gray-800 border border-gray-700 text-gray-300 hover:border-gray-600 hover:text-white"
+										}`}
+									>
+										{page}
+									</button>
+								);
+							})}
+							<button
+								type="button"
+								onClick={() => handlePageChange(currentPage + 1)}
+								disabled={currentPage >= totalPages || isFetchingLogs}
+								className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 hover:border-gray-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+							>
+								Next
+								<svg
+									className="w-4 h-4"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<title>Next page</title>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M9 5l7 7-7 7"
+									/>
+								</svg>
+							</button>
+						</div>
 					</div>
 				)}
 			</div>
@@ -299,6 +504,73 @@ export default function LogsPage() {
 				onClose={() => setContextModal({ isOpen: false })}
 			/>
 		</div>
+	);
+}
+
+interface CheckboxProps {
+	checked: boolean;
+	indeterminate?: boolean;
+	disabled?: boolean;
+	onChange: () => void;
+}
+
+function Checkbox({
+	checked,
+	indeterminate,
+	disabled,
+	onChange,
+}: CheckboxProps) {
+	const ref = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if (ref.current) ref.current.indeterminate = indeterminate ?? false;
+	}, [indeterminate]);
+
+	return (
+		<label
+			className={`relative inline-flex items-center justify-center w-4 h-4 ${
+				disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+			}`}
+		>
+			<input
+				ref={ref}
+				type="checkbox"
+				checked={checked}
+				disabled={disabled}
+				onChange={onChange}
+				className="sr-only"
+			/>
+			<span
+				aria-hidden="true"
+				className={`flex items-center justify-center w-4 h-4 rounded border transition-colors ${
+					checked || indeterminate
+						? "bg-blue-600 border-blue-500"
+						: "bg-gray-800 border-gray-600 hover:border-gray-500"
+				}`}
+			>
+				{indeterminate && !checked ? (
+					<svg
+						className="w-2.5 h-2.5 text-white"
+						viewBox="0 0 10 10"
+						fill="currentColor"
+					>
+						<title>Indeterminate</title>
+						<rect x="1" y="4" width="8" height="2" rx="1" />
+					</svg>
+				) : checked ? (
+					<svg
+						className="w-2.5 h-2.5 text-white"
+						viewBox="0 0 10 10"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="1.8"
+					>
+						<title>Checked</title>
+						<polyline points="1.5,5 4,7.5 8.5,2.5" />
+					</svg>
+				) : null}
+			</span>
+		</label>
 	);
 }
 
@@ -326,6 +598,9 @@ function SkeletonRows() {
 		<>
 			{placeholders.map((_, idx) => (
 				<tr key={idx} className="animate-pulse">
+					<td className="px-4 py-3 w-10">
+						<div className="h-4 w-4 rounded bg-gray-700/60" />
+					</td>
 					<td className="px-4 py-3">
 						<div className="h-6 w-24 rounded-full bg-gray-700/60" />
 					</td>
@@ -349,7 +624,7 @@ function SkeletonRows() {
 
 interface ContextModalProps {
 	isOpen: boolean;
-	context?: Record<string, any>;
+	context?: Record<string, unknown>;
 	onClose: () => void;
 }
 

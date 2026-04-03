@@ -10,7 +10,7 @@ Configure JumpCloud as an identity provider for your application.
 4. Select **Custom OIDC App** or search for your application type
 5. Configure the application:
    - **Display Label**: Your application name
-   - **Redirect URIs**: Your callback URL (e.g., `https://your-domain.com/jumpcloud/callback`)
+   - **Redirect URIs**: <props.RedirectURI value={props.redirectURI} />
 6. Save the application
 7. Copy the **Client ID** and **Client Secret** from the SSO tab
 

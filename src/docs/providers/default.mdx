@@ -6,7 +6,7 @@ Configure this OAuth provider for authentication.
 
 1. Register your application with the OAuth provider
 2. Configure the **Client ID** and **Client Secret**
-3. Set up the **redirect URI** in your provider's settings
+3. Set up the **redirect URI** in your provider's settings as <props.RedirectURI value={props.redirectURI} />
 4. Configure any additional **scopes** as needed
 
 ## Configuration Fields
@@ -35,4 +35,4 @@ Some providers support additional query parameters in the authorization URL. Use
 
 ## Redirect URI
 
-Make sure to configure your redirect URI correctly in the provider's settings. The redirect URI should match exactly what is configured in your application.
+Make sure to configure your redirect URI correctly in the provider's settings. Use <props.RedirectURI value={props.redirectURI} /> and ensure it matches exactly what is configured in your application.

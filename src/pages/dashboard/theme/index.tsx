@@ -33,7 +33,7 @@ export default function UIThemeList() {
 		}
 	};
 
-	const getPrimaryColor = (theme: Theme): string => {
+	const getPrimaryColor = (theme: Partial<Theme>): string => {
 		if (typeof theme.primary === "string") {
 			return theme.primary;
 		}
@@ -155,7 +155,7 @@ function ThemeCard({
 	isDeleting,
 }: {
 	theme: UITheme;
-	getPrimaryColor: (theme: Theme) => string;
+	getPrimaryColor: (theme: Partial<Theme>) => string;
 	getRadiusLabel: (radius?: Theme["radius"]) => string;
 	onDelete: (id: number) => void;
 	isDeleting: boolean;

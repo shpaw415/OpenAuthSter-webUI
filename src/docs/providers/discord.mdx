@@ -9,7 +9,7 @@ Configure Discord OAuth2 to allow users to sign in with their Discord accounts.
 3. Navigate to **OAuth2** section in the sidebar
 4. Copy the **Client ID**
 5. Click **Reset Secret** to generate and copy the **Client Secret**
-6. Add your redirect URI under **Redirects**
+6. Add <props.RedirectURI value={props.redirectURI} /> under **Redirects**
 
 ## Configuration Fields
 
@@ -17,7 +17,7 @@ Configure Discord OAuth2 to allow users to sign in with their Discord accounts.
 | --------------------------- | -------- | ---------------------------------------------------- |
 | Client ID                   | Yes      | The OAuth 2.0 client ID from Discord                 |
 | Client Secret               | Yes      | The OAuth 2.0 client secret from Discord             |
-| Scopes                      | No       | Additional OAuth scopes to request (default: email)  |
+| Scopes                      | No       | Additional OAuth scopes to request (default: identify, email)  |
 | PKCE                        | No       | Enable PKCE for enhanced security                    |
 | Additional Query Parameters | No       | Extra parameters to include in the authorization URL |
 
@@ -39,6 +39,10 @@ Common parameters you might want to add:
 
 - `identify` - Access to user's username, avatar, etc.
 - `email` - Access to user's email address
+
+## Important Note
+
+Discord requires the `identify` scope for `users/@me`. If you only request `email`, the OAuth callback can succeed but the user info fetch will return `401 Unauthorized`.
 
 ## Useful Links
 
